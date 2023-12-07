@@ -1,0 +1,62 @@
+{
+    "name": "nf-core/mpxvassembly",
+    "homePage": "https://github.com/nf-core/mpxvassembly",
+    "repos": {
+        "nf-core/modules": {
+            "bbmap/align": {
+                "git_sha": "848ee9a215d02d80be033bfa60881700f2bd914c"
+            },
+            "bbmap/bbduk": {
+                "git_sha": "848ee9a215d02d80be033bfa60881700f2bd914c"
+            },
+            "bwa/index": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "bwa/mem": {
+                "git_sha": "4f5274c3de0c9521f5033893ff61057a74c45ba9"
+            },
+            "custom/dumpsoftwareversions": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "fastp": {
+                "git_sha": "7e8ad566883449e7939062b5e2bcf53fc1e0002f"
+            },
+            "fastqc": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "ivar/consensus": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "kraken2/kraken2": {
+                "git_sha": "abe025677cdd805cc93032341ab19885473c1a07"
+            },
+            "multiqc": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "nf-core/mummer": {
+                "git_sha": "0f8a77ff00e65eaeebc509b8156eaa983192474b"
+            },
+            "quast": {
+                "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+            },
+            "samtools/depth": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/flagstat": {
+                "git_sha": "ecece498f10b47b7c9d06f53a310cea5811b4c5f"
+            },
+            "samtools/index": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "samtools/sort": {
+                "git_sha": "897c33d5da084b61109500ee44c01da2d3e4e773"
+            },
+            "seqtk/subseq": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            },
+            "unicycler": {
+                "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d"
+            }
+        }
+    }
+}
