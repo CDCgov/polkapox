@@ -1,7 +1,14 @@
 contact_links:
-  - name: Join nf-core
-    url: https://nf-co.re/join
-    about: Please join the nf-core community here
-  - name: "Slack #mpxvassembly channel"
-    url: https://nfcore.slack.com/channels/mpxvassembly
-    about: Discussion about the nf-core/mpxvassembly pipeline
+  - name: PolkaPox
+    url: https://github.com/CDCgov/polkapox
+    about: Please use the templates to post any issues of feature requests 
+templates:
+  # Template for bug reports
+  - bug_report:
+    file: bug_report.md
+    labels: [bug]
+  # Template for feature requests
+  - feature_request:
+    file: feature_request.md
+    labels: [enhancement]
+  
