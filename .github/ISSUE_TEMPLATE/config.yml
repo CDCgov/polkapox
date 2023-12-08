@@ -11,4 +11,11 @@ templates:
   - feature_request:
     file: feature_request.md
     labels: [enhancement]
-  
+  # Template for internal bug reports
+  - internal_bug_report:
+    file: internal_bug_report.md
+    labels: [bug]
+  # Template for internal feature requests
+  - internal_feature_request:
+    file: internal_feature_request.md
+    labels: [enhancement]
