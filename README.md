@@ -121,7 +121,7 @@ end
 3. Clone this repo to your working environment:
 
    ```console
-   git clone git@git.biotech.cdc.gov:monkeypox/mpxv-assembly-nf.git
+   git clone git@github.com:CDCgov/polkapox.git
    ```
 
 4. Prepare your samples. You have two options:
@@ -136,7 +136,7 @@ CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 5. Start running your own analysis!
 
    ```console
-   nextflow run mpxvassembly-nf/main.nf --input {SAMPLESHEET.csv OR input_directory} --outdir {OUTDIR} --fasta {REF.fa} -profile sge,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff} --workflow {WORKFLOW} --filter {true/false}
+   nextflow run polkapox/main.nf --input {SAMPLESHEET.csv OR input_directory} --outdir {OUTDIR} --fasta {REF.fa} -profile sge,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff} --workflow {WORKFLOW} --filter {true/false}
    ```
 
    **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to the reference and gff in the `assets` folder of this repo, and a kraken db hosted on the SciComp file system, respectively. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.
@@ -159,7 +159,7 @@ For use on an HPC cluster (rosalind, aspen) the workflow can be run as a job by 
     module load nextflow
     ```
 
-2) Prepare file `cdc.confing` with the necessary `sge` submission parameters, add it to sub-directory [./conf/](./conf), and include it in [nextflow.config](./nextflow.config) with:  
+2) Prepare file `cdc.config` with the necessary `sge` submission parameters, add it to sub-directory [./conf/](./conf), and include it in [nextflow.config](./nextflow.config) with:  
 
     ```groovy
     // Load CDC config for operating on internal compute infrastructure
@@ -169,7 +169,7 @@ For use on an HPC cluster (rosalind, aspen) the workflow can be run as a job by 
 3) Submit individual processes as jobs to the scheduler using a profile defined in `cdc.config`: for example:
 
     ```consol
-    nextflow run main.nf --input {SAMPLESHEET.csv} --outdir {OUTDIR} --fasta {REF.fa} -profile sge,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff}
+    nextflow run main.nf --input {SAMPLESHEET.csv} --outdir {OUTDIR} --fasta {REF.fa} -profile rosalind,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff}
     ```
 
 ## Documentation
