@@ -159,17 +159,10 @@ For use on an HPC cluster (rosalind, aspen) the workflow can be run as a job by 
     module load nextflow
     ```
 
-2) Prepare file `cdc.config` with the necessary `sge` submission parameters, add it to sub-directory [./conf/](./conf), and include it in [nextflow.config](./nextflow.config) with:  
-
-    ```groovy
-    // Load CDC config for operating on internal compute infrastructure
-    includeConfig 'conf/cdc.config'
-    ```
-
-3) Submit individual processes as jobs to the scheduler using a profile defined in `cdc.config`: for example:
+2) Point to the `cdc.config` file, which contains custom profiles for the CDC HPC clusters. Submit individual processes as jobs to the scheduler using a profile defined in `cdc.config`.  For example, to run a job on rosalind:
 
     ```consol
-    nextflow run main.nf --input {SAMPLESHEET.csv} --outdir {OUTDIR} --fasta {REF.fa} -profile rosalind,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff}
+    nextflow run main.nf --input {SAMPLESHEET.csv} --outdir {OUTDIR} --fasta {REF.fa} -profile rosalind,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff} -config /scicomp/reference/nextflow/configs/cdc.config
     ```
 
 ## Documentation
