@@ -147,23 +147,23 @@ Install mamba
 bash Mambaforge-$(uname)-$(uname -m).sh -b -p $HOME/mambaforge
 ```
 Add mamba to your PATH
-`export PATH=$PATH:/your/mamba/directory/path/bin`
+```export PATH=$PATH:/your/mamba/directory/path/bin
+```
 Install Kraken2
-`mamba install -c bioconda kraken2 -y`
+```mamba install -c bioconda kraken2 -y
+```
 Copy all your fasta files to a directory, in this case, Fasta_dir
-Now add the add to library command to add your fasta files to the kraken database
+Now use the `add to library`` command to add your fasta files to the kraken database
 ```
 for fasta in Fasta_dir/* ; 
   do kraken2-build --add-to-library $fasta --db orthopox_kdb --threads $THREADS; 
 done
 ```
 Download the reference NCBI taxonomy files
-```
-kraken2-build --download-taxonomy --db orthopox_kdb --threads $THREADS
+```kraken2-build --download-taxonomy --db orthopox_kdb --threads $THREADS
 ```
 Now build the database
-```
-kraken2-build --build --db orthopox_kdb --threads $THREADS
+```kraken2-build --build --db orthopox_kdb --threads $THREADS
 ```
 
 ## Running the pipeline
