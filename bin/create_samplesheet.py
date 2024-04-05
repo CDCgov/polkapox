@@ -68,14 +68,6 @@ def check_path(input_path):
         input_path = os.path.realpath(input_path) + '/'
     return input_path
 
-def check_if_R1(file_path):
-    """ Return true if file has R1 in the name
-    :param path: a file path
-    :returns: true if valid filenames, else false
-    :rytpe: bool
-    """
-    return "_R1" in file_path
-
 def find_file_depth(samples_dir):
     """ Return the file depth
     :param samples_dir: a file path
