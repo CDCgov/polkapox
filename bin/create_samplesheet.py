@@ -133,7 +133,7 @@ def list_samples(samples_dir, single=False):
     seqfiles = [] 
     for filename in os.listdir(samples_dir):
         if single and "_R2" in filename:
-            log.error("single flag is set to {single} but input directory contains R2 files")
+            logger.error("single flag is set to {single} but input directory contains R2 files")
         # Check for fastq files directly under samples_dir
         if filename.endswith(extensions) and "_R1_" in filename:
             seqfiles.append(os.path.join(samples_dir, filename))       
