@@ -124,17 +124,17 @@ def list_samples(samples_dir, single=False):
     extensions = (".fastq",".fq",".fastq.gz",".fq.gz")
     seqfiles = [] 
     for filename in os.listdir(samples_dir):
-        if single and ("_R2" or "_R_2" in filename):
+        if single and "_R2" in filename:
             logger.error("single flag is set to {single} but input directory contains R2 files")
         # Check for fastq files directly under samples_dir
-        if filename.endswith(extensions) and ("_R1" or "_R_1" in filename):
+        if filename.endswith(extensions) and "_R1" in filename:
             seqfiles.append(os.path.join(samples_dir, filename))       
         else:
             # Check for fastq files nested one level down
             subdir = os.path.join(samples_dir, filename)
             if os.path.isdir(subdir):
                 for subfilename in os.listdir(subdir):
-                    if subfilename.endswith(extensions) and ("_R1" or "_R_1" in subfilename):
+                    if subfilename.endswith(extensions) and "_R1" in subfilename:
                         seqfiles.append(os.path.join(subdir, subfilename))
     return seqfiles
 
