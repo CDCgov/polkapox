@@ -19,6 +19,7 @@ outfile = "${params.project_name}_samplesheet.csv" // Samplesheet name = basenam
     create_samplesheet.py \\
         --indir $indir \\
         --outdir . \\
+        --file_levels ${params.file_levels} \\
         $single \\
         --project_name ${params.project_name} 
 
