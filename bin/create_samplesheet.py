@@ -24,8 +24,8 @@ def parse_args():
     )
     parser.add_argument(
         '-d', '--indir',
-	default=None,
-	required=False,
+    default=None,
+    required=False,
         metavar="SAMPLES_DIR",
         help="Samples directory")
     parser.add_argument(
@@ -36,15 +36,23 @@ def parse_args():
     parser.add_argument(
         '-o', '--outdir',
         default=None,
-	    required=False,
+        required=False,
         metavar="OUTPUT_DIR",
         help="Path to project dir where samplesheet will be saved")
     parser.add_argument(
         '--project_name',
         default=None,
-	    required=False,
+        required=False,
         metavar="PROJECT_NAME",
         help="Project name which will be the prefix of samplesheet name")
+    parser.add_argument(
+        '--file_levels',
+        choices=['nested', 'all', 'top'],
+        default='nested',
+        required=False,
+        metavar="FILE_LEVELS",
+        help="Option for creating a sample sheet: 'nested' (default) for only nested files,\n"
+             "'all' for all files in the directory, 'top' for only top-level files")
     parser.add_argument(
         "-l",
         "--log-level",
@@ -68,40 +76,6 @@ def check_path(input_path):
         input_path = os.path.realpath(input_path) + '/'
     return input_path
 
-def find_file_depth(samples_dir):
-    """ Return the file depth
-    :param samples_dir: a file path
-    :returns: dictionary of fastq file levels under samples_dir
-    :rtype: dict
-    """
-    extensions = (".fastq",".fq",".fastq.gz",".fq.gz")
-    file_depth = {}
-    for dirpath, _, files in os.walk(samples_dir):
-        relative_path = os.path.relpath(dirpath, samples_dir)
-        depth = 0 if relative_path == "." else relative_path.count(os.path.sep) + 1
-        # Ignore files nested >1 level down because these are not handled by rest of code
-        if depth > 1:
-            continue
-        for file in files:
-            if file not in file_depth and file.endswith(extensions):
-                file_depth[file] = depth   
-    return file_depth
-
-def handle_file_depth(depth_dict):
-    """ Return whether files are directly under sampls_dir or nested 1 level down
-    :param depth_dict: a dictionary with filepaths as keys and file level as value
-    :returns: 0 if directly under samples_dir, 1 if nested one level down
-    :rtype: boolean
-    """
-    unique_depths = set(depth_dict.values())
-    if unique_depths == {0}:
-        nested = 0 # directly under input dir
-    elif unique_depths == {1}:
-        nested = 1 # nested one level down
-    else:
-        # Store err val if files are at mixed depths or unexpected val in dict
-        nested = 9
-    return nested
 
 def remove_id(sample_name):
     """ Removes the sample identifier common in CDC Core Sequencing Lab samples
@@ -114,7 +88,7 @@ def remove_id(sample_name):
     new_sample_name = re.sub(id_pattern, '', sample_name)
     return new_sample_name
 
-def list_samples(samples_dir, single=False):
+def list_samples(samples_dir, file_levels, single=False):
     """ Return a list of all samples in a directory
     :param samples_dir: a file path
     :returns: a list of paths to all fastq/fq files in samples_dir
@@ -122,53 +96,55 @@ def list_samples(samples_dir, single=False):
     """
     samples_dir = os.path.realpath(samples_dir)
     extensions = (".fastq",".fq",".fastq.gz",".fq.gz")
-    seqfiles = [] 
+    seqfiles = {} 
     for filename in os.listdir(samples_dir):
         if single and "_R2" in filename:
             logger.error("single flag is set to {single} but input directory contains R2 files")
-        # Check for fastq files directly under samples_dir
-        if filename.endswith(extensions) and "_R1" in filename:
-            seqfiles.append(os.path.join(samples_dir, filename))       
-        else:
+        if file_levels == 'top' or file_levels == 'all':
+            # Check for fastq files directly under samples_dir
+            if filename.endswith(extensions) and ("_R1" in filename or "_1." in filename):
+                #seqfiles.append(os.path.join(samples_dir, filename))
+                sample_path = os.path.join(samples_dir, filename)
+                s_name = os.path.splitext(Path(sample_path).stem)[0]
+                s_name = re.sub(r'_R1_001$', '', s_name) # remove R1_001 at the end of filename
+                s_name = re.sub(r'_1$', '', s_name) # remove a _1 only if it occurs at end of filename
+                s_name = remove_id(s_name)
+                seqfiles[s_name] = sample_path
+        if file_levels == 'nested' or file_levels == 'all':
             # Check for fastq files nested one level down
             subdir = os.path.join(samples_dir, filename)
             if os.path.isdir(subdir):
                 for subfilename in os.listdir(subdir):
                     if subfilename.endswith(extensions) and "_R1" in subfilename:
-                        seqfiles.append(os.path.join(subdir, subfilename))
+                        #seqfiles.append(os.path.join(subdir, subfilename))
+                        sample_path = os.path.join(subdir, subfilename)
+                        s_name = Path(sample_path).parent.name # use the subdirectory name as the sample name
+                        s_name = remove_id(s_name)
+                        seqfiles[s_name] = sample_path
     return seqfiles
 
-def create_samplesheet(samples_list, outdir, outfile, nested, single=False):
+
+def create_samplesheet(samples_dict, outdir, outfile, single=False):
     """ Create a samplesheet from files in a directory
     :param samples_dir: a directory of fastq files
     :param samples_list: a list of all samples in samples_dir 
     :returns:
     :rtype:
     """
-    #todo: Add a date to the samplesheet name?    
+    #todo: Add a date to the samplesheet name? 
     if single:
         # process single-end files
         with open(f'{outdir}{outfile}', 'w') as samplesheet:
-            samplesheet.write('sample,fastq_1,fastq_2\n')
-            for sample in sorted(samples_list):
-                if nested == 1:
-                    s_name = Path(sample).parent.name
-                    s_name = remove_id(s_name)
-                else:
-                    s_name = os.path.splitext(Path(sample).stem)[0].replace('_R1_001','')
-                samplesheet.write(f'{s_name},{sample},\n')
+            samplesheet.write('sample,fastq_1\n')
+            for sample_name, sample_path in sorted(samples_dict.items()):
+                samplesheet.write(f'{sample_name},{sample_path},\n')
     else:
         # process as paired-end files
         with open(f'{outdir}{outfile}', 'w') as samplesheet:
             samplesheet.write('sample,fastq_1,fastq_2\n')
-            for sample in sorted(samples_list):
-                if nested == 1:
-                    s_name = s_name = Path(sample).parent.name
-                    s_name = remove_id(s_name)
-                else:
-                    s_name = os.path.splitext(Path(sample).stem)[0].replace('_R1_001','')
-                r2 = sample.replace('R1','R2')
-                samplesheet.write(f'{s_name},{sample},{r2}\n')
+            for sample_name, sample_path in sorted(samples_dict.items()):
+                r2 = sample_path.replace('R1','R2')
+                samplesheet.write(f'{sample_name},{sample_path},{r2}\n')
 
 def main():
     args = parse_args()
@@ -178,22 +154,17 @@ def main():
         outfile = f"{args.project_name}_samplesheet.csv"
     else:
         outfile = f"samplesheet.csv"
+    # Get the list of samples
     if args.single:
-        samples_list = list_samples(input_dir, single=True)
+        samples_dict = list_samples(input_dir, file_levels = args.file_levels, single=True)
     else:
-        samples_list = list_samples(input_dir)
+        samples_dict = list_samples(input_dir, file_levels = args.file_levels)
 
-    # Find whether fastq files are nested 1 level down or directly under input dir
-    depths_dict = find_file_depth(input_dir)
-    nested = handle_file_depth(depths_dict)
     # Error if files are nested in a way the script doesn't handle
-    if nested == 9:
-        logger.error(f"fastq files in {input_dir} must be either directly under input folder or nested one level down")
-        sys.exit(1)
     if args.single:
-        create_samplesheet(samples_list,output_dir, outfile, nested, single=True)
+        create_samplesheet(samples_dict, output_dir, outfile, single=True)
     else:
-        create_samplesheet(samples_list, output_dir, outfile, nested)
+        create_samplesheet(samples_dict, output_dir, outfile)
     logger.info(f"{outfile} created. Please review and be sure it is correct.")
 
 if __name__ == '__main__':
