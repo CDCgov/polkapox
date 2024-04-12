@@ -50,6 +50,11 @@
                     "description": "A name for the run (will be the prefix of samplesheet.csv).",
                     "fa_icon": "fas fa-file-signature"
                 },
+                "file_levels": {
+                    "type": "string",
+                    "description": "Whether fq files are in directory top level, nested one level under, or both.",
+                    "fa_icon": "fas fa-file-signature"
+                },
                 "workflow": {
                     "type": "string",
                     "description": "Choose from: read_filter, ref_based, denovo, full.",
