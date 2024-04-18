@@ -10,7 +10,7 @@ from pathlib import Path
 # Script to generate sample sheet from a directory of fastq files
 # Paired-end files must end in (1 or R1) and (2 or R2)
 # Sample sheet format is sample,fastq_1,fastq_2 (paired-end) or sample,fastq (single-end)
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 def parse_args():
     """ Set up arguments
@@ -55,7 +55,7 @@ def parse_args():
              "'all' for all files in the directory, 'top' for only top-level files")
     parser.add_argument(
         "-l",
-        "--log-level",
+        "--log_level",
         help="The desired log level (default WARNING).",
         choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
         default="WARNING",
@@ -76,6 +76,30 @@ def check_path(input_path):
         input_path = os.path.realpath(input_path) + '/'
     return input_path
 
+def are_files_nested(samples_dir):
+    """ Return true if there are nested fastq files, else return false
+    :param samples_dir: a file path
+    :returns: true if there are fastq files nested one level under samples_dir
+    :rtype: boolean
+    """
+    extensions = (".fastq",".fq",".fastq.gz",".fq.gz")
+    for dirpath, _, files in os.walk(samples_dir):
+        for file in files:
+            if file.endswith(extensions):
+                return True
+    return False
+
+def are_files_top_level(samples_dir):
+    """ Return true if there are fastq files directly under samples_dir, else return false.
+    :param samples_dir: a directory path
+    :returns: true if there are files with specified extensions directly under samples_dir
+    :rtype: boolean
+    """
+    extensions = (".fastq",".fq",".fastq.gz",".fq.gz")
+    for file in os.listdir(samples_dir):
+        if any(file.endswith(ext) for ext in extensions):
+            return True
+    return False
 
 def remove_id(sample_name):
     """ Removes the sample identifier common in CDC Core Sequencing Lab samples
@@ -106,7 +130,8 @@ def list_samples(samples_dir, file_levels, single=False):
                 #seqfiles.append(os.path.join(samples_dir, filename))
                 sample_path = os.path.join(samples_dir, filename)
                 s_name = os.path.splitext(Path(sample_path).stem)[0]
-                s_name = re.sub(r'_R1_001$', '', s_name) # remove R1_001 at the end of filename
+                s_name = re.sub(r'_R1_001$', '', s_name) # remove R1_001 at the end of filename, if it exists
+                s_name = re.sub(r'_R1$', '', s_name) # remove R1 at the end of filename, if it exists
                 s_name = re.sub(r'_1$', '', s_name) # remove a _1 only if it occurs at end of filename
                 s_name = remove_id(s_name)
                 seqfiles[s_name] = sample_path
@@ -148,17 +173,47 @@ def create_samplesheet(samples_dict, outdir, outfile, single=False):
 
 def main():
     args = parse_args()
+    #log_level = args.log_level
+    #logging.basicConfig(filename=f"{os.path.basename(__file__)}.log", level=logging.log_level)
+    #logging.basicConfig(filename='myapp.log', level=logging.INFO)
     input_dir = check_path(args.indir)
     output_dir = check_path(args.outdir)
     if args.project_name:
         outfile = f"{args.project_name}_samplesheet.csv"
     else:
         outfile = f"samplesheet.csv"
+    
+    if args.file_levels != 'all':
+        if args.file_levels == 'nested':
+            # check if there are nested files
+            if are_files_nested(input_dir):
+                print('are_files_tested is true')
+                file_levels = 'nested'
+            # if no nested files, check if top level files
+            elif are_files_top_level(input_dir):
+                print('are_files_tested is false and art_files_top is true')
+                logger.info(f"--file_levels is set to {args.file_levels} but {input_dir} does not contain nested files. Running on top level files.")
+                file_levels = 'top'
+            else:
+                print('are_files_tested is false and art_files_top is false')
+                # if not top level or nested files, return error
+                logger.error(f"{input_dir} doesn't contain files with fastq, fq, fastq.gz, or fq.gz extensions")
+                sys.exit(1)
+        elif args.file_levels == 'top':
+            if are_files_top_level(input_dir):
+                file_levels = 'top'
+            else:
+                logger.error(f"--file_levels is set to {args.file_levels} but {input_dir} doesn't contain top-level files with fastq, fq, fastq.gz, or fq.gz extensions.")
+                sys.exit(1)   
+    else:
+        file_levels = 'all'
+
+
     # Get the list of samples
     if args.single:
-        samples_dict = list_samples(input_dir, file_levels = args.file_levels, single=True)
+        samples_dict = list_samples(input_dir, file_levels = file_levels, single=True)
     else:
-        samples_dict = list_samples(input_dir, file_levels = args.file_levels)
+        samples_dict = list_samples(input_dir, file_levels = file_levels)
 
     # Error if files are nested in a way the script doesn't handle
     if args.single:
