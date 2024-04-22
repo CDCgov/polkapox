@@ -52,13 +52,7 @@ def parse_args():
         required=False,
         metavar="FILE_LEVELS",
         help="Option for creating a sample sheet: 'nested' (default) for only nested files,\n"
-             "'all' for all files in the directory, 'top' for only top-level files")
-    parser.add_argument(
-        "-l",
-        "--log_level",
-        help="The desired log level (default WARNING).",
-        choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
-        default="WARNING",
+             "'all' for all files in the directory, 'top' for only top-level files"
     )
     return parser.parse_args()
 
@@ -84,6 +78,8 @@ def are_files_nested(samples_dir):
     """
     extensions = (".fastq",".fq",".fastq.gz",".fq.gz")
     for dirpath, _, files in os.walk(samples_dir):
+        if dirpath == samples_dir:
+            continue
         for file in files:
             if file.endswith(extensions):
                 return True
@@ -173,9 +169,9 @@ def create_samplesheet(samples_dict, outdir, outfile, single=False):
 
 def main():
     args = parse_args()
-    #log_level = args.log_level
-    #logging.basicConfig(filename=f"{os.path.basename(__file__)}.log", level=logging.log_level)
-    #logging.basicConfig(filename='myapp.log', level=logging.INFO)
+    logfile = f"{os.path.basename(__file__).strip('.py')}.log"
+    logging.basicConfig(filename=logfile, 
+                        level=logging.DEBUG)
     input_dir = check_path(args.indir)
     output_dir = check_path(args.outdir)
     if args.project_name:
@@ -187,15 +183,12 @@ def main():
         if args.file_levels == 'nested':
             # check if there are nested files
             if are_files_nested(input_dir):
-                print('are_files_tested is true')
                 file_levels = 'nested'
             # if no nested files, check if top level files
             elif are_files_top_level(input_dir):
-                print('are_files_tested is false and art_files_top is true')
                 logger.info(f"--file_levels is set to {args.file_levels} but {input_dir} does not contain nested files. Running on top level files.")
                 file_levels = 'top'
             else:
-                print('are_files_tested is false and art_files_top is false')
                 # if not top level or nested files, return error
                 logger.error(f"{input_dir} doesn't contain files with fastq, fq, fastq.gz, or fq.gz extensions")
                 sys.exit(1)
