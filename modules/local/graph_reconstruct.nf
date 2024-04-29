@@ -1,7 +1,7 @@
 process GRAPH_RECON {
 
     conda (params.enable_conda ? "conda-forge::python=3.10.6 conda-forge::biopython conda-forge::numpy conda-forge::mkl conda-forge::networkx bioconda::gfapy bioconda::blast" : null)
-    container "$baseDir/assets/mpxvgfa.sif"
+    container "staphb/polkapox"
 
     input:
     tuple val(meta), path(gfa)
