@@ -3,6 +3,9 @@
 ### Written by S.Morrison and K. Knipe
 ### Date: 20221018
 
+# Need to account for fully resolved graph where there is only one segment
+# need to account for 3 segments where we have ITR + loop + long segment
+
 import gzip, argparse,os,sys,fnmatch,subprocess,re
 import os.path
 from datetime import datetime
@@ -18,6 +21,7 @@ import pprint
 import json
 
 def readGFA(gfa):
+	#print(gfa)
 	### Read GFA file into gfapy python structure
 	try:
 		gfaGraph = gfapy.Gfa.from_file(gfa)
@@ -29,7 +33,6 @@ def readGFA(gfa):
 		check = "WARNING: Issue with GFA file : No GFA processing"
 		gfaGraph = "WARNING: Issue with GFA file : No GFA processing"
 	return gfaGraph,check
-
 
 def remove_loops(lnkInfo):
 	### Identify contigs with self hits, remove those links
@@ -44,6 +47,8 @@ def remove_loops(lnkInfo):
 			prunedSelfs.append(j)
 
 	check = "PASS"
+	#print(prunedSelfs)
+	#print(prunedSelfs)
 	return prunedSelfs,check
 
 def id_low_cov_contigs(segInfo):
@@ -57,6 +62,7 @@ def id_low_cov_contigs(segInfo):
 					name = i.get('name')
 					lowCov.append(name)
 	check= "PASS"
+	#print(segInfo)
 	return lowCov,check
 
 def remove_low_cov_contigs_from_edges(lowCov,selfHits):
@@ -75,6 +81,7 @@ def remove_low_cov_contigs_from_edges(lowCov,selfHits):
 		check="PASS"
 	else:
 		check="[Warning :: There are 2 or more contigs with coverage less than 0.5 - manual review required]"
+	#print(fLinks)
 	return fLinks,check
 
 def find_longest_contig(seqs, gfa):
@@ -89,7 +96,6 @@ def find_longest_contig(seqs, gfa):
 				seqLen = j.get(m)
 				lgContig[name]=seqLen
 	lgSeq = max(lgContig,key=lgContig.get)
-	
 	
 	#write longest contig to file
 	for j in seqs:
@@ -117,6 +123,10 @@ def create_filtered_graph(lnks):
 		check="WARNING :: This assembly graph does not appear to be connected -- there may be an assembly issue!"
 	else:
 		check = "PASS"
+	# nx.draw(tGraph)
+	# import matplotlib.pyplot as plt
+	# plt.show()
+	# print(tGraph)
 	return tGraph,check
 	
 def get_final_path( graph, longest_contig ):
@@ -159,19 +169,25 @@ def get_final_path( graph, longest_contig ):
 					if len(sp) not in lengths:
 						lengths[len(sp)] = 0
 					lengths[len(sp)] = lengths[len(sp)] + 1
+		print(longest_path)
 	####REVERSE THE ITR length path instead of the first path of the all paths section######	
 	#warning if there is more than one longest path
 		if lengths[len(longest_path)] > 1:
+			print(longest_path)
+			#print(all_simple_paths)
 			status = "WARNING: >1 longest path"
 			return final_path, status
 	
 	# make sure there are 2 paths between the longest contig and the last contig in the longest path
 		sp_l = all_simple_paths[longest_path[-1]]
+		#print(sp_l)
+		# print(all_simple_paths)
+		# print(len(sp_l))
 		if len(sp_l) < 2:
+			print('this is where it is hitting the warning')
 			status = "WARNING: only 1 path between longest contig and the last contig in the longest path"
 			return final_path, status
 		elif len(sp_l) == 2:
-
 
 			path_a = sp_l[0]
 			path_b = sp_l[1]
@@ -182,7 +198,6 @@ def get_final_path( graph, longest_contig ):
 			elif len(path_b) < len(path_a):
 				path_b.reverse()
 				final_path = path_b + path_a[1:]
-
 
 			status = "PASS"
 			return final_path, status
