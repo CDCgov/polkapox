@@ -231,7 +231,7 @@ def fix_names(df):
                      'Samtools_mqc-generalstats-samtools-mapped_passed',
                      'QUAST_mqc-generalstats-quast-N50',
                      'QUAST_mqc-generalstats-quast-Total_length',
-                     'Kraken_mqc-generalstats-kraken-Homo_sapiens'
+                     'Kraken_mqc-generalstats-kraken-Homo_sapiens',
                      'Kraken_mqc-generalstats-kraken-Monkeypox_virus',
                      'Kraken_mqc-generalstats-kraken-Top_5',
                      'Kraken_mqc-generalstats-kraken-Unclassified',
