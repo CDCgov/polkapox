@@ -241,14 +241,16 @@ def fix_names(df):
                      'fastp_mqc-generalstats-fastp-after_filtering_gc_content',
                      'fastp_mqc-generalstats-fastp-pct_surviving',
                      'fastp_mqc-generalstats-fastp-pct_adapter']
-
-    for i in range(0,len(raw_col_names)):
+    
+    for col_name in raw_col_names[:]:
         # check for human, mpox virus top hit column. add any missing columns from raw_col_names list
-        if not raw_col_names[i] in df.columns:
-            if raw_col_names[i] == 'Kraken_mqc-generalstats-kraken-Homo_sapiens' or raw_col_names[i] == 'Kraken_mqc-generalstats-kraken-Monkeypox_virus':
-                raw_col_names.remove(raw_col_names[i])
+        if col_name not in df.columns:
+            # if the missing column is either human, mpox virus top hit, remove it from the raw_col_names list
+            if col_name == 'Kraken_mqc-generalstats-kraken-Homo_sapiens' or col_name == 'Kraken_mqc-generalstats-kraken-Monkeypox_virus':
+                raw_col_names.remove(col_name)
             else:
-                df[raw_col_names[i]] = "NA"
+                # add any other missing columns and give a value of NA
+                df[col_name] = "NA"
     
     df = df[raw_col_names]
 
