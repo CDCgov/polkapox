@@ -417,7 +417,10 @@ def main():
             fixed_summary['n_contigs_unicycler'] = 'NaN'    
 
     if args.workflow == 'ref_based' or args.workflow == 'full':
-        fixed_summary['percent_mapped_bwa'] = round(((fixed_summary['reads_mapped_bwa'] / fixed_summary['reads_total_bwa']) * 100),2)
+        fixed_summary['reads_mapped_bwa'] = pd.to_numeric(fixed_summary['reads_mapped_bwa'], errors='coerce')
+        fixed_summary['reads_total_bwa'] = pd.to_numeric(fixed_summary['reads_total_bwa'], errors='coerce')
+        percent_mapped_bwa = (fixed_summary['reads_mapped_bwa'] / fixed_summary['reads_total_bwa']) * 100
+        fixed_summary['percent_mapped_bwa'] = np.where(fixed_summary['reads_mapped_bwa'].isna() | fixed_summary['reads_total_bwa'].isna(), np.nan, percent_mapped_bwa).round(2)
     
     summary_full = fixed_summary.reindex(fixed_summary.columns.tolist() + ['raw_read_count_fastp', 'filtered_read_count_fastp', 'total_raw_reads', 'opx_percent_kraken','human_percent_kraken', 'unclass_percent_kraken', 'average_depth_bwa', 'count_20xdepth_bwa'], axis=1)
     summary_full.to_csv("before_adding_values.csv")
