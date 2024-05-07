@@ -72,7 +72,6 @@ def get_raw_filt_counts(search_dir, sample):
     :rtype: tuple
     """
     p = "**/*{}.fastp.json".format(sample)
-    #fastp_file = glob(os.path.join(search_dir, p), recursive=True)[0]
     files = glob(os.path.join(search_dir, p), recursive=True)
     
     if not files:
@@ -103,39 +102,43 @@ def get_kraken_stats(search_dir, sample, kraken_db, kraken_tax_ids):
     :rtype: tuple
     """
 
+    total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids = ('NA',) * 6
+
     p = "**/*{}.kraken2.classifiedreads.txt".format(sample)
-    kraken_reads = glob(os.path.join(search_dir, p), recursive=True)[0]
-    try:
-        k_data = pd.read_csv(kraken_reads, delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
-        logger.info(f"Data load from {kraken_reads}")
-    except:
-        logger.error(f"Unable to load data from {kraken_reads}")
-        sys.exit(1)
-    
-    total = len(k_data)
+    kraken_files = glob(os.path.join(search_dir, p), recursive=True)
+    if kraken_files:
+        try:
+            k_data = pd.read_csv(kraken_files[0], delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
+            logger.info(f"Data load from {kraken_files[0]}")
+        except:
+            logger.error(f"Unable to load data from {kraken_files[0]}")
+            sys.exit(1)
+        
+        total = len(k_data)
+        human = (k_data[2] == 9606).sum()
+        unclass = (k_data[2] == 0).sum()
+        human_perc = round(((human/total) * 100),2)
+        unclass_perc = round(((unclass/total) * 100),2)
 
     s = "**/{}*.opxreads.txt".format(sample)
-    ortho_reads = glob(os.path.join(search_dir, s), recursive=True)[0]
+    ortho_files = glob(os.path.join(search_dir, s), recursive=True)
+    if ortho_files:
+        if os.path.getsize(ortho_files[0]) > 0:
+            s_data = pd.read_csv(ortho_files[0], delim_whitespace=True, header=None)
+            opx = len(s_data)
+        else:
+            opx = 0
 
-    if os.path.getsize(ortho_reads) > 0:
-        s_data = pd.read_csv(ortho_reads, delim_whitespace=True, header=None)
-        opx = len(s_data)
-    else:
-        opx = 0
-
-    human = (k_data[2] == 9606).sum()
-    unclass = (k_data[2] == 0).sum()
-    
     with open(kraken_tax_ids) as l:
         lines = [line.strip() for line in l.readlines()]
     k_tax_ids = ', '.join(lines)
 
     if opx == 0:
         opx_perc = 0
+    elif opx == 'NA':
+        opx_perc = 'NA'
     else:
         opx_perc = round(((opx/total) * 100),2)
-    human_perc = round(((human/total) * 100),2)
-    unclass_perc = round(((unclass/total) * 100),2)
 
     return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
 
