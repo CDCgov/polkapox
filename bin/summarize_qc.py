@@ -72,8 +72,14 @@ def get_raw_filt_counts(search_dir, sample):
     :rtype: tuple
     """
     p = "**/*{}.fastp.json".format(sample)
-    fastp_file = glob(os.path.join(search_dir, p), recursive=True)[0]
-
+    #fastp_file = glob(os.path.join(search_dir, p), recursive=True)[0]
+    files = glob(os.path.join(search_dir, p), recursive=True)
+    
+    if not files:
+        logger.error(f"No fastp files found for sample {sample}")
+        return 'NA', 'NA'
+    
+    fastp_file = files[0]
     f = open(fastp_file)
     try:
         data = json.load(f)
