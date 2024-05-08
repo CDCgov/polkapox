@@ -71,25 +71,20 @@ def get_raw_filt_counts(search_dir, sample):
     :returns: total raw reads and total filtered reads
     :rtype: tuple
     """
-    p = "**/*{}.fastp.json".format(sample)
-    files = glob(os.path.join(search_dir, p), recursive=True)
-    
-    if not files:
-        logger.error(f"No fastp files found for sample {sample}")
+    fastp_file = "{}.fastp.json".format(sample)
+    if os.path.exists(fastp_file):
+        logger.error(f"Path {fastp_file} found")
+        f=open(fastp_file,'r')
+        try:
+            data = json.load(f)
+            logger.error(f"Data loaded from {fastp_file}")
+        except:
+            logger.error(f"Could not load data from {fastp_file}")
+            return 'NA', 'NA'
+        total_raw_reads = data['summary']['before_filtering']['total_reads']
+        total_filtered_reads = data['summary']['after_filtering']['total_reads']
+    else:
         return 'NA', 'NA'
-    
-    fastp_file = files[0]
-    f = open(fastp_file)
-    try:
-        data = json.load(f)
-        logger.info(f"Data loaded from {fastp_file}")
-    except:
-        logger.error(f"Could not load data from {fastp_file}")
-        sys.exit(1)
-
-    total_raw_reads = data['summary']['before_filtering']['total_reads']
-    total_filtered_reads = data['summary']['after_filtering']['total_reads']
-
     return total_raw_reads, total_filtered_reads
 
 def get_kraken_stats(search_dir, sample, kraken_db, kraken_tax_ids):
@@ -101,44 +96,39 @@ def get_kraken_stats(search_dir, sample, kraken_db, kraken_tax_ids):
     :returns: kraken statistics
     :rtype: tuple
     """
-
     total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids = ('NA',) * 6
-
-    p = "**/*{}.kraken2.classifiedreads.txt".format(sample)
-    kraken_files = glob(os.path.join(search_dir, p), recursive=True)
-    if kraken_files:
+    
+    kraken_reads = "{}.kraken2.classifiedreads.txt".format(sample)
+    ortho_reads = "**/{}*.opxreads.txt".format(sample)
+    
+    if os.path.exists(kraken_reads) and os.path.exists(ortho_reads):
         try:
-            k_data = pd.read_csv(kraken_files[0], delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
-            logger.info(f"Data load from {kraken_files[0]}")
-        except:
-            logger.error(f"Unable to load data from {kraken_files[0]}")
-            sys.exit(1)
-        
+            k_data = pd.read_csv(kraken_reads, delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
+            logger.info(f"Data load from {kraken_reads}")
+        except pd.errors.ParserError:
+            logger.error(f"Unable to load data from {kraken_reads}")
+            return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
         total = len(k_data)
         human = (k_data[2] == 9606).sum()
         unclass = (k_data[2] == 0).sum()
         human_perc = round(((human/total) * 100),2)
         unclass_perc = round(((unclass/total) * 100),2)
 
-    s = "**/{}*.opxreads.txt".format(sample)
-    ortho_files = glob(os.path.join(search_dir, s), recursive=True)
-    if ortho_files:
-        if os.path.getsize(ortho_files[0]) > 0:
-            s_data = pd.read_csv(ortho_files[0], delim_whitespace=True, header=None)
-            opx = len(s_data)
+        if os.path.getsize(ortho_reads) > 0:
+            try:
+                s_data = pd.read_csv(ortho_reads, delim_whitespace=True, header=None)
+                opx = len(s_data)
+                opx_perc = round(((opx/total) * 100),2)
+            except pd.errors.ParserError:
+                logger.error(f"Unable to load data from {ortho_reads}")
+                return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
         else:
             opx = 0
+            opx_perc = 0
 
     with open(kraken_tax_ids) as l:
         lines = [line.strip() for line in l.readlines()]
     k_tax_ids = ', '.join(lines)
-
-    if opx == 0:
-        opx_perc = 0
-    elif opx == 'NA':
-        opx_perc = 'NA'
-    else:
-        opx_perc = round(((opx/total) * 100),2)
 
     return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
 
@@ -149,7 +139,6 @@ def get_flagstat_denovo(search_dir, sample):
     :returns: denovo mapping statistics
     :rtype: tuple
     """
-    #if path not exist output unknown
     stats=[]
     p = "{}.denovo.flagstat".format(sample)
     if os.path.exists(p):
@@ -163,9 +152,9 @@ def get_flagstat_denovo(search_dir, sample):
         percent_mapped_denovo=round((mapped_reads_denovo/total_reads_denovo)*100,2)
     else:
         logger.info(f"Path {p} does not exist")
-        total_reads_denovo='NaN'
-        mapped_reads_denovo='NaN'
-        percent_mapped_denovo='NaN'
+        total_reads_denovo='NA'
+        mapped_reads_denovo='NA'
+        percent_mapped_denovo='NA'
     
     return total_reads_denovo, mapped_reads_denovo, percent_mapped_denovo
 
@@ -177,19 +166,25 @@ def get_cov_stats(search_dir, sample, reference):
     :returns: coverage statistics
     :rtype: tuple
     """
-    p = "**/*{}.depth.tsv".format(sample)
-    depth_file = glob(os.path.join(search_dir, p), recursive=True)[0]
-    
-    if os.path.getsize(depth_file) > 0:
-        logger.info(f"Retrieving depth statistics from {depth_file}")
-        dp = pd.read_csv(depth_file, sep="\t", header = None)
-        avg_dp = int(round(dp[2].mean(),2))
-        dp_gt_20 = int(round(len(dp[dp[2] >= 20]),2))
-    else:
+    depth_file = "{}.depth.tsv".format(sample)
+
+    if os.path.exists(depth_file) and os.path.getsize(depth_file) > 0:
+        try:
+            logger.info(f"Retrieving depth statistics from {depth_file}")
+            dp = pd.read_csv(depth_file, sep="\t", header = None)
+            avg_dp = int(round(dp[2].mean(),2))
+            dp_gt_20 = int(round(len(dp[dp[2] >= 20]),2))
+        except pd.errors.ParserError:
+            logger.error(f"Unable to load data from {depth_file}")
+            return 'NA','NA','NA'
+    elif os.path.exists(depth_file) and os.path.getsize(depth_file) == 0:
         logger.info(f"{depth_file} has size zero")
         dp = 0
         avg_dp = 0
         dp_gt_20 = 0
+    else:
+        return 'NA','NA','NA'
+    
     ref_genome = reference.split('/')[-1]
 
     return avg_dp, dp_gt_20, ref_genome
@@ -201,29 +196,31 @@ def get_gfa_stats(search_dir, sample):
     :returns:gfaResults
     :rtype: list
     """
-    p = "**/*{}.assembly.log".format(sample)
-    #print(p)
-    gfa_log = glob(os.path.join(search_dir, p), recursive=True)
-    if gfa_log:
-       gfa_log = glob(os.path.join(search_dir, p), recursive=True)[0]
-        
-       f = open(gfa_log)
-       parsed_json = json.load(f)    
+    gfa_log = "{}.assembly.log".format(sample)
 
-       if len(parsed_json.keys()) == 11:
-           notes = 'GFA step complete'
-           successCode_step9 = list(parsed_json)[-2]
-           successCode_step10 = list(parsed_json)[-1]
-           final_order_orientation_copy_number = parsed_json[successCode_step9]['output']['final_order_orientation_copy_number']
-           final_sequence_length = parsed_json[successCode_step9]['output']['final_sequence_length']
-           status = parsed_json[successCode_step10]['status']
-           final_itr_length = parsed_json[successCode_step10]['output']['final_itr_length']
-           gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
-       else:
-           failCode_stepN = list(parsed_json)[-1]
-           status = parsed_json[failCode_stepN]['status']
-           statusReport = 'FAIL'
-           gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
+    if os.path.exists(gfa_log):    
+        f = open(gfa_log)
+        try:
+            parsed_json = json.load(f) 
+            logger.error(f"Data loaded from {gfa_log}")
+        except:
+            logger.error(f"Could not load data from {gfa_log}")
+            return(['NA','NA','NA','NA','NA'])
+            
+        if len(parsed_json.keys()) == 11:
+            notes = 'GFA step complete'
+            successCode_step9 = list(parsed_json)[-2]
+            successCode_step10 = list(parsed_json)[-1]
+            final_order_orientation_copy_number = parsed_json[successCode_step9]['output']['final_order_orientation_copy_number']
+            final_sequence_length = parsed_json[successCode_step9]['output']['final_sequence_length']
+            status = parsed_json[successCode_step10]['status']
+            final_itr_length = parsed_json[successCode_step10]['output']['final_itr_length']
+            gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
+        else:
+            failCode_stepN = list(parsed_json)[-1]
+            status = parsed_json[failCode_stepN]['status']
+            statusReport = 'FAIL'
+            gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
     else:
         status = 'Unicycler-GFA Log No Exist'
         statusReport = 'FAIL'
@@ -282,15 +279,17 @@ def get_total_snps(search_dir, sample):
     :returns: total number of snps
     :rtype: int
     """
-    p = "**/*{}.ivar.tsv".format(sample)
-    snpFile = glob(os.path.join(search_dir, p), recursive=True)[0]
-    try:
-        df = pd.read_csv(snpFile, sep="\t", header = 0)
-        logger.info(f"Successfully read {snpFile}")
-    except:
-        logger.error(f"Unable to read {snpFile}")
-    total_snps = len(df)
-
+    snp_file = "{}.ivar.tsv".format(sample)
+    if os.path.exists(snp_file):
+        try:
+            df = pd.read_csv(snp_file, sep="\t", header = 0)
+            logger.info(f"Successfully read {snp_file}")
+        except pd.errors.ParserError:
+            logger.error(f"Unable to read {snp_file}")
+            return 'NA'
+        total_snps = len(df)
+    else:
+        return 'NA'
     return total_snps
 
 def get_snp_metadata(search_dir, sample, coords):
@@ -304,19 +303,21 @@ def get_snp_metadata(search_dir, sample, coords):
     C1_count = 0
     C2_count = 0
     coord2_start = coords.split(',')[2]
-    p = "**/*{}_ivar_summary.txt".format(sample)
-    try:
-        snpMeta = glob(os.path.join(search_dir, p), recursive=True)[0]
-        logger.info(f"Found {snpMeta}")
-    except:
-        logger.error(f"Unable to open {snpMeta}")
-        sys.exit(1)
-    for line in open(snpMeta,'r').readlines():
-        if line.split('\t')[1] < coord2_start:
-            C1_count += 1
-        else:
-            C2_count += 1
-
+    snp_meta = "{}_ivar_summary.txt".format(sample)
+    if os.path.exists(snp_meta):
+        try:
+            logger.info(f"Found {snp_meta}")
+            with open(snp_meta, 'r') as file:
+                for line in file:
+                    if line.split('\t')[1] < coord2_start:
+                        C1_count += 1
+                    else:
+                        C2_count += 1
+        except FileNotFoundError:
+            logger.error(f"Unable to open {snp_meta}")
+    else:
+        logger.info(f"{snp_meta} does not exist")
+    
     return C1_count, C2_count
 
 def get_polish_stats(sample):
@@ -325,27 +326,28 @@ def get_polish_stats(sample):
     :returns: total number of snps and indels
     :rtype: tuple
     """
-    SNPs = None
-    Indels = None
     infile = sample + '.report'
 
     if os.path.exists(infile):
         logger.info(f"{infile} found")
-        with open(infile, 'r') as file:
-            for line in file:
-                if line.startswith("TotalSNPs"):
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        SNPs = round(int(parts[1]),2)
-                elif line.startswith("TotalIndels"):
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        Indels = round(int(parts[1]),2)
-                    break  # Stop reading after finding TotalIndels
+        try:
+            with open(infile, 'r') as file:
+                for line in file:
+                    if line.startswith("TotalSNPs"):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            SNPs = round(int(parts[1]),2)
+                    elif line.startswith("TotalIndels"):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            Indels = round(int(parts[1]),2)
+                        break  # Stop reading after finding TotalIndels
+        except FileNotFoundError: 
+            logger.error(f"Unable to open {infile}")
+            SNPs, Indels = 'NA', 'NA'
     else:
         logger.info(f"{infile} does not exist")
-        SNPs = 'NaN'
-        Indels = 'NaN'
+        SNPs, Indels = 'NA', 'NA'
     return SNPs, Indels
 
 def count_ns_in_pileup(sample):
