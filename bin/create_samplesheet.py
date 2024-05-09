@@ -161,10 +161,13 @@ def create_samplesheet(samples_dict, outdir, outfile, single=False):
                 samplesheet.write(f'{sample_name},{sample_path},\n')
     else:
         # process as paired-end files
+        pattern = r'R1(?=\.|_001)|(?<=_)1(?=\.)' # regex for the R2 filepaths
+        # Perform the replacement
         with open(f'{outdir}{outfile}', 'w') as samplesheet:
             samplesheet.write('sample,fastq_1,fastq_2\n')
             for sample_name, sample_path in sorted(samples_dict.items()):
-                r2 = sample_path.replace('R1','R2')
+                # replaces .R1 or .R1_001 with R2, and _1. with 2
+                r2 = re.sub(pattern, lambda m: 'R2' if m.group().startswith('R') else '2', sample_path) 
                 samplesheet.write(f'{sample_name},{sample_path},{r2}\n')
 
 def main():
