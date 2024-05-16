@@ -3,6 +3,8 @@
 ### Written by S.Morrison and K. Knipe
 ### Date: 20221018
 
+### Updated by M.Tcheukado 20240516 to handle Clade I graphs
+
 import gzip, argparse,os,sys,fnmatch,subprocess,re
 import os.path
 from datetime import datetime
@@ -189,6 +191,55 @@ def get_final_path( graph, longest_contig ):
 		elif len(sp_l) > 2:
 			status = "WARNING: >2 paths between longest contig and the last contig in the longest path"
 			return final_path, status
+		
+def get_final_path_discon( graph ):
+	### This function is a copy of of the original get_final_path to find path in a disconnected graph
+	### This is the function to assess if there are multiple paths
+	### duplicate pairs of contig links with different orientations
+	contigs = []
+	all_simple_paths = {}
+	lengths = {}
+	longest_path = 0
+	final_path = []
+	parsed_contig = []
+	### Check to see if longest contig in edge list to connect contig seqs, dups not removed
+	edgeList = list(graph.edges)
+	edgeCheck =[]
+	for i in edgeList:
+		edgeCheck.append(i[2])
+	goEdge = list(set(edgeCheck))
+	if not len(goEdge) == 1:
+		status = "WARNING: Multiple links connect to 2 or more contigs in assembly"
+		return final_path, status
+	else:
+
+		for edge in graph.edges:
+			if edge[0] not in contigs:
+				contigs.append(edge[0]) 
+			if edge[1] not in contigs:
+				contigs.append(edge[1]) 
+		for contig in contigs:
+			parsed_contig = parsed_contig + [contig]
+			targets = [i for i in contigs if i not in parsed_contig]
+			for sp in nx.all_simple_paths( graph, contig, targets ):
+				if len(sp) not in all_simple_paths:
+					all_simple_paths[len(sp)] = []
+				all_simple_paths[len(sp)].append( sp )
+				if len(sp) > longest_path:
+					longest_path = len(sp)
+	
+	# make sure there are 2 paths between the longest contig and the last contig in the longest path
+		sp_l = all_simple_paths[longest_path]
+		if len(sp_l) == 1:
+
+
+			path = sp_l[0]
+			final_path = path
+			status = "PASS"
+			return final_path, status
+		elif len(sp_l) > 1:
+			status = "WARNING: >2 paths between longest contig and the last contig in the longest path"
+			return final_path, status
 
 
 def orient_longest_contig(query,reference):
@@ -212,33 +263,37 @@ def orient_longest_contig(query,reference):
 def get_final_orientation(final_path, lnks, longest_contig, longest_orient):
 	contig_orientation = [0] * len(final_path)
 
-	for i in range(final_path.index(longest_contig), len(final_path)):
-		if i == final_path.index(longest_contig):
-			contig_orientation[i] = longest_orient
-		else:
-			flag=0
-			for link in lnks:
-				if (link.from_name == final_path[i-1] and link.to_name == final_path[i]):
-					from_orient = 1 if link.from_orient == '+' else int(-1)
-					to_orient = 1 if link.to_orient == '+' else int(-1)
-					contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
-					flag=1
-			if flag == 0:
+	if final_path.index(longest_contig) == 0: #Marco adding this here to check if Clade I longest contig is at left end
+		for i in range(final_path.index(longest_contig), len(final_path)):
+			if i == final_path.index(longest_contig):
+				contig_orientation[i] = longest_orient
+			else:
+				flag=0
 				for link in lnks:
-					if (link.to_name == final_path[i-1] and link.from_name == final_path[i]):
+					if (link.from_name == final_path[i-1] and link.to_name == final_path[i]):
 						from_orient = 1 if link.from_orient == '+' else int(-1)
 						to_orient = 1 if link.to_orient == '+' else int(-1)
 						contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
 						flag=1
+				if flag == 0:
+					for link in lnks:
+						if (link.to_name == final_path[i-1] and link.from_name == final_path[i]):
+							from_orient = 1 if link.from_orient == '+' else int(-1)
+							to_orient = 1 if link.to_orient == '+' else int(-1)
+							contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
+							flag=1
+				check="PASS"
 
-	for i in range(final_path.index(longest_contig)-1, -1 ,-1):
-		flag=0
-		for link in lnks:
-			if (link.to_name == final_path[i+1] and link.from_name == final_path[i]):
-				from_orient = 1 if link.from_orient == '+' else int(-1)
-				to_orient = 1 if link.to_orient == '+' else int(-1)
-				contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
-				flag=1
+
+	elif final_path.index(longest_contig) == len(final_path) - 1: #Marco adding this here to check if Clade I longest contig is at right end
+		for i in range(final_path.index(longest_contig)-1, -1 ,-1):
+			flag=0
+			for link in lnks:
+				if (link.to_name == final_path[i+1] and link.from_name == final_path[i]):
+					from_orient = 1 if link.from_orient == '+' else int(-1)
+					to_orient = 1 if link.to_orient == '+' else int(-1)
+					contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
+					flag=1
 		if flag == 0:
 			for link in lnks:
 				if (link.from_name == final_path[i+1] and link.to_name == final_path[i]):
@@ -247,6 +302,44 @@ def get_final_orientation(final_path, lnks, longest_contig, longest_orient):
 					contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
 					flag=1
 		check="PASS"
+
+	else:
+
+		for i in range(final_path.index(longest_contig), len(final_path)):
+			if i == final_path.index(longest_contig):
+				contig_orientation[i] = longest_orient
+			else:
+				flag=0
+				for link in lnks:
+					if (link.from_name == final_path[i-1] and link.to_name == final_path[i]):
+						from_orient = 1 if link.from_orient == '+' else int(-1)
+						to_orient = 1 if link.to_orient == '+' else int(-1)
+						contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
+						flag=1
+				if flag == 0:
+					for link in lnks:
+						if (link.to_name == final_path[i-1] and link.from_name == final_path[i]):
+							from_orient = 1 if link.from_orient == '+' else int(-1)
+							to_orient = 1 if link.to_orient == '+' else int(-1)
+							contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
+							flag=1
+
+		for i in range(final_path.index(longest_contig)-1, -1 ,-1):
+			flag=0
+			for link in lnks:
+				if (link.to_name == final_path[i+1] and link.from_name == final_path[i]):
+					from_orient = 1 if link.from_orient == '+' else int(-1)
+					to_orient = 1 if link.to_orient == '+' else int(-1)
+					contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
+					flag=1
+			if flag == 0:
+				for link in lnks:
+					if (link.from_name == final_path[i+1] and link.to_name == final_path[i]):
+						from_orient = 1 if link.from_orient == '+' else int(-1)
+						to_orient = 1 if link.to_orient == '+' else int(-1)
+						contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
+						flag=1
+			check="PASS"
 	return contig_orientation, check
 
 def get_final_sequence(contig_order, contig_orientation, segments):
@@ -341,7 +434,7 @@ def main(arguments):
 	errors = []
 	logFile = []
 	logFile.append(gfaFile)
-
+	
 	# read gfa file into graph structure
 	original_graph, status = readGFA(gfaFile)
 	log['00'] = {'step_name'			: "read_gfa",
@@ -425,7 +518,14 @@ def main(arguments):
 		write_log_and_exit(log)
 		sys.exit(0)
 	
-	final_path, status = get_final_path( filtered_graph, longest_contig )
+	#check if graph is cyclical
+	connected = False if list(nx.simple_cycles(filtered_graph)) == [] else True
+
+
+	if connected:
+		final_path, status = get_final_path( filtered_graph, longest_contig )
+	else:
+		final_path, status = get_final_path_discon( filtered_graph )
 	log['06'] = {'step_name'			: "get_final_path",
 				'step_description'	: "get final path from filtered graph using longest contig to longest simple path",
 				'status'			: status,
