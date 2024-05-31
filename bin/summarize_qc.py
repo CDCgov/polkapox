@@ -26,6 +26,10 @@ def parse_args():
         metavar="SAMPLE_SHEET",
         help="The path to the sample sheet"),
     parser.add_argument(
+        "--project_outdir",
+        metavar="PROJECT_OUTDIR",
+        help="The path to the project output directory"),
+    parser.add_argument(
         "--reference_genome",
         metavar="REFERENCE_GENOME",
         required=False,
@@ -478,6 +482,19 @@ def main():
             summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps',f'{args.locus1}_SNPs',f'{args.locus2}_SNPs','corrected_snps','corrected_indels','corrected_Ns']]
         if args.filter == 'false':
             summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps','corrected_snps','corrected_indels','corrected_Ns']]
+
+    # get the final paths for the seqtk output R1 and R2, and final assembly n
+    seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
+
+    # Check for the files and assign to summary_full
+    for sample in summary_full['sample']:
+        # final assembly
+        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa' # extension enforced by IVAR_CONSENSUS_POLISH + PUBLISH_CONTIGS
+        summary_full['final_assembly'] = final_assembly if final_assembly else None
+        # opxv reads
+        for i in [1, 2]:
+            seqtk_outfile = glob(seqtk_outfile_pattern.format(i))
+            summary_full[f'opxv_reads_{i}'] = seqtk_outfile[0] if seqtk_outfile else None
 
     summary_full.to_csv("sample_summary.tsv", sep = "\t", index = False)
     logger.info(f"Summary results successfully written to sample_summary.tsv")

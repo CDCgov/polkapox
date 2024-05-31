@@ -20,6 +20,7 @@ process SUMMARIZE_QC {
         --analysis_dir . \\
         --samplesheet $samplesheet \\
         --reference_genome ${params.fasta} \\
+        --project_outdir ${params.outdir} \\
         --kraken_db ${params.kraken_db} \\
         --kraken_tax_ids ${params.kraken2_tax_ids} \\
         --filter ${params.filter} \\
