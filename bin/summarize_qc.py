@@ -429,7 +429,7 @@ def main():
             fixed_summary = fixed_summary.merge(contigs[['Sample', 'n_contigs_unicycler']],left_on='sample', right_on='Sample').drop('Sample', axis = 1)
         else:
             # If Unicycler run failed, config_files don't get created
-            logger.info(f"{contig_file} not found")
+            logger.info(f"{contig_files} not found")
             fixed_summary['n_contigs_unicycler'] = 'NaN'    
 
     if args.workflow == 'ref_based' or args.workflow == 'full':
