@@ -139,7 +139,7 @@ CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
    nextflow run polkapox/main.nf --input {SAMPLESHEET.csv OR input_directory} --outdir {OUTDIR} --fasta {REF.fa} -profile sge,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff} --workflow {WORKFLOW} --filter {true/false}
    ```
 
-   **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to the reference and gff in the `assets` folder of this repo, and a kraken db hosted on the SciComp file system, respectively. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.  Add `--file_levels {nested (default)/top/all}` if passing a directory as input. See [usage](/docs/usage.md) for details.
+   **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to the reference and gff in the `assets` folder of this repo, and a kraken db hosted on the SciComp file system, respectively. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.  Add `--file_levels {top (default)/nested}` if passing a directory as input. See [usage](/docs/usage.md) for details.
 
 ## Pipeline configuration
 

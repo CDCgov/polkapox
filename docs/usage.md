@@ -17,7 +17,7 @@
 > B) Provide a path to FastQ files: You will need to pass the path to a folder containing your samples, as shown below: 
 
 ```console
---indir '[path to fastq files]' --file_levels '[nested (default)/all/top]'
+--indir '[path to fastq files]' --file_levels '[top (default)/nested]'
 ```
 
 > For this option, PolkaPox currently supports two file organization structures. 
@@ -37,7 +37,7 @@
 
 > If your file structure looks as above, you would specify the input directory like this:
 ```console
---indir /[path-to-directory]/NovaSeq/200710_A01000_0210_GF4RBVWJY8_MLA16554/
+--indir /[path-to-directory]/NovaSeq/200710_A01000_0210_GF4RBVWJY8_MLA16554/ --file_levels nested
 ```
 
 > And the pipeline would automatically create samplesheet like this:
@@ -59,7 +59,7 @@ MLA16554A11_2022_662_GA,/[path-to-directory]/NovaSeq/200710_A01000_0210_GF4RBVWJ
 
 > If your file structure looks as above, you would specify the input directory like this:
 ```console
---indir /[path-to-directory]/mpox_samples_2023/ --file_levels top
+--indir /[path-to-directory]/mpox_samples_2023/
 ```
 
 > The pipeline would automatically create samplesheet like this:
@@ -68,8 +68,6 @@ sample,fastq_1,fastq_2
 MLA16554A10_2022_660_GA_S10,/[path-to-directory]/mpox_samples_2023/MLA16554A10_2022_660_GA_S10_R1_001.fq.gz,/[path-to-directory]/mpox_samples_2023/MLA16554A10_2022_660_GA_S10_R2_001.fq.gz
 MLA16554A11_2022_662_GA_S10,/[path-to-directory]/mpox_samples_2023/MLA16554A11_2022_662_GA_S10_R1_001.fq.gz,/[path-to-directory]/mpox_samples_2023/MLA16554A11_2022_662_GA_S10_R2_001.fq.gz
 ```  
-
-If your folder contains fastq files of mixed levels (i.e. a combination of 1 and 2 above), you may choose to run all the files by specifying `--file_levels all`.  **note**: PolkaPox does not currently support automated samplesheet creation for files nested more than one level under the input directory `indir`.
 
 ### Multiple runs of the same sample
 
