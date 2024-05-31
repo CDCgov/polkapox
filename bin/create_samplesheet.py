@@ -47,12 +47,12 @@ def parse_args():
         help="Project name which will be the prefix of samplesheet name")
     parser.add_argument(
         '--file_levels',
-        choices=['nested', 'all', 'top'],
-        default='nested',
+        choices=['nested', 'top'],
+        default='top',
         required=False,
         metavar="FILE_LEVELS",
         help="Option for creating a sample sheet: 'nested' (default) for only nested files,\n"
-             "'all' for all files in the directory, 'top' for only top-level files"
+             "'top' for only top-level files"
     )
     return parser.parse_args()
 
@@ -120,7 +120,7 @@ def list_samples(samples_dir, file_levels, single=False):
     for filename in os.listdir(samples_dir):
         if single and "_R2" in filename:
             logger.error("single flag is set to {single} but input directory contains R2 files")
-        if file_levels == 'top' or file_levels == 'all':
+        if file_levels == 'top':
             # Check for fastq files directly under samples_dir
             if filename.endswith(extensions) and ("_R1" in filename or "_1." in filename):
                 #seqfiles.append(os.path.join(samples_dir, filename))
@@ -131,7 +131,7 @@ def list_samples(samples_dir, file_levels, single=False):
                 s_name = re.sub(r'_1$', '', s_name) # remove a _1 only if it occurs at end of filename
                 s_name = remove_id(s_name)
                 seqfiles[s_name] = sample_path
-        if file_levels == 'nested' or file_levels == 'all':
+        elif file_levels == 'nested':
             # Check for fastq files nested one level down
             subdir = os.path.join(samples_dir, filename)
             if os.path.isdir(subdir):
@@ -182,27 +182,24 @@ def main():
     else:
         outfile = f"samplesheet.csv"
     
-    if args.file_levels != 'all':
-        if args.file_levels == 'nested':
-            # check if there are nested files
-            if are_files_nested(input_dir):
-                file_levels = 'nested'
-            # if no nested files, check if top level files
-            elif are_files_top_level(input_dir):
-                logger.info(f"--file_levels is set to {args.file_levels} but {input_dir} does not contain nested files. Running on top level files.")
-                file_levels = 'top'
-            else:
-                # if not top level or nested files, return error
-                logger.error(f"{input_dir} doesn't contain files with fastq, fq, fastq.gz, or fq.gz extensions")
-                sys.exit(1)
-        elif args.file_levels == 'top':
-            if are_files_top_level(input_dir):
-                file_levels = 'top'
-            else:
-                logger.error(f"--file_levels is set to {args.file_levels} but {input_dir} doesn't contain top-level files with fastq, fq, fastq.gz, or fq.gz extensions.")
-                sys.exit(1)   
+    if args.file_levels == 'top':
+        # check if there are top level files
+        if are_files_top_level(input_dir):
+            file_levels = 'top'
+        # if no top files, check if there are nested files
+        elif are_files_nested(input_dir):
+            logger.info(f"--file_levels is set to {args.file_levels} but {input_dir} does not contain any top-level files. Running on nested files.")
+            file_levels = 'nested'
+    elif args.file_levels == 'nested':
+        # check if there are nested files
+        if are_files_nested(input_dir):
+            file_levels = 'nested'
+        else:
+            logger.error(f"--file_levels is set to {args.file_levels} but {input_dir} doesn't contain nested files with fastq, fq, fastq.gz, or fq.gz extensions.")
+            sys.exit(1)   
     else:
-        file_levels = 'all'
+        logger.error(f"--file_levels must be 'nested' or 'top' ")
+        sys.exit(1)
 
 
     # Get the list of samples
