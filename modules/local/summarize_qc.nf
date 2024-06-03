@@ -17,7 +17,7 @@ process SUMMARIZE_QC {
     def args = task.ext.args   ?: ''
     // Convert relative path to absolute path
     def absolute_outdir = file(params.outdir)
-
+    """
     summarize_qc.py \\
         --analysis_dir . \\
         --samplesheet $samplesheet \\
