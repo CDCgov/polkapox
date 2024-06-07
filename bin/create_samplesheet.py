@@ -201,7 +201,6 @@ def main():
         logger.error(f"--file_levels must be 'nested' or 'top' ")
         sys.exit(1)
 
-
     # Get the list of samples
     if args.single:
         samples_dict = list_samples(input_dir, file_levels = file_levels, single=True)

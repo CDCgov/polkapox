@@ -52,6 +52,7 @@
                 },
                 "file_levels": {
                     "type": "string",
+                    "pattern": "top|nested",
                     "description": "Whether fq files are in directory top level, nested one level under, or both.",
                     "fa_icon": "fas fa-file-signature"
                 },
