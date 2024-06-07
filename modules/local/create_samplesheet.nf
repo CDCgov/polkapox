@@ -13,14 +13,17 @@ path "versions.yml", emit: versions
 
 script: // This script is bundled with the pipeline, in polkapox/bin
 single = params.paired ? "" : "--single"  // $single is empty string if paired=true, '--single' if paired=false
-outfile = "${params.project_name}_samplesheet.csv" // Samplesheet name = basename of the project dir containing samples
+// Check if params.project_name is not empty and not null, then add --project_name flag
+project_name = params.project_name ? "--project_name ${params.project_name}" : ""
+
 
 """
     create_samplesheet.py \\
         --indir $indir \\
         --outdir . \\
+        --file_levels ${params.file_levels} \\
         $single \\
-        --project_name ${params.project_name} 
+        $project_name
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

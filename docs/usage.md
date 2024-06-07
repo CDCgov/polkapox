@@ -17,7 +17,7 @@
 > B) Provide a path to FastQ files: You will need to pass the path to a folder containing your samples, as shown below: 
 
 ```console
---indir '[path to fastq files]'
+--indir '[path to fastq files]' --file_levels '[top (default)/nested]'
 ```
 
 > For this option, PolkaPox currently supports two file organization structures. 
@@ -37,7 +37,7 @@
 
 > If your file structure looks as above, you would specify the input directory like this:
 ```console
---indir /[path-to-directory]/NovaSeq/200710_A01000_0210_GF4RBVWJY8_MLA16554/
+--indir /[path-to-directory]/NovaSeq/200710_A01000_0210_GF4RBVWJY8_MLA16554/ --file_levels nested
 ```
 
 > And the pipeline would automatically create samplesheet like this:
