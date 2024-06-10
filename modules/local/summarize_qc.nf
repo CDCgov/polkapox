@@ -15,11 +15,14 @@ process SUMMARIZE_QC {
 
     script: // This script is bundled with the pipeline, in polkapox/bin/
     def args = task.ext.args   ?: ''
+    // Convert relative path to absolute path
+    def absolute_outdir = file(params.outdir)
     """
     summarize_qc.py \\
         --analysis_dir . \\
         --samplesheet $samplesheet \\
         --reference_genome ${params.fasta} \\
+        --project_outdir ${absolute_outdir} \\
         --kraken_db ${params.kraken_db} \\
         --kraken_tax_ids ${params.kraken2_tax_ids} \\
         --filter ${params.filter} \\

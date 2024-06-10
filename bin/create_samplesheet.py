@@ -52,7 +52,7 @@ def parse_args():
         required=False,
         metavar="FILE_LEVELS",
         help="Option for creating a sample sheet: 'nested' (default) for only nested files,\n"
-             "'all' for all files in the directory, 'top' for only top-level files"
+             "'top' for only top-level files"
     )
     return parser.parse_args()
 
@@ -131,7 +131,7 @@ def list_samples(samples_dir, file_levels, single=False):
                 s_name = re.sub(r'_1$', '', s_name) # remove a _1 only if it occurs at end of filename
                 s_name = remove_id(s_name)
                 seqfiles[s_name] = sample_path
-        if file_levels == 'nested':
+        elif file_levels == 'nested':
             # Check for fastq files nested one level down
             subdir = os.path.join(samples_dir, filename)
             if os.path.isdir(subdir):
@@ -199,7 +199,7 @@ def main():
             sys.exit(1)   
     else:
         logger.error(f"--file_levels must be 'nested' or 'top' ")
-
+        sys.exit(1)
 
     # Get the list of samples
     if args.single:
