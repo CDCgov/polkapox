@@ -20,7 +20,12 @@ if (params.input) {
 else if (params.indir) { 
     ch_indir = file(params.indir)
     } 
-else { exit 1, 'Must specify either input samplesheet or input directory of fastq files!' }
+else if (params.sra_ids) {
+    //ch_sra_id = Channel.fromPath("${params.sra_ids}", type: 'file', checkIfExists: true)
+    ch_sra_id = file(params.sra_ids)
+
+    }
+else { exit 1, 'Must specify samplesheet, input directory of fastq files, or sra id list!' }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,7 +47,8 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome'
-include { CREATE_SAMPLESHEET      } from '../modules/local/create_samplesheet'
+include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
+include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads'
 include { DENOVO              } from '../subworkflows/local/denovo'
 include { REFBASED            } from '../subworkflows/local/ref_based'
@@ -58,8 +64,15 @@ include { REFBASED            } from '../subworkflows/local/ref_based'
 //
 include { FASTQC                                        } from '../modules/nf-core/modules/fastqc/main'
 include { MULTIQC                                       } from '../modules/nf-core/modules/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
+
+//
+// MODULE: Borrowed from fetchngs
+//
+include { SRA_TO_SAMPLESHEET                            } from '../modules/nf-core/modules/sra_to_samplesheet/main'
+include { SRA_IDS_TO_RUNINFO                            } from '../modules/nf-core/modules/sra_ids_to_runinfo/main'
+include { SRA_RUNINFO_TO_FTP                            } from '../modules/nf-core/modules/sra_runinfo_to_ftp/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,6 +96,25 @@ workflow POLKAPOX {
         )
         ch_input = CREATE_SAMPLESHEET.out.samplesheet
         ch_versions = ch_versions.mix(CREATE_SAMPLESHEET.out.versions)
+    }
+    else if (params.sra_ids) {
+        // This is taken directly from fetchngs https://github.com/nf-core/fetchngs/tree/master
+        // get SRA ch for each accession
+        ch_sra = Channel.fromPath(params.sra_ids)
+            .splitCsv ( header: false )
+            .flatten()
+            .map { 
+                accession -> [meta: accession, accession: accession] 
+                }  // creating a map with id and accession
+        ch_sra.view()
+        //
+        // Subworkflow: Create samplesheet from list of SRA Accessions 
+        //
+        SRA_TOOLS (
+            ch_sra
+        )
+        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions.first())
+    
     }
 
     //
