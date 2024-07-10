@@ -1,5 +1,4 @@
 process SRATOOLS_FASTERQDUMP {
-    tag "$meta.id"
     label 'process_medium'
 
     conda "${moduleDir}/environment.yml"
@@ -11,7 +10,9 @@ process SRATOOLS_FASTERQDUMP {
     tuple val(meta), path(id)
 
     output:
-    tuple val(meta), path('*.fastq.gz'), emit: reads
+    tuple val(meta), path('*_1.fastq.gz'), emit: forward
+    tuple val(meta), path('*_2.fastq.gz'), emit: reverse
+
     path "versions.yml"                , emit: versions
 
     when:
@@ -20,11 +21,9 @@ process SRATOOLS_FASTERQDUMP {
     script:
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def outfile = meta.single_end ? "${prefix}.fastq" : prefix
+    def prefix = task.ext.prefix ?: "${meta}"
+    def outfile = "${prefix}.fastq"
     """
-    #export NCBI_SETTINGS="\$PWD/${ncbi_settings}"
-
     fasterq-dump \\
         $args \\
         --threads $task.cpus \\
