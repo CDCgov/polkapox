@@ -17,31 +17,18 @@ from Bio import SeqIO
 import pprint
 import json
 
-def clean_graph_tags(input_file, output_file):
-    # Define the regex pattern to match the LB and CL tags
-    tag_pattern = re.compile(r'\tLB:z:[^\t]+\tCL:z:[^\t]+')
-
-    with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
-        for line in infile:
-            # Remove the tags from the line
-            cleaned_line = re.sub(tag_pattern, '\n', line)
-            # Remove trailing tabs
-            cleaned_line = cleaned_line.rstrip('\t')
-            # Write the cleaned line to the output file, ensuring the newline character is preserved
-            outfile.write(cleaned_line)
-
 def readGFA(gfa):
 	### Read GFA file into gfapy python structure
-	#gfaGraph = gfapy.Gfa.from_file(gfa)
-	try:
-		gfaGraph = gfapy.Gfa.from_file(gfa)
+	gfaGraph = gfapy.Gfa.from_file(gfa)
+	#print(gfaGraph.edges)
+	#print(gfaGraph)
+	if(len(gfaGraph.edges)) == 0:
+		check = "WARNING: gfa file only contains segment lines"
+		gfaGraph = "WARNING: gfa file only contains segment lines"
+	else:
 		check = "PASS"
-		if(len(gfaGraph.edges)) ==0:
-			check = "WARNING: gfa file only contains segment lines"
-			gfaGraph = "WARNING: gfa file only contains segment lines"
-	except:
-		check = "WARNING: Issue with GFA file : No GFA processing"
-		gfaGraph = "WARNING: Issue with GFA file : No GFA processing"
+	#check = "WARNING: Issue with GFA file : No GFA processing"
+	#	gfaGraph = "WARNING: Issue with GFA file : No GFA processing"
 	return gfaGraph,check
 
 
@@ -52,6 +39,7 @@ def remove_loops(lnkInfo):
 	for i in lnkInfo:
 		if i.from_name == i.to_name:
 			selfHits.append(i)
+
 	for j in lnkInfo:
 		if not j in selfHits:
 			prunedSelfs.append(j)
@@ -75,7 +63,7 @@ def id_low_cov_contigs(segInfo):
 def remove_low_cov_contigs_from_edges(lowCov,selfHits):
 	### Remove low coverage hits from links (after self hits)
 	fLinks = []
-	#print(selfHits)
+	
 	if len(lowCov) ==0:
 		fLinks = selfHits
 		check = "PASS"
@@ -102,6 +90,7 @@ def find_longest_contig(seqs, gfa):
 				seqLen = j.get(m)
 				lgContig[name]=seqLen
 	lgSeq = max(lgContig,key=lgContig.get)
+	
 	
 	#write longest contig to file
 	for j in seqs:
@@ -135,14 +124,10 @@ def get_final_path( graph, longest_contig ):
 	### This is the function to assess if there are multiple paths
 	### duplicate pairs of contig links with different orientations
 	contigs = []
-	itr_candidates = []
 	all_simple_paths = {}
 	lengths = {}
 	longest_path = []
 	final_path = []
-
-	### Identify ITR candidates based on depth
-	print(graph.nodes())
 	### Check to see if longest contig in edge list to connect contig seqs, dups not removed
 	edgeList = list(graph.edges)
 	edgeCheck =[]
@@ -166,9 +151,8 @@ def get_final_path( graph, longest_contig ):
 				contigs.append(edge[1]) 
 		for contig in contigs:
 			if contig != longest_contig:
-				print(contig)
-				for sp in nx.all_simple_paths( graph, contig, longest_contig ):
-					print(sp)
+				for sp in nx.all_simple_paths( graph, longest_contig, contig ):
+					#print(sp)
 					if contig not in all_simple_paths:
 						all_simple_paths[contig] = []
 					all_simple_paths[contig].append( sp )
@@ -177,15 +161,13 @@ def get_final_path( graph, longest_contig ):
 					if len(sp) not in lengths:
 						lengths[len(sp)] = 0
 					lengths[len(sp)] = lengths[len(sp)] + 1
-					#print(longest_path)
 	####REVERSE THE ITR length path instead of the first path of the all paths section######	
-	#warning if there is more than one longest path
-		#print(lengths[len(longest_path)])
+	#warning if there is more than one longest 
 		if lengths[len(longest_path)] > 1:
 			status = "WARNING: >1 longest path"
 			return final_path, status
 	
-	# make sure there are 2 paths between the longest contig and the last contig in the longest 
+	# make sure there are 2 paths between the longest contig and the last contig in the longest path
 		sp_l = all_simple_paths[longest_path[-1]]
 		if len(sp_l) < 2:
 			status = "WARNING: only 1 path between longest contig and the last contig in the longest path"
@@ -201,13 +183,12 @@ def get_final_path( graph, longest_contig ):
 			elif len(path_b) < len(path_a):
 				path_b.reverse()
 				final_path = path_b + path_a[1:]
-			print(final_path)
 			status = "PASS"
 			return final_path, status
-		
 		elif len(sp_l) > 2:
 			status = "WARNING: >2 paths between longest contig and the last contig in the longest path"
-			return final_path, status
+		status="Pass"
+		return final_path, status
 
 def orient_longest_contig(query,reference):
 	blastResults = query+"_blast.out"
@@ -358,12 +339,8 @@ def main(arguments):
 	logFile = []
 	logFile.append(gfaFile)
 
-	# clean up gfa tags
-	cleanedGfa = 'graph_cleaned.gfa'
-	clean_graph_tags(gfaFile, cleanedGfa)
-
 	# read gfa file into graph structure
-	original_graph, status = readGFA(cleanedGfa)
+	original_graph, status = readGFA(gfaFile)
 	log['00'] = {'step_name'			: "read_gfa",
 				'step_description'	: "read gfa file into graph structure",
 				'status'			: status,
@@ -381,6 +358,7 @@ def main(arguments):
 	
 	# filter edges that are loops (these represent repeats, we'll deal with them later)
 	if type(original_graph) == str:
+		
 		sys.exit(0)
 	else:
 		filtered_edges, status = remove_loops( original_graph.edges )
@@ -391,7 +369,6 @@ def main(arguments):
 					'filtered_edges'	: str(filtered_edges)
 					}
 				}
-		print(filtered_edges)
 		if status != "PASS":
 			write_log_and_exit(log, status)
 	
@@ -503,6 +480,7 @@ def main(arguments):
 					'final_itr_length'	: final_itr_length
 					}
 				}
+	
 	write_log_and_exit(log,status)
 	
 if __name__=='__main__':

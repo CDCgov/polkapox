@@ -12,7 +12,7 @@ process UNICYCLER {
 
     output:
     tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds optional true
-    tuple val(meta), path('*.assembly.gfa.gz'), emit: gfa optional true
+    tuple val(meta), path('*.gfa'), emit: gfa optional true
     tuple val(meta), path('*.log')            , emit: log
     path  "versions.yml"                      , emit: versions
 
@@ -28,11 +28,13 @@ process UNICYCLER {
         --threads $task.cpus \\
         $args \\
         $short_reads \\
-        --out ./
+        --out ./ \\
+        --keep 2
 
     mv unicycler.log ${prefix}.unicycler.log
     mv assembly.fasta ${prefix}.scaffolds.fa
     gzip -n ${prefix}.scaffolds.fa
+    mv 003_bridges_applied.gfa ${prefix}.003_bridges_applied.gfa
     mv assembly.gfa ${prefix}.assembly.gfa
     gzip -n ${prefix}.assembly.gfa
 
