@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 
-### Written by S.Morrison, K. Knipe and Kyle O'Connell
-### initial code : 20221018; refactor 20240730
-
-'''
-To Do: 
-- Need to add all the logging and summary file like shatavia had
-- need to add ITR length to that script
-- Need to add total seq length 
-
-'''
+### Written by S.Morrison, K. Knipe 20221018
+### Refactored by Kyle O'Connell with help from GPT 4o and Gemini 1.5 Pro 20240730
 
 import gzip
 import argparse
@@ -38,11 +30,9 @@ def clean_graph_tags(input_file, output_file):
             cleaned_line = cleaned_line.rstrip('\t')
             # Write the cleaned line to the output file, ensuring the newline character is preserved
             outfile.write(cleaned_line)
-    print('cleaned graph tags')
 
 def read_gfa_file(gfa_path):
     """Read GFA file into gfapy python structure."""
-    print('reading cleaned gfa')
     try:
         gfa_graph = gfapy.Gfa.from_file(gfa_path)
         # print(gfa_graph.edges)
@@ -50,12 +40,13 @@ def read_gfa_file(gfa_path):
             return None, "WARNING: GFA file only contains segment lines"
         return gfa_graph, "PASS"
     except Exception as e:
+        
         return None, f"WARNING: Issue with GFA file : {str(e)}"
 
 def remove_self_loops(links):
     """Remove self-loops from link information."""
     pruned_links = [link for link in links if link.from_name != link.to_name]
-    # print(pruned_links)
+
     return pruned_links, "PASS"
 
 def identify_low_coverage_contigs(segments):
@@ -65,12 +56,13 @@ def identify_low_coverage_contigs(segments):
         dp_value = seg.get('dp')  # This will return None if 'dp' is not a field in the segment
         if dp_value is not None and float(dp_value) < 0.5:
             low_cov.append(seg.get('name'))
-    #$print(low_cov)
+
     return low_cov, "PASS"
 
 def filter_links_by_coverage(low_cov, links):
     """Filter out links involving low coverage contigs."""
     filtered_links = [link for link in links if link.from_name not in low_cov and link.to_name not in low_cov]
+    
     return filtered_links, "PASS"
 
 def find_longest_contig(segments, output_dir):
@@ -82,12 +74,14 @@ def find_longest_contig(segments, output_dir):
         seqName = longest_contig.get('name')
         gfaContigs.write(">" + seqName + "\n")
         gfaContigs.write(longest_contig.get('sequence') + "\n")
+    
     return longest_contig.get('name'), "PASS", longest_contig_file
 
 def filter_segments_by_graph(segments, graph):
     """Filter segments to include only those that are part of the graph."""
     graph_nodes = set(graph.nodes())  # Get all nodes in the graph as a set for quick lookup
     filtered_segments = [seg for seg in segments if seg.get('name') in graph_nodes]
+    
     return filtered_segments
 
 def create_filtered_graph(links):
@@ -102,6 +96,7 @@ def create_filtered_graph(links):
     
     if not nx.is_connected(graph):
         return None, "WARNING: Graph is not connected"
+    
     return graph, "PASS"
 
 def identify_itr( gfa_graph, segments ):
@@ -135,7 +130,6 @@ def get_final_path(gfa_graph, filtered_graph, segments):
         for contig in filtered_graph.nodes():
             if contig != itr:
                 for path in nx.all_simple_paths(filtered_graph, source=itr, target=contig):
-                    # print(path)
                     path_length = len(path)
                     if path_length > max_length:
                         longest_paths = [path]  # Start a new list with the new longest path
@@ -241,13 +235,13 @@ def get_final_sequence(contig_order, contig_orientation, segments):
             order_orientation_copy_number = '%sx%s' % (order_orientation_copy_number, round(segment_info[segment_name]['coverage']))
         final_sequence = final_sequence + sequence
         final_order_orientation_copy_number.append(order_orientation_copy_number)
-    
     check = "PASS"
     # are all segments in final_sequence?
     cleaned_contig_order = [contig.strip('+-') for contig in contig_order]
     for segment in segment_info:
         if (segment_info[segment]['coverage'] > 0.5) and (segment not in cleaned_contig_order):
             check = 'WARNING: missing segments'
+    
     return final_sequence, len(final_sequence), " ".join(final_order_orientation_copy_number), check
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
@@ -309,7 +303,7 @@ def write_log_and_exit(log, status):
     sys.exit(0)
 
 def process_graph(gfa_graph, output_dir, input_file, reference):
-    """Process the graph and write output based on the results."""
+    """Process the graph and write output."""
     log = {}
     input_with_ext = os.path.basename(input_file)
     input_base, _ = os.path.splitext(input_with_ext)
@@ -367,6 +361,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
     # Create blast database directory
     blast_db_dir = os.path.join(output_dir, 'blast_db')
     os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
+    
     # Determine the orientation of the longest contig
     longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
     log['05'] = {'step_name': "orient_longest_contig",
