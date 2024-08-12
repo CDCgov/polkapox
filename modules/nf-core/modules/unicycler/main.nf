@@ -12,7 +12,7 @@ process UNICYCLER {
 
     output:
     tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds optional true
-    tuple val(meta), path('*.gfa'), emit: gfa optional true
+    tuple val(meta), path('*003_bridges_applied.gfa'), emit: gfa optional true
     tuple val(meta), path('*.log')            , emit: log
     path  "versions.yml"                      , emit: versions
 
