@@ -103,7 +103,7 @@ def identify_itr( gfa_graph, segments ):
     """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
-    upper_bound = 3
+    upper_bound = 20
     itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
     
     itr_length = 0
@@ -114,8 +114,7 @@ def identify_itr( gfa_graph, segments ):
             visited.add(seg.name)  # Mark this segment as visited
             itr_length += len(seg.sequence)  # Accumulate the sequence length
 
-    print("Total ITR sequence length:", itr_length)
-    
+    # print("Total ITR sequence length:", itr_length)
     return itrs, itr_length
 
 def get_final_path(gfa_graph, filtered_graph, segments):
@@ -136,9 +135,12 @@ def get_final_path(gfa_graph, filtered_graph, segments):
                         max_length = path_length
                     elif path_length == max_length:
                         longest_paths.append(path)  # Add path to the list of longest paths
-
+    itr_order = []
     if longest_paths:
-        return longest_paths[0], f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
+        final_path = longest_paths[0]
+        itr_order.extend(c for c in final_path if c in itrs)
+        final_path.extend(itr_order[::-1])
+        return final_path, f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
     else:
         return [], "WARNING: No path found starting from any ITR."
 
@@ -169,7 +171,6 @@ def orient_longest_contig(query, reference, blast_db_dir):
 
 def get_final_orientation(final_path, lnks, longest_contig, longest_orient):
     contig_orientation = [0] * len(final_path)
-
     for i in range(final_path.index(longest_contig), len(final_path)):
         if i == final_path.index(longest_contig):
             contig_orientation[i] = longest_orient
@@ -205,6 +206,8 @@ def get_final_orientation(final_path, lnks, longest_contig, longest_orient):
                     contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
                     flag=1
         check="PASS"
+    # print(final_path)
+    # print(contig_orientation)
     return contig_orientation, check
 
 def get_final_sequence(contig_order, contig_orientation, segments):
@@ -217,10 +220,7 @@ def get_final_sequence(contig_order, contig_orientation, segments):
             'sequence': Seq(segment.get('sequence')),
             'sequence_rc': Seq(segment.get('sequence')).reverse_complement()
         }
-    
-    print("Segment Info Keys:", segment_info.keys())
-    print("Contig Order:", contig_order)
-    
+        
     final_sequence = ''
     final_order_orientation_copy_number = []
     for i in range(len(contig_order)):
@@ -241,7 +241,6 @@ def get_final_sequence(contig_order, contig_orientation, segments):
     for segment in segment_info:
         if (segment_info[segment]['coverage'] > 0.5) and (segment not in cleaned_contig_order):
             check = 'WARNING: missing segments'
-    
     return final_sequence, len(final_sequence), " ".join(final_order_orientation_copy_number), check
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
@@ -361,7 +360,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
     # Create blast database directory
     blast_db_dir = os.path.join(output_dir, 'blast_db')
     os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
-    
+
     # Determine the orientation of the longest contig
     longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
     log['05'] = {'step_name': "orient_longest_contig",
