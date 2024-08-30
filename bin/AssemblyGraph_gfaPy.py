@@ -114,10 +114,11 @@ def identify_itr( gfa_graph, segments ):
             visited.add(seg.name)  # Mark this segment as visited
             itr_length += len(seg.sequence)  # Accumulate the sequence length
 
-    # print("Total ITR sequence length:", itr_length)
+    print("Total ITR sequence length:", itr_length)
     return itrs, itr_length
 
 def get_final_path(gfa_graph, filtered_graph, segments):
+    print(gfa_graph)
     """Find all longest paths in the graph starting from any ITR."""
     itrs, itr_length = identify_itr(gfa_graph, segments)
     if not itrs:
@@ -137,9 +138,11 @@ def get_final_path(gfa_graph, filtered_graph, segments):
                         longest_paths.append(path)  # Add path to the list of longest paths
     itr_order = []
     if longest_paths:
+        print(longest_paths)
         final_path = longest_paths[0]
         itr_order.extend(c for c in final_path if c in itrs)
         final_path.extend(itr_order[::-1])
+        #print(final_path)
         return final_path, f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
     else:
         return [], "WARNING: No path found starting from any ITR."
