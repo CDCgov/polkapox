@@ -1,4 +1,4 @@
-process BANDAGE_IMAGE {
+process BANDAGE {
     tag "${meta.id}"
     label 'process_low'
 
