@@ -2,7 +2,7 @@
 // Generate reference genome related files for analysis
 //
 
-include { BWA_INDEX     } from '../../modules/nf-core/modules/bwa/index/main'
+include { BWA_INDEX     } from '../../modules/nf-core/bwa/index/main'
 
 workflow PREPARE_GENOME {
     main:
