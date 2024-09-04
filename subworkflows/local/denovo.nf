@@ -1,5 +1,6 @@
 include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../modules/nf-core/modules/samtools/flagstat/main.denovo'
 include { UNICYCLER                                     } from '../../modules/nf-core/modules/unicycler/main'
+include { BANDAGE                                       } from '../../modules/nf-core/modules/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../modules/local/graph_reconstruct'
 include { BWA_MEM as BWA_MEM_DENOVO                     } from '../../modules/nf-core/modules/bwa/mem/main_denovo'
 include { PUBLISH_CONTIGS                               } from '../../modules/local/publish_contigs.nf'
@@ -25,6 +26,13 @@ workflow DENOVO {
     )
     ch_versions = ch_versions.mix(UNICYCLER.out.versions)
     ch_gfa = UNICYCLER.out.gfa
+
+    //
+    // Module: Publish Bandage PNG Plot
+    //
+    BANDAGE (
+        ch_gfa,
+    )
 
     //
     // Module: Genome Reconstruction from Unicycler GFA
