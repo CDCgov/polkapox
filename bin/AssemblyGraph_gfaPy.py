@@ -243,7 +243,7 @@ def get_final_sequence(contig_order, contig_orientation, segments):
     cleaned_contig_order = [contig.strip('+-') for contig in contig_order]
     for segment in segment_info:
         if (segment_info[segment]['coverage'] > 0.5) and (segment not in cleaned_contig_order):
-            check = 'WARNING: missing segments'
+            check = 'WARNING: missing segments or is not fully connected'
     return final_sequence, len(final_sequence), " ".join(final_order_orientation_copy_number), check
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
