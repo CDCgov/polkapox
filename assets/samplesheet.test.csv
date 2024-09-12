@@ -1,0 +1,2 @@
+sample,fastq_1,fastq_2
+test,s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/test_data/LIY16011A34_2022_5630_NY_3003749700_1.fq.gz,s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/test_data/LIY16011A34_2022_5630_NY_3003749700_2.fq.gz

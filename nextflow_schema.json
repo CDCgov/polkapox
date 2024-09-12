@@ -34,6 +34,20 @@
                     "description": "An input directory where the samples are located.  Use if you want the pipeline to create your samplesheet. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
+                "sra": {
+                    "type": "boolean",
+                    "format": "boolean",
+                    "description": "True/False if using SRA accessions",
+                    "fa_icon": "fas fa-folder-open"
+                },
+                "sra_ids": {
+                    "type": "string",
+                    "format": "file-path",
+                    "schema": "assets/schema_input.json",
+                    "description": "Path to file with simple list of SRA Accessions",
+                    "help_text": "Create a file with a list of SRA Accessions",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
