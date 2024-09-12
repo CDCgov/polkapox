@@ -76,8 +76,8 @@ workflow DENOVO {
         ch_polishing_input,
         false
     )
-    ch_gfapolish_compare = IVAR_CONSENSUS_POLISH.out.fasta
-    ch_tocompare = ch_gfaassm_compare.join(ch_gfapolish_compare, by: 0)
+    //ch_gfapolish_compare = IVAR_CONSENSUS_POLISH.out.fasta
+    ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH.out.fasta, by: 0)
     
     //join unicycler contigs with the polished fasta, and only keep contigs if fasta doesn't exist
     ch_assemblies = ch_uni_contigs.join(IVAR_CONSENSUS_POLISH.out.fasta, remainder: true)

@@ -68,7 +68,7 @@ def parse_args():
     
     return parser.parse_args()
 
-def get_raw_filt_counts(search_dir, sample):
+def get_raw_filt_counts(sample):
     """ Get raw filter counts from fastp output
     :param search_dir: work directory
     :param sample: sample name
@@ -91,7 +91,7 @@ def get_raw_filt_counts(search_dir, sample):
         return 'NA', 'NA'
     return total_raw_reads, total_filtered_reads
 
-def get_kraken_stats(search_dir, sample, kraken_db, kraken_tax_ids):
+def get_kraken_stats(sample, kdb, kraken_tax_ids):
     """ Get stats from kraken output
     :param search_dir: work directory
     :param sample: sample name
@@ -103,8 +103,8 @@ def get_kraken_stats(search_dir, sample, kraken_db, kraken_tax_ids):
     total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids = ('NA',) * 6
     
     kraken_reads = "{}.kraken2.classifiedreads.txt".format(sample)
-    ortho_reads = "**/{}*.opxreads.txt".format(sample)
-    
+    ortho_reads = "{}.opxreads.txt".format(sample)
+
     if os.path.exists(kraken_reads) and os.path.exists(ortho_reads):
         try:
             k_data = pd.read_csv(kraken_reads, delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
@@ -134,9 +134,9 @@ def get_kraken_stats(search_dir, sample, kraken_db, kraken_tax_ids):
         lines = [line.strip() for line in l.readlines()]
     k_tax_ids = ', '.join(lines)
 
-    return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
+    return total, opx_perc, human_perc, unclass_perc, kdb, k_tax_ids
 
-def get_flagstat_denovo(search_dir, sample):
+def get_flagstat_denovo(sample):
     """ Get samtools flagstat results from denovo mapping
     :param search_dir: work directory
     :param sample: sample name
@@ -162,7 +162,7 @@ def get_flagstat_denovo(search_dir, sample):
     
     return total_reads_denovo, mapped_reads_denovo, percent_mapped_denovo
 
-def get_cov_stats(search_dir, sample, reference):
+def get_cov_stats(sample, reference):
     """ Get coverage stats from samtools output
     :param search_dir: work directory
     :param sample: sample name
@@ -193,7 +193,7 @@ def get_cov_stats(search_dir, sample, reference):
 
     return avg_dp, dp_gt_20, ref_genome
 
-def get_gfa_stats(search_dir, sample):
+def get_gfa_stats(sample):
     """ Get stats from Unicycler graph assembly output
     :param search_dir: work directory
     :param sample: sample name
@@ -210,13 +210,14 @@ def get_gfa_stats(search_dir, sample):
         except:
             logger.error(f"Could not load data from {gfa_log}")
             return(['NA','NA','NA','NA','NA'])
-            
-        if len(parsed_json.keys()) == 11:
+        
+        if len(parsed_json.keys()) == 10:
             notes = 'GFA step complete'
-            successCode_step9 = list(parsed_json)[-2]
+            successCode_step8 = list(parsed_json)[-3]
             successCode_step10 = list(parsed_json)[-1]
-            final_order_orientation_copy_number = parsed_json[successCode_step9]['output']['final_order_orientation_copy_number']
-            final_sequence_length = parsed_json[successCode_step9]['output']['final_sequence_length']
+            
+            final_order_orientation_copy_number = parsed_json[successCode_step8]['output']['final_order_orientation_copy_number']
+            final_sequence_length = parsed_json[successCode_step8]['output']['final_sequence_length']
             status = parsed_json[successCode_step10]['status']
             final_itr_length = parsed_json[successCode_step10]['output']['final_itr_length']
             gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
@@ -226,9 +227,10 @@ def get_gfa_stats(search_dir, sample):
             statusReport = 'FAIL'
             gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
     else:
-        status = 'Unicycler-GFA Log No Exist'
+        status = 'Unicycler-GFA Log DOES NOT Exist'
         statusReport = 'FAIL'
         gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
+    print(gfaResults)
     return gfaResults
 
 def fix_names(df):
@@ -276,7 +278,7 @@ def fix_names(df):
     
     return df
 
-def get_total_snps(search_dir, sample):
+def get_total_snps(sample):
     """ Grab the tsv files from ivar output (ivar_variants dir) and get total number of SNPs
     :param search_dir: work directory
     :param sample: sample name
@@ -296,7 +298,7 @@ def get_total_snps(search_dir, sample):
         return 'NA'
     return total_snps
 
-def get_snp_metadata(search_dir, sample, coords):
+def get_snp_metadata(sample, coords):
     """ Get number of SNPs for input coordinates from ivar_summary file (in variant_summaries dir)
     :param search_dir: work directory
     :param sample: sample name
@@ -375,7 +377,7 @@ def count_ns_in_pileup(sample):
 def main():
     args = parse_args()
 
-    summary_file = glob(os.path.join(args.analysis_dir, '**/*general_stats.txt'), recursive=True)[0]
+    summary_file = glob(os.path.join('**/*general_stats.txt'), recursive=True)[0]
     sample_file = args.samplesheet
     logger.info(f"Running summary_qc.py for {args.workflow}")
     try:
@@ -408,7 +410,7 @@ def main():
     fixed_summary.set_axis(new_col_names, axis=1, inplace=True)    
 
     if args.workflow == 'denovo' or args.workflow == 'full':
-        contig_files = glob(os.path.join(args.analysis_dir, '**/*quast_num_contigs_1.txt'), recursive=True)
+        contig_files = glob(os.path.join('**/*quast_num_contigs_1.txt'), recursive=True)
         if contig_files:
             contig_file = contig_files[0]
             logger.info(f"{contig_file} found")
@@ -437,35 +439,35 @@ def main():
         fixed_summary['reads_total_bwa'] = pd.to_numeric(fixed_summary['reads_total_bwa'], errors='coerce')
         percent_mapped_bwa = (fixed_summary['reads_mapped_bwa'] / fixed_summary['reads_total_bwa']) * 100
         fixed_summary['percent_mapped_bwa'] = np.where(fixed_summary['reads_mapped_bwa'].isna() | fixed_summary['reads_total_bwa'].isna(), np.nan, percent_mapped_bwa).round(2)
-    
     summary_full = fixed_summary.reindex(fixed_summary.columns.tolist() + ['raw_read_count_fastp', 'filtered_read_count_fastp', 'total_raw_reads', 'opx_percent_kraken','human_percent_kraken', 'unclass_percent_kraken', 'average_depth_bwa', 'count_20xdepth_bwa'], axis=1)
     summary_full.to_csv("before_adding_values.csv")
-
+    
     # get data from other non multiqc input files:
     for sample in summary_full['sample']:
-        summary_full.loc[summary_full['sample'] == sample, ['opx_read_count_kraken', 'filtered_read_count_fastp']] = get_raw_filt_counts(args.analysis_dir, sample)
-        summary_full.loc[summary_full['sample'] == sample, ['total_raw_reads', 'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken', 'kraken_db','kraken_tax_ids']] = get_kraken_stats(args.analysis_dir, sample, args.kraken_db, args.kraken_tax_ids)
+        summary_full.loc[summary_full['sample'] == sample, ['opx_read_count_kraken', 'filtered_read_count_fastp']] = get_raw_filt_counts(sample)
+        kraken_db = args.kraken_db
+        summary_full.loc[summary_full['sample'] == sample, ['total_raw_reads', 'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken', 'kraken_db','kraken_tax_ids']] = get_kraken_stats(sample, kraken_db, args.kraken_tax_ids)
         if args.workflow == 'ref_based':
-            summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa','reference_genome']] = get_cov_stats(args.analysis_dir, sample, args.reference_genome)
-            summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(args.analysis_dir,sample)    
+            summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa','reference_genome']] = get_cov_stats(sample, args.reference_genome)
+            summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(sample)    
             summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
             #logic to handle if a user is not interested in variant filtering
             if args.filter == 'true':
-                summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(args.analysis_dir, sample, args.coords)
+                summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(sample, args.coords)
         elif args.workflow == 'denovo':
-            summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(args.analysis_dir, sample)
-            summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(args.analysis_dir, sample)
+            summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(sample)
+            summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(sample)
             summary_full.loc[summary_full['sample'] == sample, ['corrected_snps','corrected_indels']] = get_polish_stats(sample)
             summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
         elif args.workflow == 'full':
-            summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa', 'reference_genome']] = get_cov_stats(args.analysis_dir, sample, args.reference_genome)
-            summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(args.analysis_dir,sample)    
+            summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa', 'reference_genome']] = get_cov_stats(sample, args.reference_genome)
+            summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(sample)    
             summary_full.loc[summary_full['sample'] == sample, ['corrected_snps','corrected_indels']] = get_polish_stats(sample)    
             summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
-            summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(args.analysis_dir, sample)
-            summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(args.analysis_dir, sample)
+            summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(sample)
+            summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(sample)
             if args.filter == 'true':
-                summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(args.analysis_dir, sample, args.coords)
+                summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(sample, args.coords)
 
     # final column order
     if args.workflow == 'filter_reads':

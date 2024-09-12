@@ -103,7 +103,7 @@ def identify_itr( gfa_graph, segments ):
     """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
-    upper_bound = 20
+    upper_bound = 3
     itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
     
     itr_length = 0
@@ -277,8 +277,8 @@ def write_all_contigs(segments, output_file):
 
 def write_log_and_exit(log, status):
     # print(log)
-    log_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".log")
-    summary_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".summary")
+    log_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.log")
+    summary_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.summary")
 
     headers = ['sample', 'status', 'contig_order', 'contig_orientation', 'contig_order_orientation_copy_number', 'assembly_length', 'itr_length']
     data = []
@@ -309,7 +309,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
     log = {}
     input_with_ext = os.path.basename(input_file)
     input_base, _ = os.path.splitext(input_with_ext)
-    sample_name = input_base
+    sample_name = input_base.replace('.003_bridges_applied','')
 
     # Initial log entry
     log['00'] = {'step_name': "initialization",
@@ -323,7 +323,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
                  'output': {}}
 
     # Always write all contigs to a FASTA file at the start
-    write_all_contigs(gfa_graph.segments, os.path.join(output_dir, input_base + ".all_contigs.fasta"))
+    write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
 
     # Start processing the graph
     filtered_edges, status = remove_self_loops(gfa_graph.edges)
@@ -397,7 +397,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
         write_log_and_exit(log, status)
 
     # Write the oriented contigs to a FASTA file
-    asm_name = input_base + ".assembly_asm.fasta"
+    asm_name = sample_name + ".assembly_asm.fasta"
     record = SeqRecord(Seq(final_sequence), id=input_base, description=final_order_orientation_copy_number)
     with open(os.path.join(output_dir, asm_name), 'w') as f:
         SeqIO.write(record, f, "fasta")

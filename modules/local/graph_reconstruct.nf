@@ -8,8 +8,8 @@ process GRAPH_RECON {
 
     output:
     tuple val(meta), path('*asm.fasta')       , emit: gfa_assembly optional true
-    path '*longest.fasta'                     , emit: gfa_longest optional true
-    tuple val(meta), path('*.contigs.fasta')  , emit: unicycler_contigs optional true
+    // path '*longest.fasta'                     , emit: gfa_longest optional true
+    tuple val(meta), path('*contigs.fasta')  , emit: unicycler_contigs optional true
     path '*.log'                              , emit: log
     path '*.summary'                          , emit: summary optional true
     path "versions.yml"                       , emit: versions
