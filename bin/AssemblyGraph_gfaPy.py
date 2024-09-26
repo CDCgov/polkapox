@@ -102,7 +102,7 @@ def identify_itr(gfa_graph, segments):
     """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
-    upper_bound = 20
+    upper_bound = 30
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
 
     # Create a subgraph with only potential ITRs
