@@ -102,10 +102,6 @@ def identify_itr(gfa_graph, segments):
     """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
-<<<<<<< HEAD
-    upper_bound = 3
-    itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
-=======
     upper_bound = 20
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
 
@@ -114,7 +110,6 @@ def identify_itr(gfa_graph, segments):
     for link in gfa_graph.edges:
         if link.from_name in potential_itrs and link.to_name in potential_itrs:
             subgraph.add_edge(link.from_name, link.to_name)
->>>>>>> 519d3b5 (fixed bug where contigs were being multiplied by depth which caused ITRs to be double the target length)
     
     # Find connected components in the subgraph
     connected_components = list(nx.connected_components(subgraph))
@@ -267,12 +262,8 @@ def get_final_sequence(contig_order, contig_orientation, segments):
     for segment in segment_info:
         if (segment_info[segment]['coverage'] > 0.5) and (segment not in cleaned_contig_order):
             check = 'WARNING: missing segments or is not fully connected'
-<<<<<<< HEAD
-    return final_sequence, len(final_sequence), " ".join(final_order_orientation_copy_number), check
-=======
     
     return final_sequence, final_sequence_length, " ".join(final_order_orientation_copy_number), check
->>>>>>> 519d3b5 (fixed bug where contigs were being multiplied by depth which caused ITRs to be double the target length)
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
     """Write the segments in the specified orientation to a single FASTA entry with the input file name as the header."""
@@ -303,10 +294,6 @@ def write_all_contigs(segments, output_file):
             SeqIO.write(record, f, "fasta")
 
 def write_log_and_exit(log, status):
-<<<<<<< HEAD
-    # print(log)
-=======
->>>>>>> 519d3b5 (fixed bug where contigs were being multiplied by depth which caused ITRs to be double the target length)
     log_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.log")
     summary_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.summary")
 
