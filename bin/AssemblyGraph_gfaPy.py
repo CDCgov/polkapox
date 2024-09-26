@@ -35,7 +35,6 @@ def read_gfa_file(gfa_path):
     """Read GFA file into gfapy python structure."""
     try:
         gfa_graph = gfapy.Gfa.from_file(gfa_path)
-        # print(gfa_graph.edges)
         if len(gfa_graph.edges) == 0:
             return None, "WARNING: GFA file only contains segment lines"
         return gfa_graph, "PASS"
@@ -99,26 +98,39 @@ def create_filtered_graph(links):
     
     return graph, "PASS"
 
-def identify_itr( gfa_graph, segments ):
+def identify_itr(gfa_graph, segments):
     """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
+<<<<<<< HEAD
     upper_bound = 3
     itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
+=======
+    upper_bound = 20
+    potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
+
+    # Create a subgraph with only potential ITRs
+    subgraph = nx.Graph()
+    for link in gfa_graph.edges:
+        if link.from_name in potential_itrs and link.to_name in potential_itrs:
+            subgraph.add_edge(link.from_name, link.to_name)
+>>>>>>> 519d3b5 (fixed bug where contigs were being multiplied by depth which caused ITRs to be double the target length)
     
-    itr_length = 0
-    visited = set()
-
-    for seg in segments:
-        if seg.name in itrs and seg.name not in visited:
-            visited.add(seg.name)  # Mark this segment as visited
-            itr_length += len(seg.sequence)  # Accumulate the sequence length
-
+    # Find connected components in the subgraph
+    connected_components = list(nx.connected_components(subgraph))
+    # Select the largest connected component as the ITRs
+    if connected_components:
+        itrs = max(connected_components, key=len)
+    else:
+        itrs = []
+    
+    itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
+    
+    print("contigs in ITR", itrs)
     print("Total ITR sequence length:", itr_length)
-    return itrs, itr_length
+    return list(itrs), itr_length
 
 def get_final_path(gfa_graph, filtered_graph, segments):
-    print(gfa_graph)
     """Find all longest paths in the graph starting from any ITR."""
     itrs, itr_length = identify_itr(gfa_graph, segments)
     if not itrs:
@@ -136,13 +148,19 @@ def get_final_path(gfa_graph, filtered_graph, segments):
                         max_length = path_length
                     elif path_length == max_length:
                         longest_paths.append(path)  # Add path to the list of longest paths
-    itr_order = []
+    
     if longest_paths:
-        print(longest_paths)
+        print("longest path =", longest_paths)
         final_path = longest_paths[0]
-        itr_order.extend(c for c in final_path if c in itrs)
-        final_path.extend(itr_order[::-1])
-        #print(final_path)
+        
+        # Ensure ITRs are not duplicated and are correctly oriented
+        left_itrs = [itr for itr in final_path if itr in itrs]
+        right_itrs = [itr for itr in reversed(final_path) if itr in itrs]
+        
+        # Construct the final path with ITRs on both ends, ensuring no duplicates
+        middle_path = [node for node in final_path if node not in itrs]
+        final_path = left_itrs + middle_path + right_itrs
+        
         return final_path, f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
     else:
         return [], "WARNING: No path found starting from any ITR."
@@ -209,11 +227,12 @@ def get_final_orientation(final_path, lnks, longest_contig, longest_orient):
                     contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
                     flag=1
         check="PASS"
-    # print(final_path)
-    # print(contig_orientation)
+    print("final path =",final_path)
+    print("final contig orientation",contig_orientation)
     return contig_orientation, check
 
 def get_final_sequence(contig_order, contig_orientation, segments):
+    print("contig order used for final sequence", contig_order)
     segment_info = {}
     for segment in segments:
         segment_count = contig_order.count(segment.get('name'))
@@ -226,25 +245,34 @@ def get_final_sequence(contig_order, contig_orientation, segments):
         
     final_sequence = ''
     final_order_orientation_copy_number = []
+
     for i in range(len(contig_order)):
         segment_name = contig_order[i].strip('+').strip('-')  # Strip orientation symbols
-        # print(f"Processing segment: {segment_name}")
-        sequence = segment_info[segment_name]['sequence'] * round(segment_info[segment_name]['coverage'])
+        sequence = segment_info[segment_name]['sequence']
         if contig_orientation[i] == -1:
-            sequence = segment_info[segment_name]['sequence_rc'] * round(segment_info[segment_name]['coverage'])
+            sequence = segment_info[segment_name]['sequence_rc']
         orientation = '+' if contig_orientation[i] == 1 else '-'
         order_orientation_copy_number = '%s%s' % (orientation, segment_name)
         if round(segment_info[segment_name]['coverage']) > 1:
             order_orientation_copy_number = '%sx%s' % (order_orientation_copy_number, round(segment_info[segment_name]['coverage']))
         final_sequence = final_sequence + sequence
         final_order_orientation_copy_number.append(order_orientation_copy_number)
+    
+    final_sequence_length = len(final_sequence)
+    print("Final sequence length:", final_sequence_length)
+    
     check = "PASS"
     # are all segments in final_sequence?
     cleaned_contig_order = [contig.strip('+-') for contig in contig_order]
     for segment in segment_info:
         if (segment_info[segment]['coverage'] > 0.5) and (segment not in cleaned_contig_order):
             check = 'WARNING: missing segments or is not fully connected'
+<<<<<<< HEAD
     return final_sequence, len(final_sequence), " ".join(final_order_orientation_copy_number), check
+=======
+    
+    return final_sequence, final_sequence_length, " ".join(final_order_orientation_copy_number), check
+>>>>>>> 519d3b5 (fixed bug where contigs were being multiplied by depth which caused ITRs to be double the target length)
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
     """Write the segments in the specified orientation to a single FASTA entry with the input file name as the header."""
@@ -263,7 +291,6 @@ def write_oriented_fasta(final_path, segments, output_file, input_file):
     # Use the base name of the input file as the ID for the SeqRecord
     input_base_name = os.path.splitext(os.path.basename(input_file))[0]
     record = SeqRecord(Seq(full_sequence), id=input_base_name, description="All contigs concatenated based on the final path")
-    
     # Write the single record to the output file
     with open(output_file, 'w') as f:
         SeqIO.write(record, f, "fasta")
@@ -276,7 +303,10 @@ def write_all_contigs(segments, output_file):
             SeqIO.write(record, f, "fasta")
 
 def write_log_and_exit(log, status):
+<<<<<<< HEAD
     # print(log)
+=======
+>>>>>>> 519d3b5 (fixed bug where contigs were being multiplied by depth which caused ITRs to be double the target length)
     log_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.log")
     summary_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.summary")
 
