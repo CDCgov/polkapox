@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 
 ### Written by S.Morrison, K. Knipe 20221018
-### Refactored by Kyle O'Connell with help from GPT 4o and Gemini 1.5 Pro 20240730
+### Refactored by Kyle O'Connell with help from GPT 4o, o1-preview, and Gemini 1.5 Pro 20240730
 
-import gzip
-import argparse
 import os
-import sys
-import fnmatch
-import subprocess
 import re
+import gzip
+import sys
+import json
 import gfapy
+import shutil
+import fnmatch
+import argparse
+import subprocess
 import networkx as nx
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio import SeqIO
-import json
-import shutil
 
 def clean_graph_tags(input_file, output_file):
     # Define the regex pattern to match the LB and CL tags
@@ -102,7 +102,7 @@ def identify_itr(gfa_graph, segments):
     """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
-    upper_bound = 30
+    upper_bound = 20
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth < upper_bound]
 
     # Create a subgraph with only potential ITRs
@@ -121,11 +121,11 @@ def identify_itr(gfa_graph, segments):
     
     itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
     
-    print("contigs in ITR", itrs)
-    print("Total ITR sequence length:", itr_length)
+    # print("contigs in ITR", itrs)
+    # print("Total ITR sequence length:", itr_length)
     return list(itrs), itr_length
 
-def get_final_path(gfa_graph, filtered_graph, segments):
+def get_final_paths(gfa_graph, filtered_graph, segments):
     """Find all longest paths in the graph starting from any ITR."""
     itrs, itr_length = identify_itr(gfa_graph, segments)
     if not itrs:
@@ -139,24 +139,25 @@ def get_final_path(gfa_graph, filtered_graph, segments):
                 for path in nx.all_simple_paths(filtered_graph, source=itr, target=contig):
                     path_length = len(path)
                     if path_length > max_length:
-                        longest_paths = [path]  # Start a new list with the new longest path
+                        longest_paths = [path]  # Start a naew list with the new longest path
                         max_length = path_length
                     elif path_length == max_length:
                         longest_paths.append(path)  # Add path to the list of longest paths
-    
+    final_paths = []
     if longest_paths:
-        print("longest path =", longest_paths)
-        final_path = longest_paths[0]
+        print("longest path list =", longest_paths)
         
         # Ensure ITRs are not duplicated and are correctly oriented
-        left_itrs = [itr for itr in final_path if itr in itrs]
-        right_itrs = [itr for itr in reversed(final_path) if itr in itrs]
+        for path in longest_paths:
+            left_itrs = [itr for itr in path if itr in itrs]
+            right_itrs = [itr for itr in reversed(path) if itr in itrs]
         
-        # Construct the final path with ITRs on both ends, ensuring no duplicates
-        middle_path = [node for node in final_path if node not in itrs]
-        final_path = left_itrs + middle_path + right_itrs
-        
-        return final_path, f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
+            # Construct the final path with ITRs on both ends, ensuring no duplicates
+            middle_path = [node for node in path if node not in itrs]
+            final_path = left_itrs + middle_path + right_itrs
+            final_paths.append(final_path)
+
+        return final_paths, itr_length, f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
     else:
         return [], "WARNING: No path found starting from any ITR."
 
@@ -164,106 +165,110 @@ def orient_longest_contig(query, reference, blast_db_dir):
     blastResults = query + "_blast.out"
     blast_db_path = os.path.join(blast_db_dir, query + "_DB")
     makeblastdb_command = ["makeblastdb", "-in", query, "-out", blast_db_path, "-dbtype", "nucl"]
-    blastn_command = ["blastn", "-query", reference, "-db", blast_db_path, "-evalue", ".00001", "-outfmt", "6 qseqid sseqid pident length qcovs sstart send sseq mismatch gapopen qlen slen bitscore", "-out", blastResults]
+    blastn_command = ["blastn", "-query", reference, "-db", blast_db_path, "-evalue", "1e-10", "-word_size", "28", "-outfmt", "6 qseqid sseqid pident length qcovs sstart send mismatch gapopen qlen slen bitscore", "-out", blastResults]
     
-    print(f"Running command: {' '.join(makeblastdb_command)}")
-    subprocess.call(makeblastdb_command, shell=False)
+    #print(f"Running command: {' '.join(makeblastdb_command)}")
+    result = subprocess.run(makeblastdb_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
-    print(f"Running command: {' '.join(blastn_command)}")
-    subprocess.call(blastn_command, shell=False)
+    #print(f"Running command: {' '.join(blastn_command)}")
+    result2 = subprocess.run(blastn_command, shell=False)
     
     # Check if blastResults file is created and contains results
     if not os.path.exists(blastResults):
         print(f"BLAST results file not created: {blastResults}")
         return None, "FAIL"
-    
+
     with open(blastResults, 'r') as e:
         for line in e:
-            f13LInfo = line.split('\t')
-            sstart = int(f13LInfo[5])
-            send = int(f13LInfo[6])
+            blastHits = line.split('\t')
+            sstart = int(blastHits[5])
+            send = int(blastHits[6])
     orientation = 1 if sstart < send else int(-1)
     return orientation, "PASS"
 
-def get_final_orientation(final_path, lnks, longest_contig, longest_orient):
-    contig_orientation = [0] * len(final_path)
-    for i in range(final_path.index(longest_contig), len(final_path)):
-        if i == final_path.index(longest_contig):
-            contig_orientation[i] = longest_orient
-        else:
-            flag=0
+def get_final_orientation(final_paths, lnks, longest_contig, longest_orient):
+    contig_orientations = []
+    status = "PASS"
+    for path in final_paths:
+        if longest_contig not in path:
+            print("Longest contig not in path, skipping orientation determination for this path.")
+            contig_orientations.append(None)
+            continue
+        contig_orientation = [0] * len(path)
+        index = path.index(longest_contig)
+        # Forward direction
+        for i in range(index, len(path)):
+            if i == index:
+                contig_orientation[i] = longest_orient
+            else:
+                flag = 0
+                for link in lnks:
+                    if (link.from_name == path[i-1] and link.to_name == path[i]):
+                        from_orient = 1 if link.from_orient == '+' else -1
+                        to_orient = 1 if link.to_orient == '+' else -1
+                        contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
+                        flag = 1
+                        break
+                if flag == 0:
+                    for link in lnks:
+                        if (link.to_name == path[i-1] and link.from_name == path[i]):
+                            from_orient = 1 if link.from_orient == '+' else -1
+                            to_orient = 1 if link.to_orient == '+' else -1
+                            contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
+                            flag = 1
+                            break
+                if flag == 0:
+                    print(f"Unable to determine orientation between {path[i-1]} and {path[i]}.")
+                    contig_orientation = None
+                    break
+            if contig_orientation is None:
+                break
+        if contig_orientation is None:
+            contig_orientations.append(None)
+            continue
+        # Backward direction
+        for i in range(index - 1, -1, -1):
+            flag = 0
             for link in lnks:
-                if (link.from_name == final_path[i-1] and link.to_name == final_path[i]):
-                    from_orient = 1 if link.from_orient == '+' else int(-1)
-                    to_orient = 1 if link.to_orient == '+' else int(-1)
-                    contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
-                    flag=1
+                if (link.to_name == path[i+1] and link.from_name == path[i]):
+                    from_orient = 1 if link.from_orient == '+' else -1
+                    to_orient = 1 if link.to_orient == '+' else -1
+                    contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
+                    flag = 1
+                    break
             if flag == 0:
                 for link in lnks:
-                    if (link.to_name == final_path[i-1] and link.from_name == final_path[i]):
-                        from_orient = 1 if link.from_orient == '+' else int(-1)
-                        to_orient = 1 if link.to_orient == '+' else int(-1)
-                        contig_orientation[i] = contig_orientation[i-1] * from_orient * to_orient
-                        flag=1
+                    if (link.from_name == path[i+1] and link.to_name == path[i]):
+                        from_orient = 1 if link.from_orient == '+' else -1
+                        to_orient = 1 if link.to_orient == '+' else -1
+                        contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
+                        flag = 1
+                        break
+            if flag == 0:
+                print(f"Unable to determine orientation between {path[i+1]} and {path[i]}.")
+                contig_orientation = None
+                break
+        contig_orientations.append(contig_orientation)
+    print("Final orientations",contig_orientations)
+    return contig_orientations, status
 
-    for i in range(final_path.index(longest_contig)-1, -1 ,-1):
-        flag=0
-        for link in lnks:
-            if (link.to_name == final_path[i+1] and link.from_name == final_path[i]):
-                from_orient = 1 if link.from_orient == '+' else int(-1)
-                to_orient = 1 if link.to_orient == '+' else int(-1)
-                contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
-                flag=1
-        if flag == 0:
-            for link in lnks:
-                if (link.from_name == final_path[i+1] and link.to_name == final_path[i]):
-                    from_orient = 1 if link.from_orient == '+' else int(-1)
-                    to_orient = 1 if link.to_orient == '+' else int(-1)
-                    contig_orientation[i] = contig_orientation[i+1] * from_orient * to_orient
-                    flag=1
-        check="PASS"
-    print("final path =",final_path)
-    print("final contig orientation",contig_orientation)
-    return contig_orientation, check
+def get_final_sequence(oriented_path, orientation, segments):
+    """Generate the final sequence for a given path and orientation."""
+    segment_dict = {seg.name: seg.sequence for seg in segments}  # Create a dictionary of segment names to sequences
+    final_sequence = ""  # Initialize an empty string to accumulate the final sequence
 
-def get_final_sequence(contig_order, contig_orientation, segments):
-    print("contig order used for final sequence", contig_order)
-    segment_info = {}
-    for segment in segments:
-        segment_count = contig_order.count(segment.get('name'))
-        coverage = float(segment.get('dp')) if segment_count == 0 else float(segment.get('dp')) / contig_order.count(segment.get('name'))
-        segment_info[segment.get('name')] = {
-            'coverage': coverage,
-            'sequence': Seq(segment.get('sequence')),
-            'sequence_rc': Seq(segment.get('sequence')).reverse_complement()
-        }
-        
-    final_sequence = ''
-    final_order_orientation_copy_number = []
+    for i, segment_name in enumerate(oriented_path):
+        seq = segment_dict[segment_name.strip('+').strip('-')]  # Remove orientation symbols for lookup
+        # Check if the segment should be reversed
+        if orientation[i] == -1:
+            seq = str(Seq(seq).reverse_complement())  # Reverse complement the sequence if needed
 
-    for i in range(len(contig_order)):
-        segment_name = contig_order[i].strip('+').strip('-')  # Strip orientation symbols
-        sequence = segment_info[segment_name]['sequence']
-        if contig_orientation[i] == -1:
-            sequence = segment_info[segment_name]['sequence_rc']
-        orientation = '+' if contig_orientation[i] == 1 else '-'
-        order_orientation_copy_number = '%s%s' % (orientation, segment_name)
-        if round(segment_info[segment_name]['coverage']) > 1:
-            order_orientation_copy_number = '%sx%s' % (order_orientation_copy_number, round(segment_info[segment_name]['coverage']))
-        final_sequence = final_sequence + sequence
-        final_order_orientation_copy_number.append(order_orientation_copy_number)
-    
+        final_sequence += seq  # Concatenate sequence
+
     final_sequence_length = len(final_sequence)
-    print("Final sequence length:", final_sequence_length)
-    
-    check = "PASS"
-    # are all segments in final_sequence?
-    cleaned_contig_order = [contig.strip('+-') for contig in contig_order]
-    for segment in segment_info:
-        if (segment_info[segment]['coverage'] > 0.5) and (segment not in cleaned_contig_order):
-            check = 'WARNING: missing segments or is not fully connected'
-    
-    return final_sequence, final_sequence_length, " ".join(final_order_orientation_copy_number), check
+    final_order_orientation_copy_number = ",".join([f"{seg}{orientation[i]}" for i, seg in enumerate(oriented_path)])
+
+    return final_sequence, final_sequence_length, final_order_orientation_copy_number, "PASS"
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
     """Write the segments in the specified orientation to a single FASTA entry with the input file name as the header."""
@@ -303,15 +308,12 @@ def write_log_and_exit(log, status):
         data.append(log['00']['input']['sample_name'])
         data.append(status)
     if '03' in log:
-        data.append(",".join(str(i) for i in log['03']['output']['final_path']))
+        data.append(",".join(str(i) for i in log['03']['output']['final_paths']))
     if '06' in log:
-        data.append(",".join(str(i) for i in log['06']['output']['final_orientation']))
+        data.append(",".join(str(i) for i in log['06']['output']['contig_orientations']))
     if '07' in log:
-        data.append(str(log['07']['output']['final_order_orientation_copy_number']))
-        data.append(str(log['07']['output']['final_sequence_length']))
-    if '09' in log:
-        data.append(str(log['09']['output']['final_itr_length']))
-
+        data.append(str(log['07']['final_order_orientation_copy_number']))
+        data.append(str(log['07']['final_sequence_length']))
     with open(summary_file, 'w') as f:
         f.write('\t'.join(headers) + '\n')
         f.write('\t'.join(data) + '\n')
@@ -344,36 +346,46 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
 
     # Start processing the graph
     filtered_edges, status = remove_self_loops(gfa_graph.edges)
-    log['01'] = {'step_name': "remove_self_loops",
-                 'step_description': "Remove self-loops from link information",
-                 'status': status,
-                 'output': {'filtered_edges': [str(edge) for edge in filtered_edges]}}
+    log['01'] = {
+        'step_name': "remove_self_loops",
+        'step_description': "Remove self-loops from link information",
+        'status': status,
+        'output': {'filtered_edges': [str(edge) for edge in filtered_edges]}
+    }
     if status != "PASS":
         write_log_and_exit(log, status)
 
     filtered_graph, status = create_filtered_graph(filtered_edges)
-    log['02'] = {'step_name': "create_filtered_graph",
-                 'step_description': "Create a filtered NetworkX graph from links and remove disconnected nodes",
-                 'status': status,
-                 'output': {'filtered_graph': str(filtered_graph)}}
+    log['02'] = {
+        'step_name': "create_filtered_graph",
+        'step_description': "Create a filtered NetworkX graph from links and remove disconnected nodes",
+        'status': status,
+        'output': {'filtered_graph': str(filtered_graph)}
+    }
     if status != "PASS":
         write_log_and_exit(log, status)
 
     filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
-    final_path, status = get_final_path(gfa_graph, filtered_graph, filtered_segments)
-    log['03'] = {'step_name': "get_final_path",
-                 'step_description': "Find all longest paths in the graph starting from any ITR",
-                 'status': status,
-                 'output': {'final_path': final_path}}
+
+    # Find all longest paths
+    final_paths, itr_length, status = get_final_paths(gfa_graph, filtered_graph, filtered_segments)
+    log['03'] = {
+        'step_name': "get_final_paths",
+        'step_description': "Find all longest paths in the graph starting from any ITR",
+        'status': status,
+        'output': {'final_paths': final_paths,'itr_length':itr_length}
+    }
     if not status.startswith("PASS"):
         write_log_and_exit(log, status)
 
     # Find the longest contig
     longest_contig, status, longest_contig_file = find_longest_contig(filtered_segments, output_dir)
-    log['04'] = {'step_name': "find_longest_contig",
-                 'step_description': "Find the longest contig based on length",
-                 'status': status,
-                 'output': {'longest_contig': longest_contig}}
+    log['04'] = {
+        'step_name': "find_longest_contig",
+        'step_description': "Find the longest contig based on length",
+        'status': status,
+        'output': {'longest_contig': longest_contig}
+    }
     if status != "PASS":
         write_log_and_exit(log, status)
 
@@ -383,57 +395,113 @@ def process_graph(gfa_graph, output_dir, input_file, reference):
 
     # Determine the orientation of the longest contig
     longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
-    log['05'] = {'step_name': "orient_longest_contig",
-                 'step_description': "Determine the orientation of the longest contig",
-                 'status': status,
-                 'output': {'longest_orient': longest_orient}}
+    log['05'] = {
+        'step_name': "orient_longest_contig",
+        'step_description': "Determine the orientation of the longest contig",
+        'status': status,
+        'output': {'longest_orient': longest_orient}
+    }
     if status != "PASS":
         write_log_and_exit(log, status)
 
-    # Get the final orientation for all contigs
-    contig_orientation, status = get_final_orientation(final_path, filtered_edges, longest_contig, longest_orient)
-    log['06'] = {'step_name': "get_final_orientation",
-                 'step_description': "Get the final orientation for all contigs",
-                 'status': status,
-                 'output': {'final_orientation': contig_orientation}}
+    # Get the final orientation for all contigs in each path
+    contig_orientations, status = get_final_orientation(final_paths, filtered_edges, longest_contig, longest_orient)
+    log['06'] = {
+        'step_name': "get_final_orientation",
+        'step_description': "Get the final orientation for all contigs",
+        'status': status,
+        'output': {'contig_orientations': contig_orientations}
+    }
     if status != "PASS":
         write_log_and_exit(log, status)
 
-    # Re-orient the final path based on determined orientation
-    oriented_final_path = [contig + ('-' if contig_orientation[i] == -1 else '+') for i, contig in enumerate(final_path)]
+    assembled_sequences = []
 
-    # Get the final sequence and order
-    final_sequence, seq_len, final_order_orientation_copy_number, status = get_final_sequence(oriented_final_path, contig_orientation, filtered_segments)
-    log['07'] = {'step_name': "get_final_sequence",
-                 'step_description': "Get the final sequence and order",
-                 'status': status,
-                 'output': {'final_sequence': str(final_sequence),  # Convert Seq object to string
-                            'final_sequence_length': seq_len,
-                            'final_order_orientation_copy_number': final_order_orientation_copy_number}}
-    if status != "PASS":
-        write_log_and_exit(log, status)
+    for idx, (path, orientation) in enumerate(zip(final_paths, contig_orientations)):
+        if orientation is None:
+            print(f"Skipping path {idx + 1} due to missing orientation.")
+            continue
 
-    # Write the oriented contigs to a FASTA file
-    asm_name = sample_name + ".assembly_asm.fasta"
-    record = SeqRecord(Seq(final_sequence), id=input_base, description=final_order_orientation_copy_number)
-    with open(os.path.join(output_dir, asm_name), 'w') as f:
-        SeqIO.write(record, f, "fasta")
+        print(f"Processing path in quast to determine best orientation {idx + 1}/{len(final_paths)}")
 
-    log['08'] = {'step_name': "write_oriented_fasta",
-                 'step_description': "Write the oriented contigs to a FASTA file",
-                 'status': "PASS",
-                 'output': {'assembly_file': asm_name}}
+        # Re-orient the final path based on determined orientation
+        oriented_path = [contig + ('-' if orientation[i] == -1 else '+') for i, contig in enumerate(path)]
+
+        # Generate the final sequence for this path
+        final_sequence, seq_len, final_order_orientation_copy_number, status = get_final_sequence(
+            oriented_path, orientation, filtered_segments)
+
+        if status != "PASS":
+            print(f"Skipping path {idx + 1} due to sequence generation failure.")
+            continue
+
+        # Write the sequence to a FASTA file
+        asm_name = f"{sample_name}_assembly_path_{idx + 1}.fasta"
+        assembly_file = os.path.join(output_dir, asm_name)
+        record = SeqRecord(Seq(final_sequence), id=input_base, description=final_order_orientation_copy_number)
+        with open(assembly_file, 'w') as f:
+            SeqIO.write(record, f, "fasta")
+
+        # Run QUAST to evaluate the assembly
+        quast_output_dir = os.path.join(output_dir, f"quast_output_{idx + 1}")
+        quast_command = ["quast.py", assembly_file, "-r", reference, "-o", quast_output_dir]
+        #print(f"Running QUAST for path {idx + 1}: {' '.join(quast_command)}")
+        result = subprocess.run(quast_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Parse QUAST results
+        quast_report = os.path.join(quast_output_dir, "report.tsv")
+        if not os.path.exists(quast_report):
+            print(f"QUAST analysis failed for path {idx + 1}.")
+            continue
+
+        quast_metrics = {}
+        with open(quast_report, 'r') as report_file:
+            for line in report_file:
+                key_value = line.strip().split('\t')
+                if len(key_value) == 2:
+                    quast_metrics[key_value[0].strip()] = key_value[1].strip()
+
+        # Store the assembly data
+        assembled_sequences.append({
+            'path_index': idx,
+            'path': path,
+            'orientation': orientation,
+            'assembly_file': assembly_file,
+            'sequence': final_sequence,
+            'sequence_length': seq_len,
+            'order_orientation_copy_number': final_order_orientation_copy_number,
+            'quast_output_dir': quast_output_dir,
+            'quast_metrics': quast_metrics
+        })
+    # Select the best assembly based on QUAST results
+    if not assembled_sequences:
+        write_log_and_exit(log, "FAIL: No valid assemblies generated from longest paths.")
+
+    # Example: select assembly with the highest Total aligned length
+    best_assembly = max(assembled_sequences, key=lambda x: int(x['quast_metrics'].get('Largest alignment', '0')))
+    #print(best_assembly)
+    best_idx = best_assembly['path_index']
+    print(f"Selected path {best_idx + 1} as the best assembly based on QUAST results.")
+
+    # Update log with the final selected assembly
+    log['07'] = {
+        'final_path': best_assembly['path'],
+        'final_orientation': best_assembly['orientation'],
+        'final_sequence_length': best_assembly['sequence_length'],
+        'final_order_orientation_copy_number': best_assembly['order_orientation_copy_number']
+    }
 
     # Remove the blast_db directory
     shutil.rmtree(blast_db_dir)  # Remove the directory and its contents
 
-    # Identify ITRs and their length
-    itrs, itr_length = identify_itr(gfa_graph, filtered_segments)
-    log['09'] = {'step_name': "identify_itr",
-                 'step_description': "Identify all Inverted Terminal Repeats (ITRs) based on depth criteria",
-                 'status': "PASS",
-                 'output': {'itrs': itrs,
-                            'final_itr_length': itr_length}}
+    # Write the final assembly to a file
+    asm_name = sample_name + ".assembly_asm.fasta"
+    assembly_file = os.path.join(output_dir, asm_name)
+    record = SeqRecord(Seq(best_assembly['sequence']), id=input_base, description=best_assembly['order_orientation_copy_number'])
+    with open(assembly_file, 'w') as f:
+        SeqIO.write(record, f, "fasta")
+
+    log['07']['assembly_file'] = asm_name
 
     # Write the final log and summary
     write_log_and_exit(log, "PASS")
