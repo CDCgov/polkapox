@@ -100,13 +100,49 @@ def create_filtered_graph(links):
     return graph, "PASS"
 
 def identify_itr(gfa_graph, segments):
-    """Identify all Inverted Terminal Repeats (ITRs) based on depth criteria and check if they are connected in the graph."""
+    """
+    Identify all Inverted Terminal Repeats (ITRs) based on the orientation of their connections.
+    A terminal ITR is identified as a contig that has connections only on the same end (orientation),
+    whereas other contigs are connected on both '+' and '-' ends.
+    """
+    # Create a dictionary to store the set of connected orientations for each contig
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
-    #upper_bound = 20
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth]
     print("potential ITRs",potential_itrs)
-    # Create a subgraph with only potential ITRs
+
+    # idenfify the terminal ITR
+    contig_ends = []
+    for itr in potential_itrs:
+        #print(itr)
+        from_orients = []
+        to_orients = []
+        for edge in gfa_graph.edges:
+            if edge.from_name != edge.to_name:
+                if edge.from_name == itr:
+                    from_orients.append(edge.from_orient)
+                elif edge.to_name == itr:
+                    to_orients.append(edge.to_orient)
+        # create set of each list
+        from_orients=set(from_orients)
+        to_orients=set(to_orients)
+        #print(from_orients,to_orients)
+
+        # if links are both ++ or both -- or if to and from are opposite +/-
+        if len(from_orients) == 1 and len(to_orients) < 1 or len(from_orients) <1 and len(to_orients) == 1:
+            contig_ends.append(itr)
+        elif len(from_orients) == 1 and len(to_orients) == 1:
+            if list(from_orients)[0] != list(to_orients)[0]:
+                contig_ends.append(itr)
+                
+        # if more than one terminal contig exit
+        if len(contig_ends) > 1:
+            print('WARNING: more than one terminal contig!')
+            break
+    
+    print("Terminal ITR contigs based on links:", contig_ends)
+
+    # Create a subgraph with only potential ITRs to check for connected ITR contigs and get rid of unconnected repeats
     subgraph = nx.Graph()
     for link in gfa_graph.edges:
         if link.from_name in potential_itrs and link.to_name in potential_itrs:
@@ -115,11 +151,14 @@ def identify_itr(gfa_graph, segments):
     # Find connected components in the subgraph
     connected_components = list(nx.connected_components(subgraph))
     print('connected components',connected_components)
-    # Select the largest connected component as the ITRs
+
+    # Select the connected component list with the 
     if connected_components:
-        itrs = max(connected_components, key=len)
+        for group in connected_components:
+            if contig_ends[0] in group:
+                itrs = max(connected_components, key=len)
     else:
-        itrs = []
+        itrs = contig_ends[0]
     
     itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
     
@@ -193,6 +232,7 @@ def orient_longest_contig(query, reference, blast_db_dir):
 def get_final_orientation(final_paths, lnks, longest_contig, longest_orient):
     # Build a dictionary for quick lookup of links
     links_dict = {}
+    print ('listing all the links')
     for link in lnks:
         print(link)
         # Map direct links
