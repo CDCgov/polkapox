@@ -2,10 +2,7 @@
 
 ### Written by S.Morrison, K. Knipe 20221018
 ### Refactored by Kyle O'Connell with help from GPT 4o, o1-preview, and Gemini 1.5 Pro 20240730
-'''
-to do : figure out how to identify terminal ITR based on links
-to do: figure out how to differentiate seqs with single ITR contig (no other connections) vs. those with several
-'''
+
 import os
 import re
 import sys
@@ -86,18 +83,30 @@ def filter_segments_by_graph(segments, graph):
 
 def create_filtered_graph(links):
     """Create a filtered NetworkX graph from links and remove disconnected nodes."""
-    graph = nx.Graph()  # Using a simple Graph instead of MultiGraph if you don't handle multiple edges between the same nodes
+    graph = nx.MultiGraph()  # Using a simple Graph instead of MultiGraph if you don't handle multiple edges between the same nodes
     for link in links:
         graph.add_edge(link.from_name, link.to_name)
     
     # Remove disconnected nodes
     disconnected_nodes = [node for node in graph.nodes if graph.degree(node) == 0]
     graph.remove_nodes_from(disconnected_nodes)
-    
     if not nx.is_connected(graph):
         return None, "WARNING: Graph is not connected"
     
-    return graph, "PASS"
+    # Check if the graph forms a cycle
+    degrees = dict(graph.degree())
+    count_not_two = sum(1 for degree in degrees.values() if degree < 2)
+    all_degree_two = count_not_two <= 1
+
+    num_edges = graph.number_of_edges()
+    num_nodes = graph.number_of_nodes()
+    
+    if all_degree_two and num_edges == num_nodes:
+        print('The graph forms a complete cycle')
+        return graph, "PASS"
+    else:
+        print("graph is not circular")
+        return None, "WARNING: Graph is not circular"
 
 def identify_itr(gfa_graph, segments):
     """
@@ -108,25 +117,30 @@ def identify_itr(gfa_graph, segments):
     # Create a dictionary to store the set of connected orientations for each contig
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.5
+    filt_depth = 0.5
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth]
+    filt_contigs = [contig for contig, depth in depth_data.items() if filt_depth >= depth]
     print("potential ITRs",potential_itrs)
 
     # idenfify the terminal ITR
     contig_ends = []
     for itr in potential_itrs:
-        #print(itr)
+        # print('itr in loop', itr)
         from_orients = []
         to_orients = []
         for edge in gfa_graph.edges:
-            if edge.from_name != edge.to_name:
-                if edge.from_name == itr:
-                    from_orients.append(edge.from_orient)
-                elif edge.to_name == itr:
-                    to_orients.append(edge.to_orient)
+            if edge.from_name == itr or edge.to_name == itr:
+                print(edge)
+            if edge.from_name != edge.to_name and edge.from_name not in filt_contigs and edge.to_name not in filt_contigs:
+                if edge.from_name != edge.to_name:
+                    if edge.from_name == itr:
+                        from_orients.append(edge.from_orient)
+                    elif edge.to_name == itr:
+                        to_orients.append(edge.to_orient)
         # create set of each list
         from_orients=set(from_orients)
         to_orients=set(to_orients)
-        #print(from_orients,to_orients)
+        # print(from_orients,to_orients)
 
         # if links are both ++ or both -- or if to and from are opposite +/-
         if len(from_orients) == 1 and len(to_orients) < 1 or len(from_orients) <1 and len(to_orients) == 1:
@@ -157,13 +171,15 @@ def identify_itr(gfa_graph, segments):
         for group in connected_components:
             if contig_ends[0] in group:
                 itrs = max(connected_components, key=len)
+            else:
+                itrs = contig_ends[0]
+
     else:
         itrs = contig_ends[0]
-    
+    # print('this is the group of ITRS',itrs)
     itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
     
-    print("contigs in ITR", itrs)
-    print("Total ITR sequence length:", itr_length)
+    print("contigs in ITR", itrs, "with total length", itr_length)
     return list(itrs), itr_length
 
 def get_final_paths(gfa_graph, filtered_graph, segments):
@@ -171,7 +187,7 @@ def get_final_paths(gfa_graph, filtered_graph, segments):
     itrs, itr_length = identify_itr(gfa_graph, segments)
     if not itrs:
         return [], "WARNING: No suitable ITRs found based on depth criteria."
-    
+
     longest_paths = []
     max_length = 0
     for itr in itrs:
@@ -183,7 +199,8 @@ def get_final_paths(gfa_graph, filtered_graph, segments):
                         longest_paths = [path]  # Start a naew list with the new longest path
                         max_length = path_length
                     elif path_length == max_length:
-                        longest_paths.append(path)  # Add path to the list of longest paths
+                        if path not in longest_paths: # handle cases with only one longest path
+                            longest_paths.append(path)  # Add path to the list of longest paths
     final_paths = []
     if longest_paths:
         print("longest path list =", longest_paths)
@@ -229,12 +246,10 @@ def orient_longest_contig(query, reference, blast_db_dir):
     print('orientation of longest contig',orientation)
     return orientation, "PASS"
 
-def get_final_orientation(final_paths, lnks, longest_contig, longest_orient):
+def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itrs):
     # Build a dictionary for quick lookup of links
     links_dict = {}
-    print ('listing all the links')
     for link in lnks:
-        print(link)
         # Map direct links
         key = (link.from_name, link.to_name)
         links_dict[key] = (link.from_orient, link.to_orient)
@@ -246,67 +261,71 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient):
         links_dict[reverse_key] = (reversed_from_orient, reversed_to_orient)
 
     final_oriented_path = []
-    # Iterate over each path
-    for path in final_paths:
-        contig_orientations = []
-        print('Processing path:', path)
 
-        if not path:
-            continue  # Skip empty paths
+    if len(final_paths) > 1:
+        # Existing logic remains the same
+        # Iterate over each path
+        for path in final_paths:
+            contig_orientations = []
+            print('Processing path:', path)
 
-        # Assign orientation to the first contig
-        first_contig = path[0]
-        first_contig_orient = None
-        # Find an initial orientation for the first contig
-        for link in lnks:
-            if first_contig == link.from_name:
-                first_contig_orient = link.from_orient
-                break
-            elif first_contig == link.to_name:
-                # Flip the orientation since it's the 'to_name' in the link
-                first_contig_orient = '-' if link.to_orient == '+' else '+'
-                break
-        if first_contig_orient is None:
-            print(f"Could not determine orientation for contig {first_contig}")
-            continue  # Skip this path if orientation is unknown
+            if not path:
+                continue  # Skip empty paths
 
-        contig_orientations.append(f"{first_contig} {first_contig_orient}")
-        previous_contig = first_contig
-        previous_orient = first_contig_orient
+            # Assign orientation to the first contig
+            first_contig = path[0]
+            first_contig_orient = None
+            # Find an initial orientation for the first contig
+            for link in lnks:
+                if first_contig == link.from_name:
+                    first_contig_orient = link.from_orient
+                    break
+                elif first_contig == link.to_name:
+                    # Flip the orientation since it's the 'to_name' in the link
+                    first_contig_orient = '-' if link.to_orient == '+' else '+'
+                    break
+            if first_contig_orient is None:
+                print(f"Could not determine orientation for contig {first_contig}")
+                continue  # Skip this path if orientation is unknown
 
-        # Process the rest of the contigs in the path
-        for current_contig in path[1:]:
-            key = (previous_contig, current_contig)
-            if key in links_dict:
-                prev_orient_in_link, curr_orient_in_link = links_dict[key]
-                # Adjust current orientation based on the previous orientation
-                if previous_orient == prev_orient_in_link:
-                    current_orient = curr_orient_in_link
+            contig_orientations.append(f"{first_contig} {first_contig_orient}")
+            previous_contig = first_contig
+            previous_orient = first_contig_orient
+
+            # Process the rest of the contigs in the path
+            for current_contig in path[1:]:
+                key = (previous_contig, current_contig)
+                if key in links_dict:
+                    prev_orient_in_link, curr_orient_in_link = links_dict[key]
+                    # Adjust current orientation based on the previous orientation
+                    if previous_orient == prev_orient_in_link:
+                        current_orient = curr_orient_in_link
+                    else:
+                        # If previous orientation doesn't match, flip the current orientation
+                        current_orient = '-' if curr_orient_in_link == '+' else '+'
+                    contig_orientations.append(f"{current_contig} {current_orient}")
+                    previous_contig = current_contig
+                    previous_orient = current_orient
                 else:
-                    # If previous orientation doesn't match, flip the current orientation
-                    current_orient = '-' if curr_orient_in_link == '+' else '+'
-                contig_orientations.append(f"{current_contig} {current_orient}")
-                previous_contig = current_contig
-                previous_orient = current_orient
-            else:
-                print(f"No link found between {previous_contig} and {current_contig}")
-                break  # Cannot process further without a link
+                    print(f"No link found between {previous_contig} and {current_contig}")
+                    break  # Cannot process further without a link
 
-        print('Final contig orientations:', contig_orientations)
-        # Check if this path contains the longest contig with the correct orientation
-        for contig_info in contig_orientations:
-            contig_name, contig_orient = contig_info.split(' ')
-            if contig_name == longest_contig and contig_orient == longest_orient.split(' ')[1]:             
-                final_oriented_path = contig_orientations
-                #print('Updated final_oriented_path:', final_oriented_path)
-                break
-        # if final_oriented_path:
-        #     print('Final oriented path with longest contig in correct orientation:', final_oriented_path)
+            print('Final contig orientations:', contig_orientations)
+            # Check if this path contains the longest contig with the correct orientation
+            for contig_info in contig_orientations:
+                contig_name, contig_orient = contig_info.split(' ')
+                if contig_name == longest_contig and contig_orient == longest_orient.split(' ')[1]:
+                    final_oriented_path = contig_orientations
+                    break
 
-    # After all paths have been processed
-    print('final oriented path with correct longest contig orientation', final_oriented_path)
-    return path, final_oriented_path, "PASS"
+        # After all paths have been processed
+        print('Final oriented path with correct longest contig orientation:', final_oriented_path)
+        return path, final_oriented_path, "PASS"
 
+    else:
+        # Only one longest path; apply new logic
+        return None, [], "FAIL: Unable to resolve final orientation, likely only one longest contig and ITRs"
+        
 def get_final_sequence(oriented_path, segments):
     """Generate the final sequence for a given path and orientation."""
     # Create a dictionary mapping segment names to sequences
@@ -374,14 +393,20 @@ def write_log_and_exit(log, status):
         data.append(log['00']['input']['sample_name'])  # 'sample'
         data.append(status)  # 'status'
     if '03' in log:
-        data.append(",".join(str(i) for i in log['03']['output']['final_paths']))  # 'contig_order'
-        data.append(str(log['03']['output']['itr_length']))  # 'itr_length' added here
+        data.append(",".join(str(i) for i in log['03']['output']['final_paths']))  # 'longest_paths'
+        data.append(str(log['03']['output']['itr_length']))  # 'itr_length'
     if '06' in log:
-        data.append(",".join(str(i) for i in log['06']['output']['final_orientation']))  # 'contig_orientation'
+        data.append(",".join(str(i) for i in log['06']['output']['final_orientation']))  # 'final_contig_order_orientation'
+    else:
+        data.append('')  # Empty string if '06' not in log
     if '03' in log:
-        data.append(str(log['03']['output']['itr_length']))  # 'itr_length' added here
+        data.append(str(log['03']['output']['itr_length']))  # 'itr_length' added here again
+    else:
+        data.append('')  # Empty string if '03' not in log
     if '07' in log:
         data.append(str(log['07']['output']['final_sequence_length']))  # 'assembly_length'
+    else:
+        data.append('')  # Empty string if '07' not in log
 
     with open(summary_file, 'w') as f:
         f.write('\t'.join(headers) + '\n')
@@ -392,131 +417,124 @@ def write_log_and_exit(log, status):
         f.write(json_object)
     sys.exit(0)
 
-def process_graph(gfa_graph, output_dir, input_file, reference):
+def process_graph(gfa_graph, output_dir, input_file, reference, log):
     """Process the graph and write output."""
-    log = {}
-    input_with_ext = os.path.basename(input_file)
-    input_base, _ = os.path.splitext(input_with_ext)
-    sample_name = input_base.replace('.003_bridges_applied', '')
+    try:
+        input_with_ext = os.path.basename(input_file)
+        input_base, _ = os.path.splitext(input_with_ext)
+        sample_name = input_base.replace('.003_bridges_applied', '')
 
-    # Initial log entry
-    log['00'] = {'step_name': "initialization",
-                 'step_description': "Initialize the logging process",
-                 'status': "PASS",
-                 'input': {
-                     'gfa': input_file,
-                     'sample_name': sample_name,
-                     'output_dir': output_dir
-                 },
-                 'output': {}}
+        # write all contigs to a FASTA file at the start
+        write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
 
-    # Always write all contigs to a FASTA file at the start
-    write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
-
-    # Start processing the graph
-    filtered_edges, status = remove_self_loops(gfa_graph.edges)
-    log['01'] = {
-        'step_name': "remove_self_loops",
-        'step_description': "Remove self-loops from link information",
-        'status': status,
-        'output': {'filtered_edges': [str(edge) for edge in filtered_edges]}
-    }
-    if status != "PASS":
-        write_log_and_exit(log, status)
-
-    filtered_graph, status = create_filtered_graph(filtered_edges)
-    log['02'] = {
-        'step_name': "create_filtered_graph",
-        'step_description': "Create a filtered NetworkX graph from links and remove disconnected nodes",
-        'status': status,
-        'output': {'filtered_graph': str(filtered_graph)}
-    }
-    if status != "PASS":
-        write_log_and_exit(log, status)
-
-    filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
-
-    # Find all longest paths
-    final_paths, itrs, itr_length, status = get_final_paths(gfa_graph, filtered_graph, filtered_segments)
-    log['03'] = {
-        'step_name': "get_final_paths",
-        'step_description': "Find all longest paths in the graph starting from any ITR",
-        'status': status,
-        'output': {'final_paths': final_paths, 'itr_length': itr_length}
-    }
-    if not status.startswith("PASS"):
-        write_log_and_exit(log, status)
-
-    # Find the longest contig
-    longest_contig, status, longest_contig_file = find_longest_contig(filtered_segments, output_dir)
-    log['04'] = {
-        'step_name': "find_longest_contig",
-        'step_description': "Find the longest contig based on length",
-        'status': status,
-        'output': {'longest_contig': longest_contig}
-    }
-    if status != "PASS":
-        write_log_and_exit(log, status)
-
-    # Create blast database directory
-    blast_db_dir = os.path.join(output_dir, 'blast_db')
-    os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
-
-    # Determine the orientation of the longest contig
-    longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
-    log['05'] = {
-        'step_name': "orient_longest_contig",
-        'step_description': "Determine the orientation of the longest contig",
-        'status': status,
-        'output': {'longest_orient': longest_orient}
-    }
-    if status != "PASS":
-        write_log_and_exit(log, status)
-
-    # Get the final orientation for all contigs in each path
-    final_path, final_oriented_path, status = get_final_orientation(
-        final_paths, filtered_edges, longest_contig, longest_orient)
-    log['06'] = {
-        'step_name': "get_final_orientation",
-        'step_description': "Get the final orientation for all contigs",
-        'status': status,
-        'output': {'final_path': final_path, 'final_orientation': final_oriented_path}
-    }
-    if status != "PASS" or final_path is None:
-        write_log_and_exit(log, "FAIL: No valid path found with the longest contig in the correct orientation.")
-
-    # Generate the final sequence for this path
-    final_sequence, seq_len, final_order_orientation_copy_number, status = get_final_sequence(
-        final_oriented_path, filtered_segments)
-
-    if status != "PASS":
-        write_log_and_exit(log, "FAIL: Sequence generation failed for the final path.")
-
-    # Write the sequence to a FASTA file
-    asm_name = sample_name + ".assembly_asm.fasta"
-    assembly_file = os.path.join(output_dir, asm_name)
-    record = SeqRecord(Seq(final_sequence), id=input_base, description=final_order_orientation_copy_number)
-    with open(assembly_file, 'w') as f:
-        SeqIO.write(record, f, "fasta")
-    # Update log with the final selected assembly
-    log['07'] = {
-        'step_name': "generate_final_sequence",
-        'step_description': "Generate the final sequence based on the best path and orientation",
-        'status': "PASS",
-        'output': {
-            'final_sequence_length': seq_len,
-            'final_order_orientation_copy_number': final_order_orientation_copy_number,
-            'assembly_file': asm_name,
-            'final_path': final_path,
-            'final_orientation': final_oriented_path
+        # Start processing the graph
+        filtered_edges, status = remove_self_loops(gfa_graph.edges)
+        log['01'] = {
+            'step_name': "remove_self_loops",
+            'step_description': "Remove self-loops from link information",
+            'status': status,
+            'output': {'filtered_edges': [str(edge) for edge in filtered_edges]}
         }
-    }
+        if status != "PASS":
+            write_log_and_exit(log, status)
 
-    # Remove the blast_db directory
-    shutil.rmtree(blast_db_dir)  # Remove the directory and its contents
+        filtered_graph, status = create_filtered_graph(filtered_edges)
+        log['02'] = {
+            'step_name': "create_filtered_graph",
+            'step_description': "Create a filtered NetworkX graph from links and remove disconnected nodes",
+            'status': status,
+            'output': {'filtered_graph': str(filtered_graph)}
+        }
+        if status != "PASS":
+            write_log_and_exit(log, status)
 
-    # Write the final log and summary
-    write_log_and_exit(log, "PASS")
+        filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
+
+        # Find all longest paths
+        final_paths, itrs, itr_length, status = get_final_paths(gfa_graph, filtered_graph, filtered_segments)
+        log['03'] = {
+            'step_name': "get_final_paths",
+            'step_description': "Find all longest paths in the graph starting from any ITR",
+            'status': status,
+            'output': {'final_paths': final_paths, 'itr_length': itr_length}
+        }
+        if not status.startswith("PASS"):
+            write_log_and_exit(log, status)
+
+        # Find the longest contig
+        longest_contig, status, longest_contig_file = find_longest_contig(filtered_segments, output_dir)
+        log['04'] = {
+            'step_name': "find_longest_contig",
+            'step_description': "Find the longest contig based on length",
+            'status': status,
+            'output': {'longest_contig': longest_contig}
+        }
+        if status != "PASS":
+            write_log_and_exit(log, status)
+
+        # Create blast database directory
+        blast_db_dir = os.path.join(output_dir, 'blast_db')
+        os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
+
+        # Determine the orientation of the longest contig
+        longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
+        log['05'] = {
+            'step_name': "orient_longest_contig",
+            'step_description': "Determine the orientation of the longest contig",
+            'status': status,
+            'output': {'longest_orient': longest_orient}
+        }
+        if status != "PASS":
+            write_log_and_exit(log, status)
+
+        # Get the final orientation for all contigs in each path
+        final_path, final_oriented_path, status = get_final_orientation(
+            final_paths, filtered_edges, longest_contig, longest_orient, itrs)
+        log['06'] = {
+            'step_name': "get_final_orientation",
+            'step_description': "Get the final orientation for all contigs",
+            'status': status,
+            'output': {'final_path': final_path, 'final_orientation': final_oriented_path}
+        }
+        if status != "PASS" or final_path is None:
+            write_log_and_exit(log, "FAIL: No valid path found with the longest contig in the correct orientation.")
+
+        # Generate the final sequence for this path
+        final_sequence, seq_len, final_order_orientation_copy_number, status = get_final_sequence(
+            final_oriented_path, filtered_segments)
+
+        if status != "PASS":
+            write_log_and_exit(log, "FAIL: Sequence generation failed for the final path.")
+
+        # Write the sequence to a FASTA file
+        asm_name = sample_name + ".assembly_asm.fasta"
+        assembly_file = os.path.join(output_dir, asm_name)
+        record = SeqRecord(Seq(final_sequence), id=input_base, description=final_order_orientation_copy_number)
+        with open(assembly_file, 'w') as f:
+            SeqIO.write(record, f, "fasta")
+        # Update log with the final selected assembly
+        log['07'] = {
+            'step_name': "generate_final_sequence",
+            'step_description': "Generate the final sequence based on the best path and orientation",
+            'status': "PASS",
+            'output': {
+                'final_sequence_length': seq_len,
+                'final_order_orientation_copy_number': final_order_orientation_copy_number,
+                'assembly_file': asm_name,
+                'final_path': final_path,
+                'final_orientation': final_oriented_path
+            }
+        }
+
+        # Remove the blast_db directory
+        shutil.rmtree(blast_db_dir)  # Remove the directory and its contents
+
+        # Write the final log and summary
+        write_log_and_exit(log, "PASS")
+    except Exception as e:
+        log['Exception'] = {'error': str(e)}
+        write_log_and_exit(log, "FAIL: Exception occurred during processing")
+        return
 
 def main(arguments):
     parser = argparse.ArgumentParser(description="GFA parser to construct assembly from Unicycler")
@@ -529,19 +547,40 @@ def main(arguments):
     output_dir = args.o
     reference_file = args.r
 
-    # clean up gfa tags
-    cleanedGfa = 'graph_cleaned.gfa'
-    clean_graph_tags(gfa_file, cleanedGfa)
+    input_with_ext = os.path.basename(gfa_file)
+    input_base, _ = os.path.splitext(input_with_ext)
+    sample_name = input_base.replace('.003_bridges_applied', '')
 
-    gfa_graph, status = read_gfa_file(cleanedGfa)
-    if status != "PASS":
-        return
+    # Initialize log
+    log = {}
+    log['00'] = {'step_name': "initialization",
+                 'step_description': "Initialize the logging process",
+                 'status': "PASS",
+                 'input': {
+                     'gfa': gfa_file,
+                     'sample_name': sample_name,
+                     'output_dir': output_dir
+                 },
+                 'output': {}}
 
-    if gfa_graph is None:
-        print("Failed to read GFA file.")
-        return
+    try:
+        # clean up gfa tags
+        cleanedGfa = 'graph_cleaned.gfa'
+        clean_graph_tags(gfa_file, cleanedGfa)
 
-    process_graph(gfa_graph, output_dir, gfa_file, reference_file)
+        gfa_graph, status = read_gfa_file(cleanedGfa)
+        if status != "PASS":
+            write_log_and_exit(log, status)
+
+        if gfa_graph is None:
+            print("Failed to read GFA file.")
+            write_log_and_exit(log, "FAIL: Failed to read GFA file")
+            return
+
+        process_graph(gfa_graph, output_dir, gfa_file, reference_file, log)
+    except Exception as e:
+        log['Exception'] = {'error': str(e)}
+        write_log_and_exit(log, "FAIL: Exception occurred in main")
 
 if __name__ == '__main__':
     main(sys.argv[1:])
