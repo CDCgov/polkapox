@@ -85,6 +85,7 @@ def create_filtered_graph(links):
     """Create a filtered NetworkX graph from links and remove disconnected nodes."""
     graph = nx.MultiGraph()  # Using a simple Graph instead of MultiGraph if you don't handle multiple edges between the same nodes
     for link in links:
+        print(link)
         graph.add_edge(link.from_name, link.to_name)
     
     # Remove disconnected nodes
@@ -94,14 +95,17 @@ def create_filtered_graph(links):
         return None, "WARNING: Graph is not connected"
     
     # Check if the graph forms a cycle
+    # get the number of edges for each node
     degrees = dict(graph.degree())
+    # figure out how many nodes have more or less than two edges, count 
     count_not_two = sum(1 for degree in degrees.values() if degree < 2)
     all_degree_two = count_not_two <= 1
 
     num_edges = graph.number_of_edges()
     num_nodes = graph.number_of_nodes()
-    
-    if all_degree_two and num_edges == num_nodes:
+
+    # make sure the number of edges and nodes are equal (perfect loop) or one off (loop + ITR)
+    if all_degree_two and num_edges == num_nodes or num_edges == num_nodes+1:
         print('The graph forms a complete cycle')
         return graph, "PASS"
     else:
