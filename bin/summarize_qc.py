@@ -211,15 +211,15 @@ def get_gfa_stats(sample):
             logger.error(f"Could not load data from {gfa_log}")
             return(['NA','NA','NA','NA','NA'])
         
-        if len(parsed_json.keys()) == 10:
+        if len(parsed_json.keys()) == 7:
             notes = 'GFA step complete'
-            successCode_step8 = list(parsed_json)[-3]
-            successCode_step10 = list(parsed_json)[-1]
+            step07 = list(parsed_json)[6]
+            step03 = list(parsed_json)[3]
             
-            final_order_orientation_copy_number = parsed_json[successCode_step8]['output']['final_order_orientation_copy_number']
-            final_sequence_length = parsed_json[successCode_step8]['output']['final_sequence_length']
-            status = parsed_json[successCode_step10]['status']
-            final_itr_length = parsed_json[successCode_step10]['output']['final_itr_length']
+            final_order_orientation_copy_number = parsed_json[step07]['output']['final_orientation']
+            final_sequence_length = parsed_json[step07]['output']['final_sequence_length']
+            status = parsed_json[step07]['status']
+            final_itr_length = parsed_json[step03]['output']['itr_length']
             gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
         else:
             failCode_stepN = list(parsed_json)[-1]
