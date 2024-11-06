@@ -106,6 +106,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     ortho_reads = "{}.opxreads.txt".format(sample)
 
     if os.path.exists(kraken_reads) and os.path.exists(ortho_reads):
+        print('Kraken Paths Exist!!!!!')
         try:
             k_data = pd.read_csv(kraken_reads, delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
             logger.info(f"Data load from {kraken_reads}")
@@ -133,7 +134,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     with open(kraken_tax_ids) as l:
         lines = [line.strip() for line in l.readlines()]
     k_tax_ids = ', '.join(lines)
-
+    print('printing kraken stuff for testing',total,opx_perc, human_perc)
     return total, opx_perc, human_perc, unclass_perc, kdb, k_tax_ids
 
 def get_flagstat_denovo(sample):
@@ -202,7 +203,7 @@ def get_gfa_stats(sample):
     """
     gfa_log = "{}.assembly.log".format(sample)
 
-    if os.path.exists(gfa_log):    
+    if os.path.exists(gfa_log):  
         f = open(gfa_log)
         try:
             parsed_json = json.load(f) 
@@ -210,19 +211,23 @@ def get_gfa_stats(sample):
         except:
             logger.error(f"Could not load data from {gfa_log}")
             return(['NA','NA','NA','NA','NA'])
-        
-        if len(parsed_json.keys()) == 7:
+        print('len of json keys', len(parsed_json.keys()))
+
+        if len(parsed_json.keys()) == 8:
+            print('parsing log file')
             notes = 'GFA step complete'
-            step07 = list(parsed_json)[6]
+            step07 = list(parsed_json)[7]
             step03 = list(parsed_json)[3]
             
             final_order_orientation_copy_number = parsed_json[step07]['output']['final_orientation']
+            final_order_orientation_copy_number = ', '.join(str(item) for item in final_order_orientation_copy_number)
+
             final_sequence_length = parsed_json[step07]['output']['final_sequence_length']
             status = parsed_json[step07]['status']
             final_itr_length = parsed_json[step03]['output']['itr_length']
             gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
         else:
-            failCode_stepN = list(parsed_json)[-1]
+            failCode_stepN = list(parsed_json)[step07]
             status = parsed_json[failCode_stepN]['status']
             statusReport = 'FAIL'
             gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
@@ -407,7 +412,7 @@ def main():
 
     new_col_names = ['sample', 'reads_total_bwa', 'reads_mapped_bwa', 'n50_unicycler','assembly_length_unicycler','top_taxa_percent_kraken','top5_taxa_percent_kraken','unclassified_percent_kraken','percent_duplication_fastp','q30_rate_postfilter_fastp','q30_bases_postfilter_fastp','gc_content_postfilter_fastp','percent_reads_passed_fastp','percent_adapter_fastp']
     fixed_summary = fix_names(summary)
-    fixed_summary.set_axis(new_col_names, axis=1, inplace=True)    
+    fixed_summary = fixed_summary.set_axis(new_col_names, axis=1)
 
     if args.workflow == 'denovo' or args.workflow == 'full':
         contig_files = glob(os.path.join('**/*quast_num_contigs_1.txt'), recursive=True)
@@ -446,6 +451,7 @@ def main():
     for sample in summary_full['sample']:
         summary_full.loc[summary_full['sample'] == sample, ['opx_read_count_kraken', 'filtered_read_count_fastp']] = get_raw_filt_counts(sample)
         kraken_db = args.kraken_db
+        print(summary_full)
         summary_full.loc[summary_full['sample'] == sample, ['total_raw_reads', 'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken', 'kraken_db','kraken_tax_ids']] = get_kraken_stats(sample, kraken_db, args.kraken_tax_ids)
         if args.workflow == 'ref_based':
             summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa','reference_genome']] = get_cov_stats(sample, args.reference_genome)
