@@ -64,7 +64,7 @@ CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
    nextflow run polkapox/main.nf --input {SAMPLESHEET.csv OR input_directory} --outdir {OUTDIR} --fasta {REF.fa} -profile sge,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff} --workflow {WORKFLOW} --filter {true/false}
    ```
    
-   **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to the reference and gff in the `assets` folder of this repo, and a kraken db hosted on the SciComp file system, respectively. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.  Add `--file_levels {top (default)/nested}` if passing a directory as input. See [usage](/docs/usage.md) for details.
+   **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to a Clade II reference and gff in the `assets` folder of this repo, and a kraken db will be downloaded from `s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/orthopox_kdb/`. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.  Add `--file_levels {top (default)/nested}` if passing a directory as input. See [usage](/docs/usage.md) for details.
 
 ## Pipeline configuration
 
@@ -100,6 +100,7 @@ Pipeline outputs are organized into sub-directories for each step in the selecte
 ```
 ${outdir}/
   ├── bwa
+  ├── bandage
   ├── fastp
   ├── final_assembly
   ├── graph_recon
@@ -123,9 +124,9 @@ The **PolkaPox** pipeline includes de novo assembly optimized for the linear gen
 ## Credits
 
 Contributors:\
-Lynsey Kovar | Hunter Seabolt | Shatavia Morrison | Kristen Knipe\
-Kyle O'Connell | Ethan Hetrick | Michael Weigand | Crystal Gigante\
-Dhwani Batra | Ankush  Gupta | Jessica Rowell | Daisy McGrath\
+Kyle O'Connell | Michael Weigand | Jessica Rowell | Shatavia Morrison\
+Kristen Knipe | Ethan Hetrick | Crystal Gigante | Lynsey Kovar\
+Hunter Seabolt | Dhwani Batra | Daisy McGrath\
 Yesh Kulasekarapandian | Jason Caravas
 
 ## Contributions and Support
