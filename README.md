@@ -25,7 +25,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 **Reference-free analyses**
 1. De novo assembly. ([`Unicycler`](https://github.com/rrwick/Unicycler))
 1. Calculate assembly quality metrics. ([`QUAST`](http://quast.sourceforge.net/))
-1. Assembly graph resolution. ([`mpxv-AssemblyGraph_gfaPy.py`](/bin/mpxv-AssemblyGraph_gfaPy.py))
+1. Assembly graph resolution. ([`AssemblyGraph_gfaPy.py`](/bin/AssemblyGraph_gfaPy.py))
 1. Align reads to assembled genome. ([`BWA`](http://bio-bwa.sourceforge.net/))
 1. Correct assembly errors and ambiguities. ([`iVar`](https://andersen-lab.github.io/ivar/html/manualpage.html))
 1. Quantify assembly corrections. ([`MUMmer`](https://github.com/mummer4/mummer#dnadiff))
