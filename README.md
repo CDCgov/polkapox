@@ -34,7 +34,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 1. Visualize reads metrics and summary of software versions. ([`MultiQC`](http://multiqc.info/))
 1. Compile various QC metrics. ([`summarize_qc.py`](/bin/summarize_qc.py))
 
-![workflow diagram](/docs/images/bandage_polkapox.png)
+![workflow diagram](/docs/images/polkapox_workflow.png)
+
 ## Quick Start
 
 1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=21.10.3`)
