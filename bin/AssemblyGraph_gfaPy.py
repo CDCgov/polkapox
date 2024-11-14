@@ -121,30 +121,30 @@ def identify_itr(gfa_graph, segments):
     # Create a dictionary to store the set of connected orientations for each contig
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
     lower_bound = 1.2
-    filt_depth = 0.5
+    filt_depth = 0.6
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth]
     filt_contigs = [contig for contig, depth in depth_data.items() if filt_depth >= depth]
     print("potential ITRs",potential_itrs)
+    
 
     # idenfify the terminal ITR
     contig_ends = []
     for itr in potential_itrs:
-        # print('itr in loop', itr)
+        print('itr in loop', itr)
         from_orients = []
         to_orients = []
         for edge in gfa_graph.edges:
             if edge.from_name == itr or edge.to_name == itr:
                 print(edge)
             if edge.from_name != edge.to_name and edge.from_name not in filt_contigs and edge.to_name not in filt_contigs:
-                if edge.from_name != edge.to_name:
-                    if edge.from_name == itr:
-                        from_orients.append(edge.from_orient)
-                    elif edge.to_name == itr:
-                        to_orients.append(edge.to_orient)
+                if edge.from_name == itr:
+                    from_orients.append(edge.from_orient)
+                elif edge.to_name == itr:
+                    to_orients.append(edge.to_orient)
         # create set of each list
         from_orients=set(from_orients)
         to_orients=set(to_orients)
-        # print(from_orients,to_orients)
+        print(itr,from_orients,to_orients)
 
         # if links are both ++ or both -- or if to and from are opposite +/-
         if len(from_orients) == 1 and len(to_orients) < 1 or len(from_orients) <1 and len(to_orients) == 1:
@@ -225,6 +225,7 @@ def get_final_paths(gfa_graph, filtered_graph, segments):
             middle_path = [node for node in path if node not in itrs]
             final_path = left_itrs + middle_path + right_itrs
             final_paths.append(final_path)
+        print("Found Longest Path")
         status = f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
         return final_paths, itrs, itr_length, status
     else:
@@ -480,11 +481,6 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
             log['03']['status'] = status
             write_log_and_exit(log, status)
 
-        # Additional check for multiple terminal ITRs (if applicable)
-        if len(itrs) > 1:
-            status = "FAIL: Multiple terminal ITRs identified."
-            log['03']['status'] = status
-            write_log_and_exit(log, status)
         # Find the longest contig
         longest_contig, status, longest_contig_file = find_longest_contig(filtered_segments, output_dir)
         log['04'] = {
