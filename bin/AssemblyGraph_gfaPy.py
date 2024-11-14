@@ -85,7 +85,6 @@ def create_filtered_graph(links):
     """Create a filtered NetworkX graph from links and remove disconnected nodes."""
     graph = nx.MultiGraph()  # Using a simple Graph instead of MultiGraph if you don't handle multiple edges between the same nodes
     for link in links:
-        print(link)
         graph.add_edge(link.from_name, link.to_name)
     
     # Remove disconnected nodes
@@ -105,6 +104,7 @@ def create_filtered_graph(links):
     num_nodes = graph.number_of_nodes()
 
     # make sure the number of edges and nodes are equal (perfect loop) or one off (loop + ITR)
+
     if all_degree_two and num_edges == num_nodes or num_edges == num_nodes+1:
         print('The graph forms a complete cycle')
         return graph, "PASS"
@@ -120,7 +120,7 @@ def identify_itr(gfa_graph, segments):
     """
     # Create a dictionary to store the set of connected orientations for each contig
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
-    lower_bound = 1.5
+    lower_bound = 1.2
     filt_depth = 0.5
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth]
     filt_contigs = [contig for contig, depth in depth_data.items() if filt_depth >= depth]
@@ -156,7 +156,7 @@ def identify_itr(gfa_graph, segments):
         # if more than one terminal contig exit
         if len(contig_ends) > 1:
             print('WARNING: more than one terminal contig!')
-            break
+            status = 'FAIL: more than one terminal contig!'            
     
     print("Terminal ITR contigs based on links:", contig_ends)
 
@@ -165,7 +165,6 @@ def identify_itr(gfa_graph, segments):
     for link in gfa_graph.edges:
         if link.from_name in potential_itrs and link.to_name in potential_itrs:
             subgraph.add_edge(link.from_name, link.to_name)
-    
     # Find connected components in the subgraph
     connected_components = list(nx.connected_components(subgraph))
     print('connected components',connected_components)
@@ -175,23 +174,31 @@ def identify_itr(gfa_graph, segments):
         for group in connected_components:
             if contig_ends[0] in group:
                 itrs = max(connected_components, key=len)
-            else:
-                itrs = contig_ends[0]
-
+                print('these are the itrs', itrs)
+                break  # Exit the loop since we've found the group
+        else:
+            print('Warning, contig end not in connected components, assigning itr to terminal itr')
+            itrs = contig_ends
     else:
-        itrs = contig_ends[0]
-    # print('this is the group of ITRS',itrs)
+        itrs = contig_ends
+        print('Warning, no connected components, assigning itr to only terminal itr')
+
     itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
+
+    if itrs and len(contig_ends) < 2:
+        status = 'PASS: itrs conform to expectation'
     
     print("contigs in ITR", itrs, "with total length", itr_length)
-    return list(itrs), itr_length
+    print(status)
+    return list(itrs), itr_length, status
 
 def get_final_paths(gfa_graph, filtered_graph, segments):
     """Find all longest paths in the graph starting from any ITR."""
-    itrs, itr_length = identify_itr(gfa_graph, segments)
-    if not itrs:
-        return [], "WARNING: No suitable ITRs found based on depth criteria."
-
+    itrs, itr_length, itr_status = identify_itr(gfa_graph, segments)
+    if not itrs or 'FAIL' in itr_status:
+        status = itr_status
+        return [],[],[], status
+        
     longest_paths = []
     max_length = 0
     for itr in itrs:
@@ -218,11 +225,12 @@ def get_final_paths(gfa_graph, filtered_graph, segments):
             middle_path = [node for node in path if node not in itrs]
             final_path = left_itrs + middle_path + right_itrs
             final_paths.append(final_path)
-
-        return final_paths, itrs, itr_length, f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
+        status = f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
+        return final_paths, itrs, itr_length, status
     else:
-        return [], "WARNING: No path found starting from any ITR."
-
+        status = "FAIL: No path found starting from any ITR."
+        return [],[],[], status
+    
 def orient_longest_contig(query, reference, blast_db_dir):
     blastResults = query + "_blast.out"
     blast_db_path = os.path.join(blast_db_dir, query + "_DB")
@@ -451,20 +459,32 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         }
         if status != "PASS":
             write_log_and_exit(log, status)
-
+        
         filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
 
-        # Find all longest paths
+        # Find all longest paths        
         final_paths, itrs, itr_length, status = get_final_paths(gfa_graph, filtered_graph, filtered_segments)
         log['03'] = {
             'step_name': "get_final_paths",
             'step_description': "Find all longest paths in the graph starting from any ITR",
             'status': status,
-            'output': {'final_paths': final_paths, 'itr_length': itr_length}
+            'output': {'final_paths': final_paths, 'itr_length': itr_length, 'itrs': itrs}
         }
         if not status.startswith("PASS"):
             write_log_and_exit(log, status)
 
+
+        # Check for problems with the ITRs
+        if not itrs or len(itrs) == 0:
+            status = "FAIL: No ITRs identified in the graph."
+            log['03']['status'] = status
+            write_log_and_exit(log, status)
+
+        # Additional check for multiple terminal ITRs (if applicable)
+        if len(itrs) > 1:
+            status = "FAIL: Multiple terminal ITRs identified."
+            log['03']['status'] = status
+            write_log_and_exit(log, status)
         # Find the longest contig
         longest_contig, status, longest_contig_file = find_longest_contig(filtered_segments, output_dir)
         log['04'] = {
