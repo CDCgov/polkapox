@@ -81,9 +81,10 @@ def filter_segments_by_graph(segments, graph):
     
     return filtered_segments
 
-def create_filtered_graph(links):
+def create_filtered_graph(links, segments):
     """Create a filtered NetworkX graph from links and remove disconnected nodes."""
-    graph = nx.MultiGraph()  # Using a simple Graph instead of MultiGraph if you don't handle multiple edges between the same nodes
+    graph = nx.MultiGraph()
+
     for link in links:
         graph.add_edge(link.from_name, link.to_name)
     
@@ -112,7 +113,7 @@ def create_filtered_graph(links):
         print("graph is not circular")
         return None, "WARNING: Graph is not circular"
 
-def identify_itr(gfa_graph, segments):
+def identify_itr(filtered_edges, segments):
     """
     Identify all Inverted Terminal Repeats (ITRs) based on the orientation of their connections.
     A terminal ITR is identified as a contig that has connections only on the same end (orientation),
@@ -124,55 +125,50 @@ def identify_itr(gfa_graph, segments):
     filt_depth = 0.6
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth]
     filt_contigs = [contig for contig, depth in depth_data.items() if filt_depth >= depth]
-    print("potential ITRs",potential_itrs)
-    
+    print("potential ITRs", potential_itrs)
 
-    # idenfify the terminal ITR
+    # Identify the terminal ITR
     contig_ends = []
     for itr in potential_itrs:
         print('itr in loop', itr)
         from_orients = []
         to_orients = []
-        for edge in gfa_graph.edges:
+        for edge in filtered_edges:
             if edge.from_name == itr or edge.to_name == itr:
                 print(edge)
-            if edge.from_name != edge.to_name and edge.from_name not in filt_contigs and edge.to_name not in filt_contigs:
+            if edge.from_name != edge.to_name:
                 if edge.from_name == itr:
                     from_orients.append(edge.from_orient)
                 elif edge.to_name == itr:
                     to_orients.append(edge.to_orient)
-        # create set of each list
-        from_orients=set(from_orients)
-        to_orients=set(to_orients)
-        print(itr,from_orients,to_orients)
+        # Create set of each list
+        from_orients = set(from_orients)
+        to_orients = set(to_orients)
+        print(itr, from_orients, to_orients)
 
-        # if links are both ++ or both -- or if to and from are opposite +/-
-        if len(from_orients) == 1 and len(to_orients) < 1 or len(from_orients) <1 and len(to_orients) == 1:
+        # Determine if the contig is a terminal ITR based on orientations
+        if (len(from_orients) == 1 and len(to_orients) == 0) or (len(from_orients) == 0 and len(to_orients) == 1):
             contig_ends.append(itr)
         elif len(from_orients) == 1 and len(to_orients) == 1:
             if list(from_orients)[0] != list(to_orients)[0]:
                 contig_ends.append(itr)
-                
-        # if more than one terminal contig exit
-        if len(contig_ends) > 1:
-            print('WARNING: more than one terminal contig!')
-            status = 'FAIL: more than one terminal contig!'            
-    
+
     print("Terminal ITR contigs based on links:", contig_ends)
 
-    # Create a subgraph with only potential ITRs to check for connected ITR contigs and get rid of unconnected repeats
+    # Create a subgraph with only potential ITRs to check for connected ITR contigs
     subgraph = nx.Graph()
-    for link in gfa_graph.edges:
-        if link.from_name in potential_itrs and link.to_name in potential_itrs:
-            subgraph.add_edge(link.from_name, link.to_name)
+    for edge in filtered_edges:
+        if edge.from_name in potential_itrs and edge.to_name in potential_itrs:
+            subgraph.add_edge(edge.from_name, edge.to_name)
+
     # Find connected components in the subgraph
     connected_components = list(nx.connected_components(subgraph))
-    print('connected components',connected_components)
+    print('connected components', connected_components)
 
-    # Select the connected component list with the 
+    # Select the connected component containing the terminal ITR
     if connected_components:
         for group in connected_components:
-            if contig_ends[0] in group:
+            if contig_ends and contig_ends[0] in group:
                 itrs = max(connected_components, key=len)
                 print('these are the itrs', itrs)
                 break  # Exit the loop since we've found the group
@@ -187,18 +183,20 @@ def identify_itr(gfa_graph, segments):
 
     if itrs and len(contig_ends) < 2:
         status = 'PASS: itrs conform to expectation'
-    
+    else:
+        status = 'FAIL: Issues with ITR identification'
+
     print("contigs in ITR", itrs, "with total length", itr_length)
     print(status)
     return list(itrs), itr_length, status
 
-def get_final_paths(gfa_graph, filtered_graph, segments):
+def get_final_paths(filtered_edges, filtered_graph, segments):
     """Find all longest paths in the graph starting from any ITR."""
-    itrs, itr_length, itr_status = identify_itr(gfa_graph, segments)
+    itrs, itr_length, itr_status = identify_itr(filtered_edges, segments)
     if not itrs or 'FAIL' in itr_status:
         status = itr_status
-        return [],[],[], status
-        
+        return [], [], [], status
+
     longest_paths = []
     max_length = 0
     for itr in itrs:
@@ -207,20 +205,21 @@ def get_final_paths(gfa_graph, filtered_graph, segments):
                 for path in nx.all_simple_paths(filtered_graph, source=itr, target=contig):
                     path_length = len(path)
                     if path_length > max_length:
-                        longest_paths = [path]  # Start a naew list with the new longest path
+                        longest_paths = [path]  # Start a new list with the new longest path
                         max_length = path_length
                     elif path_length == max_length:
-                        if path not in longest_paths: # handle cases with only one longest path
+                        if path not in longest_paths:
                             longest_paths.append(path)  # Add path to the list of longest paths
+
     final_paths = []
     if longest_paths:
         print("longest path list =", longest_paths)
-        
+
         # Ensure ITRs are not duplicated and are correctly oriented
         for path in longest_paths:
             left_itrs = [itr for itr in path if itr in itrs]
             right_itrs = [itr for itr in reversed(path) if itr in itrs]
-        
+
             # Construct the final path with ITRs on both ends, ensuring no duplicates
             middle_path = [node for node in path if node not in itrs]
             final_path = left_itrs + middle_path + right_itrs
@@ -230,14 +229,13 @@ def get_final_paths(gfa_graph, filtered_graph, segments):
         return final_paths, itrs, itr_length, status
     else:
         status = "FAIL: No path found starting from any ITR."
-        return [],[],[], status
-    
+        return [], [], [], status
+        
 def orient_longest_contig(query, reference, blast_db_dir):
     blastResults = query + "_blast.out"
     blast_db_path = os.path.join(blast_db_dir, query + "_DB")
     makeblastdb_command = ["makeblastdb", "-in", query, "-out", blast_db_path, "-dbtype", "nucl"]
     blastn_command = ["blastn", "-query", reference, "-db", blast_db_path, "-evalue", "1e-10", "-word_size", "28", "-outfmt", "6 qseqid sseqid pident length qcovs sstart send mismatch gapopen qlen slen bitscore", "-out", blastResults]
-    
     #print(f"Running command: {' '.join(makeblastdb_command)}")
     result = subprocess.run(makeblastdb_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
@@ -263,6 +261,8 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
     # Build a dictionary for quick lookup of links
     links_dict = {}
     for link in lnks:
+        print(link)
+        
         # Map direct links
         key = (link.from_name, link.to_name)
         links_dict[key] = (link.from_orient, link.to_orient)
@@ -276,7 +276,6 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
     final_oriented_path = []
 
     if len(final_paths) > 1:
-        # Existing logic remains the same
         # Iterate over each path
         for path in final_paths:
             contig_orientations = []
@@ -370,6 +369,7 @@ def get_final_sequence(oriented_path, segments):
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
     """Write the segments in the specified orientation to a single FASTA entry with the input file name as the header."""
+    print('writing final oriented fasta to out file')
     segment_dict = {seg.name: seg.sequence for seg in segments}  # Create a dictionary of segment names to sequences
     full_sequence = ""  # Initialize an empty string to accumulate full sequence
 
@@ -405,21 +405,20 @@ def write_log_and_exit(log, status):
     if '00' in log:
         data.append(log['00']['input']['sample_name'])  # 'sample'
         data.append(status)  # 'status'
-    if '03' in log:
-        data.append(",".join(str(i) for i in log['03']['output']['final_paths']))  # 'longest_paths'
-        data.append(str(log['03']['output']['itr_length']))  # 'itr_length'
-    if '06' in log:
-        data.append(",".join(str(i) for i in log['06']['output']['final_orientation']))  # 'final_contig_order_orientation'
+    if '05' in log:
+        data.append(",".join(str(i) for i in log['05']['output']['final_paths']))  # 'longest_paths'
+    if '08' in log:
+        data.append(str(log['08']['output']['final_path']))  # 'final_path'
+        data.append(",".join(str(i) for i in log['08']['output']['final_orientation']))  # 'final_contig_order_orientation'    
     else:
-        data.append('')  # Empty string if '06' not in log
-    if '03' in log:
-        data.append(str(log['03']['output']['itr_length']))  # 'itr_length' added here again
+        data.append('')  # Empty string if '08' not in log
+    if '09' in log:
+        data.append(str(log['09']['output']['final_sequence_length']))  # 'assembly_length'
     else:
-        data.append('')  # Empty string if '03' not in log
-    if '07' in log:
-        data.append(str(log['07']['output']['final_sequence_length']))  # 'assembly_length'
-    else:
-        data.append('')  # Empty string if '07' not in log
+        data.append('')  # Empty string if '09' not in log
+    if '05' in log:
+        data.append(str(log['05']['output']['itr_length']))  # 'itr_length'
+        data.append(str(log['05']['output']['itrs']))  # 'itr_length'
 
     with open(summary_file, 'w') as f:
         f.write('\t'.join(headers) + '\n')
@@ -437,7 +436,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         input_base, _ = os.path.splitext(input_with_ext)
         sample_name = input_base.replace('.003_bridges_applied', '')
 
-        # write all contigs to a FASTA file at the start
+        # Write all contigs to a FASTA file at the start
         write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
 
         # Start processing the graph
@@ -451,8 +450,30 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         if status != "PASS":
             write_log_and_exit(log, status)
 
-        filtered_graph, status = create_filtered_graph(filtered_edges)
+        # Identify low-coverage contigs
+        low_cov, status = identify_low_coverage_contigs(gfa_graph.segments)
         log['02'] = {
+            'step_name': "identify_low_coverage_contigs",
+            'step_description': "Identify contigs with coverage below 0.5x",
+            'status': status,
+            'output': {'low_coverage_contigs': low_cov}
+        }
+        if status != "PASS":
+            write_log_and_exit(log, status)
+
+        # Filter links to exclude those involving low-coverage contigs
+        filtered_links, status = filter_links_by_coverage(low_cov, filtered_edges)
+        log['03'] = {
+            'step_name': "filter_links_by_coverage",
+            'step_description': "Filter links to exclude those involving low-coverage contigs",
+            'status': status,
+            'output': {'filtered_links': [str(edge) for edge in filtered_links]}
+        }
+        if status != "PASS":
+            write_log_and_exit(log, status)
+        # Create filtered graph using filtered links
+        filtered_graph, status = create_filtered_graph(filtered_links, gfa_graph.segments)
+        log['04'] = {
             'step_name': "create_filtered_graph",
             'step_description': "Create a filtered NetworkX graph from links and remove disconnected nodes",
             'status': status,
@@ -460,30 +481,31 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         }
         if status != "PASS":
             write_log_and_exit(log, status)
-        
+
+        # Filter segments to include only those that are part of the filtered graph
         filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
 
         # Find all longest paths        
-        final_paths, itrs, itr_length, status = get_final_paths(gfa_graph, filtered_graph, filtered_segments)
-        log['03'] = {
+        final_paths, itrs, itr_length, status = get_final_paths(filtered_links, filtered_graph, filtered_segments)
+        log['05'] = {
             'step_name': "get_final_paths",
             'step_description': "Find all longest paths in the graph starting from any ITR",
             'status': status,
             'output': {'final_paths': final_paths, 'itr_length': itr_length, 'itrs': itrs}
         }
+        
         if not status.startswith("PASS"):
             write_log_and_exit(log, status)
-
 
         # Check for problems with the ITRs
         if not itrs or len(itrs) == 0:
             status = "FAIL: No ITRs identified in the graph."
-            log['03']['status'] = status
+            log['05']['status'] = status
             write_log_and_exit(log, status)
 
         # Find the longest contig
         longest_contig, status, longest_contig_file = find_longest_contig(filtered_segments, output_dir)
-        log['04'] = {
+        log['06'] = {
             'step_name': "find_longest_contig",
             'step_description': "Find the longest contig based on length",
             'status': status,
@@ -491,14 +513,12 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         }
         if status != "PASS":
             write_log_and_exit(log, status)
-
         # Create blast database directory
         blast_db_dir = os.path.join(output_dir, 'blast_db')
         os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
-
         # Determine the orientation of the longest contig
         longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
-        log['05'] = {
+        log['07'] = {
             'step_name': "orient_longest_contig",
             'step_description': "Determine the orientation of the longest contig",
             'status': status,
@@ -506,11 +526,11 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         }
         if status != "PASS":
             write_log_and_exit(log, status)
-
-        # Get the final orientation for all contigs in each path
+        # Get the final orientation for all contigs in each path using filtered links
         final_path, final_oriented_path, status = get_final_orientation(
-            final_paths, filtered_edges, longest_contig, longest_orient, itrs)
-        log['06'] = {
+            final_paths, filtered_links, longest_contig, longest_orient, itrs)
+        
+        log['08'] = {
             'step_name': "get_final_orientation",
             'step_description': "Get the final orientation for all contigs",
             'status': status,
@@ -522,7 +542,6 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         # Generate the final sequence for this path
         final_sequence, seq_len, final_order_orientation_copy_number, status = get_final_sequence(
             final_oriented_path, filtered_segments)
-
         if status != "PASS":
             write_log_and_exit(log, "FAIL: Sequence generation failed for the final path.")
 
@@ -532,8 +551,9 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         record = SeqRecord(Seq(final_sequence), id=input_base, description=final_order_orientation_copy_number)
         with open(assembly_file, 'w') as f:
             SeqIO.write(record, f, "fasta")
-        # Update log with the final selected assembly
-        log['07'] = {
+
+        # Update log with the final selected assembly        
+        log['09'] = {
             'step_name': "generate_final_sequence",
             'step_description': "Generate the final sequence based on the best path and orientation",
             'status': "PASS",
@@ -551,11 +571,12 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
 
         # Write the final log and summary
         write_log_and_exit(log, "PASS")
+
     except Exception as e:
         log['Exception'] = {'error': str(e)}
         write_log_and_exit(log, "FAIL: Exception occurred during processing")
         return
-
+    
 def main(arguments):
     parser = argparse.ArgumentParser(description="GFA parser to construct assembly from Unicycler")
     parser.add_argument('-i', type=str, required=True, help="GFA file from Unicycler")
