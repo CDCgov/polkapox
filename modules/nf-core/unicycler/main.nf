@@ -4,15 +4,15 @@ process UNICYCLER {
 
     conda (params.enable_conda ? 'bioconda::unicycler=0.4.8' : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/unicycler:0.4.8--py38h8162308_3' :
-        'quay.io/biocontainers/unicycler:0.4.8--py38h8162308_3' }"
+        'https://depot.galaxyproject.org/singularity/unicycler:0.5.0--py312hc60241a_5' :
+        'quay.io/biocontainers/unicycler:0.5.0--py312hc60241a_5' }"
 
     input:
     tuple val(meta), path(shortreads)
 
     output:
     tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds optional true
-    tuple val(meta), path('*003_bridges_applied.gfa'), emit: gfa optional true
+    tuple val(meta), path('*bridges_applied.gfa'), emit: gfa optional true
     tuple val(meta), path('*.log')            , emit: log
     path  "versions.yml"                      , emit: versions
 
@@ -34,7 +34,7 @@ process UNICYCLER {
     mv unicycler.log ${prefix}.unicycler.log
     mv assembly.fasta ${prefix}.scaffolds.fa
     gzip -n ${prefix}.scaffolds.fa
-    mv 003_bridges_applied.gfa ${prefix}.003_bridges_applied.gfa
+    mv *_bridges_applied.gfa ${prefix}.bridges_applied.gfa
     mv assembly.gfa ${prefix}.assembly.gfa
     gzip -n ${prefix}.assembly.gfa
 
