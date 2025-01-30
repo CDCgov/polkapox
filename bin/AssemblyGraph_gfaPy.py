@@ -434,7 +434,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
     try:
         input_with_ext = os.path.basename(input_file)
         input_base, _ = os.path.splitext(input_with_ext)
-        sample_name = input_base.replace('.003_bridges_applied', '')
+        sample_name = input_base.replace('.bridges_applied', '')
 
         # Write all contigs to a FASTA file at the start
         write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
@@ -590,7 +590,7 @@ def main(arguments):
 
     input_with_ext = os.path.basename(gfa_file)
     input_base, _ = os.path.splitext(input_with_ext)
-    sample_name = input_base.replace('.003_bridges_applied', '')
+    sample_name = input_base.replace('.bridges_applied', '')
 
     # Initialize log
     log = {}

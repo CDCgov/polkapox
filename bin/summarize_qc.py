@@ -227,6 +227,7 @@ def get_gfa_stats(sample):
             final_itr_length = parsed_json[step03]['output']['itr_length']
             gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
         else:
+            print(parsed_json)
             failCode_stepN = list(parsed_json)[step07]
             status = parsed_json[failCode_stepN]['status']
             statusReport = 'FAIL'
