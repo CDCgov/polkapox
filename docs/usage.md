@@ -126,7 +126,7 @@ The default kraken2 database was assembled from MA001_USA_002 (Genbank Accession
 
   +  Variola major (NC_001611)
   +  Variola minor (DQ441419)
-  +  Alaskapox (MN240300)
+  +  Borealapox (MN240300)
   +  Camelpox (NC_003391)
   +  Cowpox (NC_003663)
   +  Ectromelia (NC_004105)
