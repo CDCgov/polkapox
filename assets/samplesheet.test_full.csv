@@ -1,0 +1,2 @@
+sample,fastq_1,fastq_2
+test_full,s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/test_data/test_full_1.fq.gz,s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/test_data/test_full_2.fq.gz
