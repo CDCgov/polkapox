@@ -82,7 +82,7 @@ CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
 
 ### Full samplesheet
 
-If you provide a samplesheet, the pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
+If you provide a samplesheet, the pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below. If you have single-end data, make sure you still include the first 3 columns, and then only list the forward read followed by a comma. See an example at [samplesheet.test-single.csv](../assets/samplesheet.test-single.csv).
 
 A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP3` has been sequenced twice.
 
@@ -103,7 +103,7 @@ TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
 | `fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
 | `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
 
-An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline. 
+An [example samplesheet](../assets/samplesheet.test.csv) has been provided with the pipeline. 
 
 
 ### Input Directory
@@ -238,6 +238,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 - `test`
   - A profile with a complete configuration for automated testing
   - Includes links to test data so needs no other parameters
+  - This profile will run subsampled data which will publish contigs, if you want to test a full assembly run test_full
 
 ### `-resume`
 
