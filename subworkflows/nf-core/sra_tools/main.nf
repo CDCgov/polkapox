@@ -1,5 +1,5 @@
-include { SRATOOLS_PREFETCH           } from '../../../modules/nf-core/modules/sratools/prefetch/main'
-include { SRATOOLS_FASTERQDUMP        } from '../../../modules/nf-core/modules/sratools/fasterqdump/main'
+include { SRATOOLS_PREFETCH           } from '../../../modules/nf-core/sratools/prefetch/main'
+include { SRATOOLS_FASTERQDUMP        } from '../../../modules/nf-core/sratools/fasterqdump/main'
 include { SRA_TO_SAMPLESHEET          } from '../../../modules/local/sra_to_samplesheet'
 //
 // Download FASTQ sequencing reads from the NCBI's Sequence Read Archive (SRA).
