@@ -21,7 +21,7 @@ process GRAPH_RECON {
     #gunzip -f $gfa
     #cat $gfa_unzip | awk 'BEGIN { FS="\\t" } /^S/{ if( length(\$3) >= 1) print ">Contig"\$2"_len"substr(\$4,6)"_cov"substr(\$5,6,5)"\\n"\$3}' | fold > ${prefix}.contigs.fasta
     
-      mpxv-AssemblyGraph_gfaPy.py \\
+    AssemblyGraph_gfaPy.py \\
         -i $gfa \\
         -r "$projectDir/assets/MPXV-UK_P2.noN_39086_40204.fasta" \\
         -o .
