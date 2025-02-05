@@ -4,8 +4,8 @@ process SRATOOLS_PREFETCH {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-5f89fe0cd045cb1d615630b9261a1d17943a9b6a:6a9ff0e76ec016c3d0d27e0c0d362339f2d787e6-0' :
-        'ncbi/sra-tools:2.11.3' }"
+        'https://depot.galaxyproject.org/singularity/sra-tools:3.1.0--h9f5acd7_0' :
+        'quay.io/biocontainers/sra-tools:3.1.0--h9f5acd7_0' }"
 
     input:
     tuple val(meta), val(id)
