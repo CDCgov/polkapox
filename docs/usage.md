@@ -118,11 +118,11 @@ CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
 
 ### Single-end vs. Paired-end reads
 
-The pipeline assumes paired-end reads by default.  You should specify  `--paired False` for single-end reads when you run the pipeline. 
+The pipeline assumes paired-end reads by default.  You should specify  `--paired False` for single-end reads when you run the pipeline with a directory path as input (`--indir`). 
 If you're providing a samplesheet, the pipeline will automatically detect paired-end vs. single-end reads based on the samplesheet, as described above.
 
 ## Entrypoint/Subworkflow options
-This workflow contains several entrypoints that allow you as the user to specify which components of the workflow you would like to run. You must select one entrypoint using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. 
+This workflow contains several subworkflows that allow you as the user to specify which components of the workflow you would like to run. You must select one subworkflow using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. 
 
 ## Kraken2 DB options
 The default kraken2 database was assembled from 15 Orthopox viruses including Monkeypox virus Clade II (MA001_USA_002), Monkeypox virus Clade I (NC_003310), Variola major (NC_001611), Variola minor (DQ441419), Borealpox (MN240300), Camelpox (NC_003391), Cowpox (NC_003663), Ectromelia (NC_004105), Vaccinia (NC_006998), Taterapox (NC_008291), Racoonpox (NC027213), Volepox (NC_031033), Skunkpox (NC_031038), Akhmeta (NC_055230), Horsepox (NC_066642), and the human genome build GRCh38 (GCF_000001405.40). We also include the path to smaller database with only Monkeypox virus Clade II (MA001_USA_002), and human genome build GRCh38 (GCF_000001405.40) which works quite well on Monkeypox virus Clade II samples. 
