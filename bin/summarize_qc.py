@@ -227,10 +227,13 @@ def get_gfa_stats(sample):
             final_itr_length = parsed_json[step03]['output']['itr_length']
             gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
         else:
-            failCode_stepN = list(parsed_json)[step07]
-            status = parsed_json[failCode_stepN]['status']
+            print(parsed_json)
+            final_elem = '0'+str(len(parsed_json)-1)
+            #failCode_stepN = list(parsed_json)[step07]
+            status = parsed_json[final_elem]['status']
             statusReport = 'FAIL'
             gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
+    
     else:
         status = 'Unicycler-GFA Log DOES NOT Exist'
         statusReport = 'FAIL'

@@ -82,7 +82,7 @@ CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
 
 ### Full samplesheet
 
-If you provide a samplesheet, the pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
+If you provide a samplesheet, the pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below. If you have single-end data, make sure you still include the first 3 columns, and then only list the forward read followed by a comma. See an example at [samplesheet.test-single.csv](../assets/samplesheet.test-single.csv).
 
 A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP3` has been sequenced twice.
 
@@ -125,7 +125,7 @@ If you're providing a samplesheet, the pipeline will automatically detect paired
 This workflow contains several subworkflows that allow you as the user to specify which components of the workflow you would like to run. You must select one subworkflow using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. 
 
 ## Kraken2 DB options
-The default kraken2 database was assembled from 15 Orthopox viruses including Monkeypox virus Clade II (MA001_USA_002), Monkeypox virus Clade I (NC_003310), Variola major (NC_001611), Variola minor (DQ441419), Borealpox (MN240300), Camelpox (NC_003391), Cowpox (NC_003663), Ectromelia (NC_004105), Vaccinia (NC_006998), Taterapox (NC_008291), Racoonpox (NC027213), Volepox (NC_031033), Skunkpox (NC_031038), Akhmeta (NC_055230), Horsepox (NC_066642), and the human genome build GRCh38 (GCF_000001405.40). We also include the path to smaller database with only Monkeypox virus Clade II (MA001_USA_002), and human genome build GRCh38 (GCF_000001405.40) which works quite well on Monkeypox virus Clade II samples. 
+The default kraken2 database was assembled from 15 Orthopox viruses including Monkeypox virus Clade II (MA001_USA_002), Monkeypox virus Clade I (NC_003310), Variola major (NC_001611), Variola minor (DQ441419), Borealpox (MN240300), Camelpox (NC_003391), Cowpox (NC_003663), Ectromelia (NC_004105), Vaccinia (NC_006998), Taterapox (NC_008291), Racoonpox (NC027213), Volepox (NC_031033), Skunkpox (NC_031038), Akhmeta (NC_055230), Horsepox (NC_066642), and the human t2t reference (GCF_009914755). We also include the path to smaller database with only Monkeypox virus Clade II (MA001_USA_002), and human genome build GRCh38 (GCF_000001405.40) which works quite well on Monkeypox virus Clade II samples. 
 
 By default the pipeline will keep reads pertaining to any of these NCBI taxon IDs which are defined in the file `assets/kraken2_tax_ids.txt`. You can modify this file and point to it for filtering with the `--kraken2_tax_ids` parameter.
 
@@ -162,10 +162,22 @@ kraken2-build --build --db orthopox_kdb --threads $THREADS
 
 ## Running the pipeline
 
-The typical command for running the pipeline is as follows:
+The typical command for running the pipeline with a sample sheet is as follows:
 
 ```console
 nextflow run polkapox --input {SAMPLESHEET.csv} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+```
+
+To run with an input directory, run as: 
+
+```console
+nextflow run polkapox --indir {PATH/TO/DIR} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+```
+
+To run with SRA accessions: 
+
+```console
+nextflow run polkapox --sra --sra_ids {PATH/TO/SRA/FILE} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
 ```
 
 Note that the pipeline will create the following files in your working directory:
@@ -227,6 +239,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 - `test`
   - A profile with a complete configuration for automated testing
   - Includes links to test data so needs no other parameters
+  - This profile will run subsampled data which will publish contigs, if you want to test a full assembly run test_full
 
 ### `-resume`
 
