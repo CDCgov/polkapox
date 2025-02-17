@@ -10,7 +10,7 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 WorkflowPolkapox.initialise(params, log)
 
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.kraken_db, params.input, params.multiqc_config, params.fasta, params.fai]
+def checkPathParamList = [ params.kraken_db, params.multiqc_config, params.fasta, params.fai]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
@@ -20,7 +20,10 @@ if (params.input) {
 else if (params.indir) { 
     ch_indir = file(params.indir)
     } 
-else { exit 1, 'Must specify either input samplesheet or input directory of fastq files!' }
+else if (params.sra_ids) {
+    ch_sra_id = file(params.sra_ids)
+    }
+//else { exit 1, 'Must specify samplesheet, input directory of fastq files, or sra id list!' }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,7 +45,8 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome'
-include { CREATE_SAMPLESHEET      } from '../modules/local/create_samplesheet'
+include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
+include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads'
 include { DENOVO              } from '../subworkflows/local/denovo'
 include { REFBASED            } from '../subworkflows/local/ref_based'
@@ -85,6 +89,28 @@ workflow POLKAPOX {
         ch_versions = ch_versions.mix(CREATE_SAMPLESHEET.out.versions)
     }
 
+    else if (params.sra_ids) {
+        // This is modified from fetchngs https://github.com/nf-core/fetchngs/tree/master
+        // get SRA ch for each accession
+        ch_sra = Channel.fromPath(params.sra_ids)
+            .splitCsv ( header: false )
+            .flatten()
+            .map { 
+                accession -> [meta: accession, accession: accession] 
+                }  // creating a map with id and accession
+        //
+        // Subworkflow: Create samplesheet from list of SRA Accessions 
+        //
+        SRA_TOOLS (
+            ch_sra
+        )
+        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions.first())
+    
+        ch_reads = SRA_TOOLS.out.forward.join(SRA_TOOLS.out.reverse)
+        ch_input = ch_reads
+            .map { meta, fastq1, fastq2 -> "$meta,$fastq1,$fastq2" }
+            .collectFile(name: 'sra-samplesheet.csv', newLine: true, seed: 'sample,fastq_1,fastq_2')
+    }
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //

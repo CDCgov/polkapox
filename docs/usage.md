@@ -105,42 +105,31 @@ TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
 
 An [example samplesheet](../assets/samplesheet.test.csv) has been provided with the pipeline. 
 
+### Multiple runs of the same sample
 
-### Input Directory
-Instead of providing a samplesheet you can also provide the path to a directory with fastq files. The script currently accepts two directory structures: 
-1. A parent directory with subdirectories, each containing paired FastQ files. 
-2. A directory with FastQ files directly under it
+The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once (e.g. to increase sequencing depth). The pipeline will concatenate the raw reads before performing any downstream analysis. Below is an example for the same sample sequenced across 3 lanes:
 
-The pipeline will exit if it detects a mix of directory structures (i.e., some FastQ files directly under the parent directory and others nested one level down).
+```console
+sample,fastq_1,fastq_2
+CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+CONTROL_REP1,AEG588A1_S1_L003_R1_001.fastq.gz,AEG588A1_S1_L003_R2_001.fastq.gz
+CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
+```
 
 ### Single-end vs. Paired-end reads
 
-The pipeline assumes paired-end reads by default.  You should specify  `--paired False` for single-end reads when you run the pipeline. 
+The pipeline assumes paired-end reads by default.  You should specify  `--paired False` for single-end reads when you run the pipeline with a directory path as input (`--indir`). 
 If you're providing a samplesheet, the pipeline will automatically detect paired-end vs. single-end reads based on the samplesheet, as described above.
 
 ## Entrypoint/Subworkflow options
-This workflow contains several entrypoints that allow you as the user to specify which components of the workflow you would like to run. You must select one entrypoint using the `--workflow` parameter. 
+This workflow contains several subworkflows that allow you as the user to specify which components of the workflow you would like to run. You must select one subworkflow using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. 
 
 ## Kraken2 DB options
-The default kraken2 database was assembled from MA001_USA_002 (Genbank Accession ON563414.3) and the human genome GRCh38 (GCF_000001405.40). For MPOX samples from other clades, or for other species of Orthopox, we recommend using an expanded database more inclusive of the target lineage. We included one version of this expanded database that includes MA001 and the human genome, as well as MPOX from Clade I (NC_003310), and the following Orthopox representative Refseq genomes:
-
-  +  Variola major (NC_001611)
-  +  Variola minor (DQ441419)
-  +  Borealapox (MN240300)
-  +  Camelpox (NC_003391)
-  +  Cowpox (NC_003663)
-  +  Ectromelia (NC_004105)
-  +  Vaccinia (NC_006998)
-  +  Taterapox (NC_008291)
-  +  Racoonpox (NC027213)
-  +  Volepox (NC_031033)
-  +  Skunkpox (NC_031038)
-  +  Akhmeta (NC_055230)
-  +  Horsepox (NC_066642)
+The default kraken2 database was assembled from 15 Orthopox viruses including Monkeypox virus Clade II (MA001_USA_002), Monkeypox virus Clade I (NC_003310), Variola major (NC_001611), Variola minor (DQ441419), Borealpox (MN240300), Camelpox (NC_003391), Cowpox (NC_003663), Ectromelia (NC_004105), Vaccinia (NC_006998), Taterapox (NC_008291), Racoonpox (NC027213), Volepox (NC_031033), Skunkpox (NC_031038), Akhmeta (NC_055230), Horsepox (NC_066642), and the human t2t reference (GCF_009914755). We also include the path to smaller database with only Monkeypox virus Clade II (MA001_USA_002), and human genome build GRCh38 (GCF_000001405.40) which works quite well on Monkeypox virus Clade II samples. 
 
 By default the pipeline will keep reads pertaining to any of these NCBI taxon IDs which are defined in the file `assets/kraken2_tax_ids.txt`. You can modify this file and point to it for filtering with the `--kraken2_tax_ids` parameter.
 
-You can recreate this database with the following commands:
+You can also recreate this database with the following commands:
 
 Install mamba
 ```
@@ -173,10 +162,22 @@ kraken2-build --build --db orthopox_kdb --threads $THREADS
 
 ## Running the pipeline
 
-The typical command for running the pipeline is as follows:
+The typical command for running the pipeline with a sample sheet is as follows:
 
 ```console
 nextflow run polkapox --input {SAMPLESHEET.csv} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+```
+
+To run with an input directory, run as: 
+
+```console
+nextflow run polkapox --indir {PATH/TO/DIR} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+```
+
+To run with SRA accessions: 
+
+```console
+nextflow run polkapox --sra --sra_ids {PATH/TO/SRA/FILE} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
 ```
 
 Note that the pipeline will create the following files in your working directory:

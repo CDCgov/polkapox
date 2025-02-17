@@ -73,11 +73,10 @@ class WorkflowMain {
         NfcoreTemplate.awsBatch(workflow, params)
 
         // Check input has been provided
-        if (!params.input && !params.indir) {
+        if (!params.input && !params.indir && !params.sra_ids) {
             log.error "Please provide either an input samplesheet (e.g. '--input samplesheet.csv') or an input directory of sample files to the pipeline"
             System.exit(1)
         }
-
         if (params.input && params.indir) {
             log.error "Please provide either an input samplesheet or an input directory of sample files, but not both"
              System.exit(1)
