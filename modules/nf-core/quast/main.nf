@@ -37,8 +37,9 @@ process QUAST {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        quast: \$(quast.py --version 2>&1 | sed '/^WARNING:/d; s/^.*QUAST v//; s/ .*$//')
+        quast: \$(quast.py --version 2>&1 | sed '/^WARNING:/d; s/^.*QUAST v//; s/ .*\$//')
 
     END_VERSIONS
     """
+
 }
