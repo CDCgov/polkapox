@@ -1,7 +1,0 @@
-name: bandage_image
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - bioconda::bandage=0.8.1
