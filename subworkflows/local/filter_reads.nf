@@ -14,7 +14,7 @@
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { KRAKEN2_KRAKEN2 as KRAKEN2                    } from '../../modules/nf-core/kraken2/main'
+include { KRAKEN2                                       } from '../../modules/nf-core/kraken2/main'
 include { FASTP                                         } from '../../modules/nf-core/fastp/main'
 include { SEQTK_SUBSEQ                                  } from '../../modules/nf-core/seqtk/subseq/main'
 

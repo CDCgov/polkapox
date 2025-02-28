@@ -2,7 +2,7 @@ process UNICYCLER {
     tag "$meta.id"
     label 'process_high'
 
-    conda (params.enable_conda ? 'bioconda::unicycler=0.4.8' : null)
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/unicycler:0.5.0--py312hc60241a_5' :
         'quay.io/biocontainers/unicycler:0.5.0--py312hc60241a_5' }"
