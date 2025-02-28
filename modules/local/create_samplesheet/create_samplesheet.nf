@@ -1,7 +1,7 @@
 process CREATE_SAMPLESHEET {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
+    conda "${moduleDir}/environment.yml"
     container 'quay.io/biocontainers/python:3.8.3'
 
 input:

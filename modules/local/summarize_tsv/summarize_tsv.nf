@@ -2,7 +2,7 @@ process SUMMARIZE_TSV {
     tag "$meta.id"
     label 'process_medium'
 
-   conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/bionumpy:0.2.17--pyha8f3691_0  ' :
         'quay.io/biocontainers/bionumpy:0.2.17--pyha8f3691_0' }"

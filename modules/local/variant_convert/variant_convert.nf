@@ -2,6 +2,7 @@ process VARIANT_CONVERT {
     tag "$meta.id"
     label 'process_medium'
 
+        conda "${moduleDir}/environment.yml"
         container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/bionumpy:0.2.17--pyha8f3691_0  ' :
         'quay.io/biocontainers/bionumpy:0.2.17--pyha8f3691_0' }"
