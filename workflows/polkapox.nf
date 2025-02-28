@@ -63,7 +63,7 @@ include { REFBASED            } from '../subworkflows/local/ref_based'
 include { FASTQC                                        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc'
+include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/summarize_qc'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
