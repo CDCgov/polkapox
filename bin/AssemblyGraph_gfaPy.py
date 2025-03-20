@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 ### Written by S.Morrison, K. Knipe 20221018
+### The script orignated was apart of Mpox Response work 2022 - 2023
 ### Refactored by Kyle O'Connell with help from GPT 4o, o1-preview, and Gemini 1.5 Pro 20240730
 
 import os
