@@ -1,7 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 ### Written by S.Morrison, K. Knipe 20221018
 ### Refactored by Kyle O'Connell with help from GPT 4o, o1-preview, and Gemini 1.5 Pro 20240730
+
+# find leng of itr from terminal to itr with 3 connections. If not one with 3 connections
 
 import os
 import re
@@ -118,6 +120,8 @@ def identify_itr(filtered_edges, segments):
     Identify all Inverted Terminal Repeats (ITRs) based on the orientation of their connections.
     A terminal ITR is identified as a contig that has connections only on the same end (orientation),
     whereas other contigs are connected on both '+' and '-' ends.
+    but the ITRs end when you have an ITR with three connections. If no 3 connections exist, then there is 
+    only 1 ITR. If there is more than one ITR with 3+ connections then there is a hairpin somewhere and the script should fail.
     """
     # Create a dictionary to store the set of connected orientations for each contig
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
@@ -128,88 +132,103 @@ def identify_itr(filtered_edges, segments):
     print("potential ITRs", potential_itrs)
 
     # Identify the terminal ITR
-    contig_ends = []
+    terminal_itr = []
+    final_itr = []
+
     for itr in potential_itrs:
-        print('itr in loop', itr)
+        # print('itr in loop', itr)
         from_orients = []
         to_orients = []
         for edge in filtered_edges:
-            if edge.from_name == itr or edge.to_name == itr:
-                print(edge)
+            # if edge.from_name == itr or edge.to_name == itr:
+            #     pass
             if edge.from_name != edge.to_name:
                 if edge.from_name == itr:
                     from_orients.append(edge.from_orient)
                 elif edge.to_name == itr:
                     to_orients.append(edge.to_orient)
         # Create set of each list
+        all_orients = from_orients + to_orients
         from_orients = set(from_orients)
         to_orients = set(to_orients)
-        print(itr, from_orients, to_orients)
+        # print(itr, from_orients, to_orients, all_orients)
 
         # Determine if the contig is a terminal ITR based on orientations
         if (len(from_orients) == 1 and len(to_orients) == 0) or (len(from_orients) == 0 and len(to_orients) == 1):
-            contig_ends.append(itr)
+            terminal_itr.append(itr)
         elif len(from_orients) == 1 and len(to_orients) == 1:
             if list(from_orients)[0] != list(to_orients)[0]:
-                contig_ends.append(itr)
+                terminal_itr.append(itr)
+        if len(all_orients) > 2:
+            final_itr.append(itr)
 
-    print("Terminal ITR contigs based on links:", contig_ends)
+    print("Terminal ITR contigs based on links:", terminal_itr)
+    print("Other end of ITR sequence based on links:", final_itr)
 
     # Create a subgraph with only potential ITRs to check for connected ITR contigs
     subgraph = nx.Graph()
     for edge in filtered_edges:
         if edge.from_name in potential_itrs and edge.to_name in potential_itrs:
             subgraph.add_edge(edge.from_name, edge.to_name)
-
-    # Find connected components in the subgraph
-    connected_components = list(nx.connected_components(subgraph))
-    print('connected components', connected_components)
-
-    # Select the connected component containing the terminal ITR
-    if connected_components:
-        for group in connected_components:
-            if contig_ends and contig_ends[0] in group:
-                itrs = max(connected_components, key=len)
-                print('these are the itrs', itrs)
-                break  # Exit the loop since we've found the group
-        else:
-            print('Warning, contig end not in connected components, assigning itr to terminal itr')
-            itrs = contig_ends
+    
+    # Ensure terminal_itr and final_itr are accessible
+    if terminal_itr and final_itr:
+        try:
+            # Perform a search to find a path between terminal_itr and final_itr
+            path = nx.shortest_path(subgraph, source=terminal_itr[0], target=final_itr[0])
+            print('Found path between terminal and final ITR:', path)
+    
+            # Filter components to the path found
+            selected_itrs = set(path)
+            selected_itrs = list(selected_itrs)
+    
+        except nx.NetworkXNoPath:
+            print('Warning, no path between terminal and final ITR')
+            selected_itrs = set(terminal_itr)  # Default to terminal_itr if no path exists
     else:
-        itrs = contig_ends
-        print('Warning, no connected components, assigning itr to only terminal itr')
+        selected_itrs = set(terminal_itr)
+        print('Warning, missing terminal or final ITR')
+    
+    print('These are the selected ITRs:', selected_itrs)
+    
+    itr_length = sum(len(seg.sequence) for seg in segments if seg.name in selected_itrs)
 
-    itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
-
-    if itrs and len(contig_ends) < 2:
-        status = 'PASS: itrs conform to expectation'
+    if selected_itrs and len(terminal_itr) < 2:
+        status = 'PASS: ITRs conform to expectation'
     else:
         status = 'FAIL: Issues with ITR identification'
 
-    print("contigs in ITR", itrs, "with total length", itr_length)
+    print("contigs in ITR", selected_itrs, "with total length", itr_length)
     print(status)
-    return list(itrs), itr_length, status
+    return selected_itrs, itr_length, status, terminal_itr, final_itr
 
 def get_final_paths(filtered_edges, filtered_graph, segments):
+    # Start Here
+    # need to filter itrs so they only include those from terminal to final
+    # also final path needs to start only with terminal itr
     """Find all longest paths in the graph starting from any ITR."""
-    itrs, itr_length, itr_status = identify_itr(filtered_edges, segments)
+    itrs, itr_length, itr_status, terminal_itr, final_itr = identify_itr(filtered_edges, segments)
     if not itrs or 'FAIL' in itr_status:
         status = itr_status
         return [], [], [], status
-
     longest_paths = []
     max_length = 0
-    for itr in itrs:
-        for contig in filtered_graph.nodes():
-            if contig != itr:
-                for path in nx.all_simple_paths(filtered_graph, source=itr, target=contig):
-                    path_length = len(path)
-                    if path_length > max_length:
-                        longest_paths = [path]  # Start a new list with the new longest path
-                        max_length = path_length
-                    elif path_length == max_length:
-                        if path not in longest_paths:
-                            longest_paths.append(path)  # Add path to the list of longest paths
+
+    for contig in filtered_graph.nodes():
+        # print('contig',contig)
+        # print(final_itr[0].strip("'[]'"))
+        # want contig but not contig that is getting flagged as itr, so stop at final itr
+        end = terminal_itr[0]
+        if contig not in final_itr and contig != end:
+            for path in nx.all_simple_paths(filtered_graph, source=end, target=contig):
+                #print(path,len(path))
+                path_length = len(path)
+                if path_length > max_length:
+                    longest_paths = [path]  # Start a new list with the new longest path
+                    max_length = path_length
+                elif path_length == max_length:
+                    if path not in longest_paths:
+                        longest_paths.append(path)  # Add path to the list of longest paths
 
     final_paths = []
     if longest_paths:
@@ -260,9 +279,7 @@ def orient_longest_contig(query, reference, blast_db_dir):
 def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itrs):
     # Build a dictionary for quick lookup of links
     links_dict = {}
-    for link in lnks:
-        print(link)
-        
+    for link in lnks:        
         # Map direct links
         key = (link.from_name, link.to_name)
         links_dict[key] = (link.from_orient, link.to_orient)
@@ -485,8 +502,9 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         # Filter segments to include only those that are part of the filtered graph
         filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
 
-        # Find all longest paths        
+        # Find all longest paths   
         final_paths, itrs, itr_length, status = get_final_paths(filtered_links, filtered_graph, filtered_segments)
+
         log['05'] = {
             'step_name': "get_final_paths",
             'step_description': "Find all longest paths in the graph starting from any ITR",
