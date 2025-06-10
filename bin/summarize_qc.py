@@ -499,7 +499,6 @@ def main():
             contig_file = contig_files[0]
             logger.info(f"{contig_file} found")
             contigs = pd.read_csv(contig_file, delimiter = "\t")
-            ### Check number of entries per dataframe
             contigsIds = list(contigs[contigs.columns[0]])
             sample_contig_notProcessed = set(samplesIds) - set(contigsIds)
             print('made it to point 1')
@@ -509,24 +508,31 @@ def main():
                     naHold = ['NaN'] * rowMissing
                     no_sample_data = [i] + naHold
                     contigs.loc[len(contigs)] = no_sample_data
-                    contigs.fillna(value='NaN',inplace=True)
+                    contigs.fillna(value='NaN', inplace=True)
             print('heres the number of contigs')
             print(contigs)
+    
             contig_columns = ['>= 50000 bp', '25000-50000 bp', '10000-25000 bp', 
-                  '5000-10000 bp', '1000-5000 bp', '0-1000 bp']
-
+                              '5000-10000 bp', '1000-5000 bp', '0-1000 bp']
+    
+            # --- Begin revision: Ensure all columns exist ---
+            for col in contig_columns:
+                if col not in contigs.columns:
+                    contigs[col] = 0
+            # --- End revision ---
+    
             # Now convert column values to numeric
-            contigs[contig_columns] = contigs[contig_columns].apply(pd.to_numeric, errors='coerce')
-
+            contigs[contig_columns] = contigs[contig_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
+    
             # Sum values row-wise
             contigs['n_contigs_unicycler'] = contigs[contig_columns].sum(axis=1)
             print('please print this whole thing!!!!!')
             print(contigs[contig_columns].sum(axis=1))
             # Merge the summed info back into fixed_summary
             fixed_summary = fixed_summary.merge(
-            contigs[['Sample', 'n_contigs_unicycler']],
-            left_on='sample',
-            right_on='Sample'
+                contigs[['Sample', 'n_contigs_unicycler']],
+                left_on='sample',
+                right_on='Sample'
             ).drop('Sample', axis=1)
 
     if args.workflow == 'ref_based' or args.workflow == 'full':
