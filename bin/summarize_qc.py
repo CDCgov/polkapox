@@ -106,9 +106,8 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     ortho_reads = "{}.opxreads.txt".format(sample)
 
     if os.path.exists(kraken_reads) and os.path.exists(ortho_reads):
-        print('Kraken Paths Exist!!!!!')
         try:
-            k_data = pd.read_csv(kraken_reads, delim_whitespace=True, usecols=[0,1,2,3,4], header=None)
+            k_data = pd.read_csv(kraken_reads, sep='\s+', usecols=[0,1,2,3,4], header=None)
             logger.info(f"Data load from {kraken_reads}")
         except pd.errors.ParserError:
             logger.error(f"Unable to load data from {kraken_reads}")
@@ -121,7 +120,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
 
         if os.path.getsize(ortho_reads) > 0:
             try:
-                s_data = pd.read_csv(ortho_reads, delim_whitespace=True, header=None)
+                s_data = pd.read_csv(ortho_reads, sep='\s+', header=None)
                 opx = len(s_data)
                 opx_perc = round(((opx/total) * 100),2)
             except pd.errors.ParserError:
@@ -134,7 +133,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     with open(kraken_tax_ids) as l:
         lines = [line.strip() for line in l.readlines()]
     k_tax_ids = ', '.join(lines)
-    print('printing kraken stuff for testing',total,opx_perc, human_perc)
+    #print('printing kraken stuff for testing',total,opx_perc, human_perc)
     return total, opx_perc, human_perc, unclass_perc, kdb, k_tax_ids
 
 def get_flagstat_denovo(sample):
@@ -196,48 +195,125 @@ def get_cov_stats(sample, reference):
 
 def get_gfa_stats(sample):
     """ Get stats from Unicycler graph assembly output
-    :param search_dir: work directory
     :param sample: sample name
-    :returns:gfaResults
+    :returns: gfaResults
     :rtype: list
     """
     gfa_log = "{}.assembly.log".format(sample)
+    print('Running analysis for:', sample)
 
-    if os.path.exists(gfa_log):  
-        f = open(gfa_log)
-        try:
-            parsed_json = json.load(f) 
-            logger.error(f"Data loaded from {gfa_log}")
-        except:
-            logger.error(f"Could not load data from {gfa_log}")
-            return(['NA','NA','NA','NA','NA'])
-        print('len of json keys', len(parsed_json.keys()))
+    if os.path.exists(gfa_log):
+        with open(gfa_log) as f:
+            try:
+                parsed_json = json.load(f)
+                #print(f"Data loaded from {gfa_log}")
+            except json.JSONDecodeError:
+                print(f"Could not load data from {gfa_log}")
+                return ['NA', 'NA', 'NA', 'NA', 'NA']
 
-        if len(parsed_json.keys()) == 8:
-            print('parsing log file')
+        # Initialize variables
+        final_order_orientation_copy_number = 'Unknown'
+        final_sequence_length = 'Unknown'
+        final_itr_length = 'Unknown'
+        status = 'Unknown'
+        notes = 'Unknown'
+        status_report = 'Unknown'
+        
+        # print('printing the whole json to debug')
+        # print(parsed_json)
+        
+        # List for collecting status of all steps
+        status_list = []
+
+        # Sort keys explicitly to respect order
+        sorted_keys = sorted(parsed_json.keys())
+        # Iterate through sorted keys
+        for key in sorted_keys:
+            step = parsed_json[key]
+
+            # Check output data if needed
+            if 'output' in step:
+                output = step['output']
+                if 'final_orientation' in output:
+                    final_order_orientation_copy_number = ', '.join(
+                        str(item) for item in output['final_orientation'])
+                if 'final_sequence_length' in output:
+                    final_sequence_length = output['final_sequence_length']
+                if 'itr_length' in output:
+                    final_itr_length = output['itr_length']
+            # append status from each step
+            if 'status' in step:
+                status_list.append(step['status'])
+
+        # final step (highest sorted key)
+        final_step = parsed_json[sorted_keys[-1]]
+        final_status = final_step.get('status', 'Unknown')
+
+        # Confirm results:
+        print("All statuses:", status_list)
+        print("Final status:", final_status)   
+        
+        # Determine notes and status report
+        if 'PASS' in final_status:
             notes = 'GFA step complete'
-            step07 = list(parsed_json)[7]
-            step03 = list(parsed_json)[3]
-            
-            final_order_orientation_copy_number = parsed_json[step07]['output']['final_orientation']
-            final_order_orientation_copy_number = ', '.join(str(item) for item in final_order_orientation_copy_number)
-
-            final_sequence_length = parsed_json[step07]['output']['final_sequence_length']
-            status = parsed_json[step07]['status']
-            final_itr_length = parsed_json[step03]['output']['itr_length']
-            gfaResults = [final_order_orientation_copy_number, float(final_sequence_length), float(final_itr_length), status, notes]
+            status_report = 'PASS'
+        elif 'WARNING' in final_status:
+            notes = final_status
+            status_report = 'FAIL'
+        elif 'FAIL' in final_status:
+            notes = final_status
+            status_report = 'FAIL'
         else:
-            print(parsed_json)
-            final_elem = '0'+str(len(parsed_json)-1)
-            #failCode_stepN = list(parsed_json)[step07]
-            status = parsed_json[final_elem]['status']
-            statusReport = 'FAIL'
-            gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
-    
+            notes = 'GFA step incomplete'
+            status_report = 'FAIL'
+            
+        # Function to handle conversion to float
+        def extract_float(val):
+            if val == 'Unknown' or val is None:
+                return 'Unknown'
+            elif isinstance(val, list):
+                if len(val) == 0:
+                    return 'Unknown'
+                else:
+                    # Decide how to handle list elements
+                    # Option 1: Take the first element
+                    try:
+                        return float(val[0])
+                    except (ValueError, TypeError):
+                        return 'Unknown'
+                    
+            else:
+                try:
+                    return float(val)
+                except (ValueError, TypeError):
+                    return 'Unknown'
+
+        # Apply the function to get float values
+        final_sequence_length_value = extract_float(final_sequence_length)
+        final_itr_length_value = extract_float(final_itr_length)
+        
+        # catch example of status PASS but no ITR/assembly
+        key_values = [final_order_orientation_copy_number, final_sequence_length, final_itr_length_value]
+
+        if status_report == 'PASS' and any(val == 'Unknown' for val in key_values):
+            status_report = 'FAIL'
+            notes = 'Issue with GFA assembly'
+            
+        gfaResults = [
+            final_order_orientation_copy_number,
+            final_sequence_length_value,
+            final_itr_length_value,
+            status_report,
+            notes,
+        ]
+        # print('here are the final gfa results',gfaResults)
+        
     else:
         status = 'Unicycler-GFA Log DOES NOT Exist'
-        statusReport = 'FAIL'
-        gfaResults = ['Unknown','Unknown','Unknown', statusReport, status]
+        status_report = 'FAIL'
+        gfaResults = ['Unknown', 'Unknown', 'Unknown', status_report, status]
+
+    print('Final GFA results for', sample)
     print(gfaResults)
     return gfaResults
 
@@ -423,24 +499,41 @@ def main():
             contig_file = contig_files[0]
             logger.info(f"{contig_file} found")
             contigs = pd.read_csv(contig_file, delimiter = "\t")
-            ### Check number of entries per dataframe
             contigsIds = list(contigs[contigs.columns[0]])
             sample_contig_notProcessed = set(samplesIds) - set(contigsIds)
-            
+            print('made it to point 1')
             if not len(list(sample_contig_notProcessed)) == 0:
                 rowMissing = len(contigs.columns)-1
                 for i in sample_contig_notProcessed:
                     naHold = ['NaN'] * rowMissing
                     no_sample_data = [i] + naHold
                     contigs.loc[len(contigs)] = no_sample_data
-                    contigs.fillna(value='NaN',inplace=True)
-
-            contigs['n_contigs_unicycler'] = contigs.sum(numeric_only=True,axis = 1)
-            fixed_summary = fixed_summary.merge(contigs[['Sample', 'n_contigs_unicycler']],left_on='sample', right_on='Sample').drop('Sample', axis = 1)
-        else:
-            # If Unicycler run failed, config_files don't get created
-            logger.info(f"{contig_files} not found")
-            fixed_summary['n_contigs_unicycler'] = 'NaN'    
+                    contigs.fillna(value='NaN', inplace=True)
+            print('heres the number of contigs')
+            print(contigs)
+    
+            contig_columns = ['>= 50000 bp', '25000-50000 bp', '10000-25000 bp', 
+                              '5000-10000 bp', '1000-5000 bp', '0-1000 bp']
+    
+            # --- Begin revision: Ensure all columns exist ---
+            for col in contig_columns:
+                if col not in contigs.columns:
+                    contigs[col] = 0
+            # --- End revision ---
+    
+            # Now convert column values to numeric
+            contigs[contig_columns] = contigs[contig_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
+    
+            # Sum values row-wise
+            contigs['n_contigs_unicycler'] = contigs[contig_columns].sum(axis=1)
+            print('please print this whole thing!!!!!')
+            print(contigs[contig_columns].sum(axis=1))
+            # Merge the summed info back into fixed_summary
+            fixed_summary = fixed_summary.merge(
+                contigs[['Sample', 'n_contigs_unicycler']],
+                left_on='sample',
+                right_on='Sample'
+            ).drop('Sample', axis=1)
 
     if args.workflow == 'ref_based' or args.workflow == 'full':
         fixed_summary['reads_mapped_bwa'] = pd.to_numeric(fixed_summary['reads_mapped_bwa'], errors='coerce')
@@ -454,7 +547,7 @@ def main():
     for sample in summary_full['sample']:
         summary_full.loc[summary_full['sample'] == sample, ['opx_read_count_kraken', 'filtered_read_count_fastp']] = get_raw_filt_counts(sample)
         kraken_db = args.kraken_db
-        print(summary_full)
+        #print(summary_full)
         summary_full.loc[summary_full['sample'] == sample, ['total_raw_reads', 'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken', 'kraken_db','kraken_tax_ids']] = get_kraken_stats(sample, kraken_db, args.kraken_tax_ids)
         if args.workflow == 'ref_based':
             summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa','reference_genome']] = get_cov_stats(sample, args.reference_genome)
@@ -494,20 +587,19 @@ def main():
         if args.filter == 'false':
             summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps','corrected_snps','corrected_indels','corrected_Ns']]
 
-    # get the final paths for the seqtk output R1 and R2, and final assembly n
-    seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
-
     # Check for the files and assign to summary_full
-    for sample in summary_full['sample']:
-        # final assembly
-        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa' # extension enforced by IVAR_CONSENSUS_POLISH + PUBLISH_CONTIGS
-        summary_full['final_assembly'] = final_assembly if final_assembly else None
-        # opxv reads
+    for idx, sample in summary_full['sample'].items():
+        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa'
+        summary_full.at[idx, 'final_assembly'] = final_assembly if final_assembly else None
+        
         for i in [1, 2]:
+            # get the final paths for the seqtk output R1 and R2, and final assembly n
+            seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
             seqtk_outfile = glob(seqtk_outfile_pattern.format(i))
-            summary_full[f'opxv_reads_{i}'] = seqtk_outfile[0] if seqtk_outfile else None
+            #print(seqtk_outfile)
+            summary_full.at[idx, f'opxv_reads_{i}'] = seqtk_outfile[0] if seqtk_outfile else None
 
-    summary_full.to_csv("sample_summary.tsv", sep = "\t", index = False)
+    summary_full.to_csv("sample_summary.tsv", sep="\t", index=False)
     logger.info(f"Summary results successfully written to sample_summary.tsv")
 
 if __name__ == "__main__":

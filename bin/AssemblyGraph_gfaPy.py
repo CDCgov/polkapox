@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 ### Written by S.Morrison, K. Knipe 20221018
 ### The script orignated was apart of Mpox Response work 2022 - 2023
 ### Refactored by Kyle O'Connell with help from GPT 4o, o1-preview, and Gemini 1.5 Pro 20240730
+
+# find leng of itr from terminal to itr with 3 connections. If not one with 3 connections
 
 import os
 import re
@@ -41,10 +43,52 @@ def read_gfa_file(gfa_path):
         print('Issue with gfa file')
         return None, f"WARNING: Issue with GFA file : {str(e)}"
 
-def remove_self_loops(links):
-    """Remove self-loops from link information."""
+class Link:
+    def __init__(self, from_name, to_name):
+        self.from_name = str(from_name)
+        self.to_name = str(to_name)
+
+def remove_self_loops_and_terminal_nodes(links, segments):
+    """Remove self-loops and terminal nodes with length < 1000 bp using segment info."""
+    
+    # Remove self-loops first
     pruned_links = [link for link in links if link.from_name != link.to_name]
 
+    # Create a graph with the pruned links
+    graph = nx.Graph()
+
+    for link in pruned_links:
+        graph.add_edge(link.from_name, link.to_name)
+    # Construct a length dictionary from the segments info
+    length_dict = {seg.get('name'): seg.get('LN') for seg in segments}
+
+    # Identify and remove terminal nodes
+    nodes_to_remove = []
+    for node in graph.nodes:
+        neighbors = list(graph.neighbors(node))
+        # Check for terminal condition and length
+        if (len(neighbors) == 1 or (len(neighbors) == 2 and neighbors[0] == neighbors[1])) \
+                and length_dict.get(node, 0) < 1000:
+            nodes_to_remove.append(node)
+
+    graph.remove_nodes_from(nodes_to_remove)
+
+    # Reconstruct links without the removed nodes
+    final_links = [
+        link for link in pruned_links if graph.has_node(link.from_name) and graph.has_node(link.to_name)
+    ]
+    # for link in final_links:
+    #     print(link, link.from_name, link.to_name)
+    return final_links, "PASS"
+
+def remove_self_loops(links):
+    """Remove self-loops from link information."""
+    extra_loops = []
+    
+    # for link in links:
+    #     print (link, link.from_name , link.to_name)
+
+    pruned_links = [link for link in links if link.from_name != link.to_name]
     return pruned_links, "PASS"
 
 def identify_low_coverage_contigs(segments):
@@ -88,37 +132,47 @@ def create_filtered_graph(links, segments):
 
     for link in links:
         graph.add_edge(link.from_name, link.to_name)
+
+    # Find all connected components
+    components = list(nx.connected_components(graph))
     
-    # Remove disconnected nodes
-    disconnected_nodes = [node for node in graph.nodes if graph.degree(node) == 0]
-    graph.remove_nodes_from(disconnected_nodes)
+    # Determine which component to keep: the main graph
+    largest_component = max(components, key=len)
+
+    # Remove all nodes that are not in the largest component
+    nodes_to_remove = set(graph.nodes) - largest_component
+    print('Removing nodes that are not part of the main graph, usually disconnected or forming subgraphs', nodes_to_remove)
+    graph.remove_nodes_from(nodes_to_remove)
+    # Check if the graph is still disconnected after filtering
     if not nx.is_connected(graph):
-        return None, "WARNING: Graph is not connected"
-    
+        return None, "WARNING: Graph is not fully connected"
+
     # Check if the graph forms a cycle
     # get the number of edges for each node
     degrees = dict(graph.degree())
+
     # figure out how many nodes have more or less than two edges, count 
     count_not_two = sum(1 for degree in degrees.values() if degree < 2)
     all_degree_two = count_not_two <= 1
 
     num_edges = graph.number_of_edges()
     num_nodes = graph.number_of_nodes()
-
     # make sure the number of edges and nodes are equal (perfect loop) or one off (loop + ITR)
-
+    #print(num_edges)
     if all_degree_two and num_edges == num_nodes or num_edges == num_nodes+1:
         print('The graph forms a complete cycle')
         return graph, "PASS"
     else:
-        print("graph is not circular")
-        return None, "WARNING: Graph is not circular"
+        print("FAIL: Graph is not circular")
+        return None, "WARNING: Graph is not circular, likely has extra ITRs or some recombination elements. Check graph in Bandage"
 
 def identify_itr(filtered_edges, segments):
     """
     Identify all Inverted Terminal Repeats (ITRs) based on the orientation of their connections.
     A terminal ITR is identified as a contig that has connections only on the same end (orientation),
     whereas other contigs are connected on both '+' and '-' ends.
+    but the ITRs end when you have an ITR with three connections. If no 3 connections exist, then there is 
+    only 1 ITR. If there is more than one ITR with 3+ connections then there is a hairpin somewhere and the script should fail.
     """
     # Create a dictionary to store the set of connected orientations for each contig
     depth_data = {seg.get('name'): float(seg.get('dp')) for seg in segments if 'dp' in seg.tagnames}
@@ -126,91 +180,103 @@ def identify_itr(filtered_edges, segments):
     filt_depth = 0.6
     potential_itrs = [contig for contig, depth in depth_data.items() if lower_bound < depth]
     filt_contigs = [contig for contig, depth in depth_data.items() if filt_depth >= depth]
-    print("potential ITRs", potential_itrs)
+    print("Potential ITRs", potential_itrs)
+    print('Filtered out contigs',filt_contigs)
 
     # Identify the terminal ITR
-    contig_ends = []
+    terminal_itr = []
+    final_itr = []
+    # for edge in filtered_edges:
+    #     print(edge,edge.from_name,edge.to_name)
     for itr in potential_itrs:
-        print('itr in loop', itr)
+        # print('itr in loop', itr)
         from_orients = []
         to_orients = []
         for edge in filtered_edges:
-            if edge.from_name == itr or edge.to_name == itr:
-                print(edge)
-            if edge.from_name != edge.to_name:
+            if edge.from_name != edge.to_name: # remove self loops
                 if edge.from_name == itr:
                     from_orients.append(edge.from_orient)
                 elif edge.to_name == itr:
                     to_orients.append(edge.to_orient)
         # Create set of each list
+        all_orients = from_orients + to_orients
         from_orients = set(from_orients)
         to_orients = set(to_orients)
-        print(itr, from_orients, to_orients)
+        # print(itr, from_orients, to_orients, all_orients)
 
         # Determine if the contig is a terminal ITR based on orientations
         if (len(from_orients) == 1 and len(to_orients) == 0) or (len(from_orients) == 0 and len(to_orients) == 1):
-            contig_ends.append(itr)
+            terminal_itr.append(itr)
         elif len(from_orients) == 1 and len(to_orients) == 1:
             if list(from_orients)[0] != list(to_orients)[0]:
-                contig_ends.append(itr)
-
-    print("Terminal ITR contigs based on links:", contig_ends)
+                terminal_itr.append(itr)
+        if len(all_orients) > 2:
+            final_itr.append(itr)
+    # This should be terminal ITR and then the final ITR before 1x sequence, contraining this helps remove other repeats that get flagged as ITRs
+    print("Terminal ITR contigs based on links:", terminal_itr)
+    print("Other end of ITR sequence based on links:", final_itr)
 
     # Create a subgraph with only potential ITRs to check for connected ITR contigs
     subgraph = nx.Graph()
     for edge in filtered_edges:
         if edge.from_name in potential_itrs and edge.to_name in potential_itrs:
             subgraph.add_edge(edge.from_name, edge.to_name)
-
-    # Find connected components in the subgraph
-    connected_components = list(nx.connected_components(subgraph))
-    print('connected components', connected_components)
-
-    # Select the connected component containing the terminal ITR
-    if connected_components:
-        for group in connected_components:
-            if contig_ends and contig_ends[0] in group:
-                itrs = max(connected_components, key=len)
-                print('these are the itrs', itrs)
-                break  # Exit the loop since we've found the group
-        else:
-            print('Warning, contig end not in connected components, assigning itr to terminal itr')
-            itrs = contig_ends
+    
+    # Ensure terminal_itr and final_itr are accessible
+    if terminal_itr and final_itr:
+        try:
+            # Perform a search to find a path between terminal_itr and final_itr
+            path = nx.shortest_path(subgraph, source=terminal_itr[0], target=final_itr[0])
+            print('Found path between terminal and final ITR:', path)
+    
+            # Filter components to the path found
+            selected_itrs = list(set(path))
+    
+        except nx.NetworkXNoPath:
+            print('Warning, no path between terminal and final ITR')
+            selected_itrs = list(set(terminal_itr))
     else:
-        itrs = contig_ends
-        print('Warning, no connected components, assigning itr to only terminal itr')
+        selected_itrs = list(set(terminal_itr))
+        print('Warning, missing terminal or final ITR')
+    
+    print('These are the selected ITRs:', selected_itrs)
+    
+    itr_length = sum(len(seg.sequence) for seg in segments if seg.name in selected_itrs)
 
-    itr_length = sum(len(seg.sequence) for seg in segments if seg.name in itrs)
-
-    if itrs and len(contig_ends) < 2:
-        status = 'PASS: itrs conform to expectation'
+    if selected_itrs and len(terminal_itr) < 2:
+        status = 'PASS: ITRs conform to expectation'
     else:
         status = 'FAIL: Issues with ITR identification'
 
-    print("contigs in ITR", itrs, "with total length", itr_length)
+    print("contigs in ITR", selected_itrs, "with total length", itr_length)
     print(status)
-    return list(itrs), itr_length, status
+    return selected_itrs, itr_length, status, terminal_itr, final_itr
 
 def get_final_paths(filtered_edges, filtered_graph, segments):
+
     """Find all longest paths in the graph starting from any ITR."""
-    itrs, itr_length, itr_status = identify_itr(filtered_edges, segments)
+    itrs, itr_length, itr_status, terminal_itr, final_itr = identify_itr(filtered_edges, segments)
     if not itrs or 'FAIL' in itr_status:
         status = itr_status
         return [], [], [], status
-
     longest_paths = []
     max_length = 0
-    for itr in itrs:
-        for contig in filtered_graph.nodes():
-            if contig != itr:
-                for path in nx.all_simple_paths(filtered_graph, source=itr, target=contig):
-                    path_length = len(path)
-                    if path_length > max_length:
-                        longest_paths = [path]  # Start a new list with the new longest path
-                        max_length = path_length
-                    elif path_length == max_length:
-                        if path not in longest_paths:
-                            longest_paths.append(path)  # Add path to the list of longest paths
+
+    for contig in filtered_graph.nodes():
+        # print('contig',contig)
+        # print(final_itr[0].strip("'[]'"))
+        # want contig but not contig that is getting flagged as itr, so stop at final itr
+        end = terminal_itr[0]
+        if contig not in final_itr and contig != end:
+            for path in nx.all_simple_paths(filtered_graph, source=end, target=contig):
+                #print(path,len(path))
+                path_length = len(path)
+                if path_length > max_length:
+                    longest_paths = [path]  # Start a new list with the new longest path
+                    max_length = path_length
+                elif path_length == max_length:
+                    if path not in longest_paths:
+                        longest_paths.append(path)  # Add path to the list of longest paths
 
     final_paths = []
     if longest_paths:
@@ -225,7 +291,7 @@ def get_final_paths(filtered_edges, filtered_graph, segments):
             middle_path = [node for node in path if node not in itrs]
             final_path = left_itrs + middle_path + right_itrs
             final_paths.append(final_path)
-        print("Found Longest Path")
+        # print("Found Longest Path")
         status = f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
         return final_paths, itrs, itr_length, status
     else:
@@ -261,9 +327,7 @@ def orient_longest_contig(query, reference, blast_db_dir):
 def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itrs):
     # Build a dictionary for quick lookup of links
     links_dict = {}
-    for link in lnks:
-        print(link)
-        
+    for link in lnks:     
         # Map direct links
         key = (link.from_name, link.to_name)
         links_dict[key] = (link.from_orient, link.to_orient)
@@ -310,6 +374,7 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
                 key = (previous_contig, current_contig)
                 if key in links_dict:
                     prev_orient_in_link, curr_orient_in_link = links_dict[key]
+                    # print(key, prev_orient_in_link, curr_orient_in_link)
                     # Adjust current orientation based on the previous orientation
                     if previous_orient == prev_orient_in_link:
                         current_orient = curr_orient_in_link
@@ -336,9 +401,15 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
         return path, final_oriented_path, "PASS"
 
     else:
-        # Only one longest path; apply new logic
+        # Only one longest path
+        """
+        To Do, need to find way to traverse this path starting from longest contig for which we know the orientation
+        Then can assemble ITRs, it's possible just difficult because the longest contig is connected in both 
+        orientations to the first ITR
+        """
+        print('Only one largest contig and ITRs, current script unable to resolve these paths')
         return None, [], "FAIL: Unable to resolve final orientation, likely only one longest contig and ITRs"
-        
+ 
 def get_final_sequence(oriented_path, segments):
     """Generate the final sequence for a given path and orientation."""
     # Create a dictionary mapping segment names to sequences
@@ -370,7 +441,7 @@ def get_final_sequence(oriented_path, segments):
 
 def write_oriented_fasta(final_path, segments, output_file, input_file):
     """Write the segments in the specified orientation to a single FASTA entry with the input file name as the header."""
-    print('writing final oriented fasta to out file')
+    print('Writing final oriented fasta to out file')
     segment_dict = {seg.name: seg.sequence for seg in segments}  # Create a dictionary of segment names to sequences
     full_sequence = ""  # Initialize an empty string to accumulate full sequence
 
@@ -424,7 +495,7 @@ def write_log_and_exit(log, status):
     with open(summary_file, 'w') as f:
         f.write('\t'.join(headers) + '\n')
         f.write('\t'.join(data) + '\n')
-
+    # Error here
     with open(log_file, 'w') as f:
         json_object = json.dumps(log, indent=4)
         f.write(json_object)
@@ -441,7 +512,9 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
 
         # Start processing the graph
-        filtered_edges, status = remove_self_loops(gfa_graph.edges)
+        # filtered_edges, status = remove_self_loops(gfa_graph.edges)
+        filtered_edges, status = remove_self_loops_and_terminal_nodes(gfa_graph.edges,gfa_graph.segments)
+        
         log['01'] = {
             'step_name': "remove_self_loops",
             'step_description': "Remove self-loops from link information",
@@ -486,8 +559,9 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         # Filter segments to include only those that are part of the filtered graph
         filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
 
-        # Find all longest paths        
+        # Find all longest paths   
         final_paths, itrs, itr_length, status = get_final_paths(filtered_links, filtered_graph, filtered_segments)
+
         log['05'] = {
             'step_name': "get_final_paths",
             'step_description': "Find all longest paths in the graph starting from any ITR",
