@@ -27,7 +27,7 @@ nextflow_process {
 
     }
 
-    test("Test | single-end reads ") {
+    test("Test | single-end reads") {
 
         when {
             params {
