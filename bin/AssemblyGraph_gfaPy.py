@@ -41,7 +41,7 @@ def read_gfa_file(gfa_path):
         return gfa_graph, "PASS"
     except Exception as e:
         print('Issue with gfa file')
-        return None, f"WARNING: Issue with GFA file : {str(e)}"
+        return None, f"WARNING: Unable to read GFA file : {str(e)}"
 
 class Link:
     def __init__(self, from_name, to_name):
@@ -164,7 +164,7 @@ def create_filtered_graph(links, segments):
         return graph, "PASS"
     else:
         print("FAIL: Graph is not circular")
-        return None, "WARNING: Graph is not circular, likely has extra ITRs or some recombination elements. Check graph in Bandage"
+        return None, "WARNING: Graph is not circular, either it's an incomplete assembly, or it has extra ITRs or some recombination elements. Check graph in Bandage"
 
 def identify_itr(filtered_edges, segments):
     """
@@ -486,7 +486,7 @@ def get_final_orientation(left_itrs, middle_contigs, final_paths, lnks, longest_
         print(contig_orientations)
         # This list will remain empty if the longest contig is oriented correctly in the first pass
         flipped_orients = []
-        
+
         # Check if this path contains the longest contig with the correct orientation
         if longest_orient in contig_orientations:
             print('Single path matches longest contig orientation')

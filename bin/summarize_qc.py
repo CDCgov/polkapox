@@ -255,7 +255,7 @@ def get_gfa_stats(sample):
         
         # Determine notes and status report
         if 'PASS' in final_status:
-            notes = 'GFA step complete'
+            notes = 'Graph successfully reconstructed'
             status_report = 'PASS'
         elif 'WARNING' in final_status:
             notes = final_status
@@ -264,7 +264,7 @@ def get_gfa_stats(sample):
             notes = final_status
             status_report = 'FAIL'
         else:
-            notes = 'GFA step incomplete'
+            notes = 'GFA step failed, review the logs for that process for more information'
             status_report = 'FAIL'
             
         # Function to handle conversion to float
