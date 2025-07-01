@@ -76,8 +76,8 @@ def remove_self_loops_and_terminal_nodes(links, segments):
     final_links = [
         link for link in pruned_links if graph.has_node(link.from_name) and graph.has_node(link.to_name)
     ]
-    # for link in final_links:
-    #     print(link, link.from_name, link.to_name)
+    for link in final_links:
+        print(link, link.from_name, link.to_name)
     return final_links, "PASS"
 
 def remove_self_loops(links):
@@ -406,8 +406,62 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
         Then can assemble ITRs, it's possible just difficult because the longest contig is connected in both 
         orientations to the first ITR
         """
-        print('Only one largest contig and ITRs, current script unable to resolve these paths')
-        return None, [], "FAIL: Unable to resolve final orientation, likely only one longest contig and ITRs"
+        print('only one longest path')
+        for path in final_paths:
+            contig_orientations = []
+            print('Processing path:', path)
+
+            if not path:
+                continue  # Skip empty paths
+
+            # Assign orientation to the first contig
+            first_contig = path[0]
+            first_contig_orient = None
+            # Find an initial orientation for the first contig
+            for link in lnks:
+                if first_contig == link.from_name:
+                    first_contig_orient = link.from_orient
+                    break
+                elif first_contig == link.to_name:
+                    # Flip the orientation since it's the 'to_name' in the link
+                    first_contig_orient = '-' if link.to_orient == '+' else '+'
+                    break
+            if first_contig_orient is None:
+                print(f"Could not determine orientation for contig {first_contig}")
+                continue  # Skip this path if orientation is unknown
+
+            contig_orientations.append(f"{first_contig} {first_contig_orient}")
+            previous_contig = first_contig
+            previous_orient = first_contig_orient
+            # Process the rest of the contigs in the path
+            for current_contig in path[1:]:
+                key = (previous_contig, current_contig)
+                if key in links_dict:
+                    prev_orient_in_link, curr_orient_in_link = links_dict[key]
+                    # print(key, prev_orient_in_link, curr_orient_in_link)
+                    # Adjust current orientation based on the previous orientation
+                    if previous_orient == prev_orient_in_link:
+                        current_orient = curr_orient_in_link
+                    else:
+                        # If previous orientation doesn't match, flip the current orientation
+                        current_orient = '-' if curr_orient_in_link == '+' else '+'
+                    contig_orientations.append(f"{current_contig} {current_orient}")
+                    previous_contig = current_contig
+                    previous_orient = current_orient
+                else:
+                    print(f"No link found between {previous_contig} and {current_contig}")
+                    break  # Cannot process further without a link
+
+            print('Final contig orientations:', contig_orientations)
+            # Check if this path contains the longest contig with the correct orientation
+            for contig_info in contig_orientations:
+                print(contig_info)
+                contig_name, contig_orient = contig_info.split(' ')
+                if contig_name == longest_contig and contig_orient == longest_orient.split(' ')[1]:
+                    final_oriented_path = contig_orientations
+                    break
+        #print('Only one largest contig and ITRs, current script unable to resolve these paths')
+        # return None, [], "FAIL: Unable to resolve final orientation, likely only one longest contig and ITRs"
  
 def get_final_sequence(oriented_path, segments):
     """Generate the final sequence for a given path and orientation."""
