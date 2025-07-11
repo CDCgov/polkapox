@@ -1,0 +1,27 @@
+nextflow_process {
+
+    name "Test Process SAMPLESHEET_CHECK"
+    script "modules/local/samplesheet_check/samplesheet_check.nf"
+    process "SAMPLESHEET_CHECK"
+
+    test("Validate samplesheet") {
+
+        when {
+            params {
+
+            }
+            process {
+                """
+                 input[0] = file("${projectDir}/assets/samplesheet.test.csv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

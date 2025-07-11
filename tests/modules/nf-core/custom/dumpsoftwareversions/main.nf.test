@@ -1,0 +1,26 @@
+nextflow_process {
+
+    name "Test Process CUSTOM_DUMPSOFTWAREVERSIONS"
+    script "modules/nf-core/custom/dumpsoftwareversions/main.nf"
+    process "CUSTOM_DUMPSOFTWAREVERSIONS"
+
+    test("Custom/DumpSoftwareVersions Test") {
+
+        when {
+            params {
+            }
+            process {
+                """
+                 input[0] = file("${projectDir}/tests/nf-test-data/collated_versions.yml")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

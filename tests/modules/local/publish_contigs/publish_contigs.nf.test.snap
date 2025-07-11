@@ -1,0 +1,22 @@
+{
+    "Publish Contig Test": {
+        "content": [
+            {
+                "0": [
+                    
+                ],
+                "1": [
+                    "versions.yml:md5,887df3ebc0dceef20bd08e960a6db4f3"
+                ],
+                "versions": [
+                    "versions.yml:md5,887df3ebc0dceef20bd08e960a6db4f3"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-07T16:50:05.599985693"
+    }
+}

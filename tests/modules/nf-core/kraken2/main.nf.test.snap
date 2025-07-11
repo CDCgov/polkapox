@@ -1,0 +1,96 @@
+{
+    "kraken2 paired-end, classified only": {
+        "content": [
+            {
+                "0": [
+                    
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    
+                ],
+                "3": [
+                    
+                ],
+                "4": [
+                    
+                ],
+                "classified_reads_assignment": [
+                    
+                ],
+                "classified_reads_fastq": [
+                    
+                ],
+                "report": [
+                    
+                ],
+                "unclassified_reads_fastq": [
+                    
+                ],
+                "versions": [
+                    
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-07T14:03:56.857764604"
+    },
+    "kraken2 stub test (paired-end)": {
+        "content": [
+            {
+                "0": [
+                    
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    
+                ],
+                "3": [
+                    
+                ],
+                "4": [
+                    
+                ],
+                "classified_reads_assignment": [
+                    
+                ],
+                "classified_reads_fastq": [
+                    
+                ],
+                "report": [
+                    
+                ],
+                "unclassified_reads_fastq": [
+                    
+                ],
+                "versions": [
+                    
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-06-25T16:07:28.63312695"
+    },
+    "kraken2 paired-end, classified + unclassified": {
+        "content": [
+            [
+                
+            ]
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-06-25T16:07:22.312962204"
+    }
+}

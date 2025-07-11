@@ -1,0 +1,31 @@
+{
+    "Custom/DumpSoftwareVersions Test": {
+        "content": [
+            {
+                "0": [
+                    
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    
+                ],
+                "mqc_yml": [
+                    
+                ],
+                "versions": [
+                    
+                ],
+                "yml": [
+                    
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-07T14:43:11.277440394"
+    }
+}

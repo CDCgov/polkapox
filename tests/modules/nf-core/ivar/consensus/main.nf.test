@@ -1,0 +1,37 @@
+nextflow_process {
+
+    name "Test Process IVAR_CONSENSUS"
+    script "modules/nf-core/ivar/consensus/main.nf"
+    process "IVAR_CONSENSUS"
+
+    test("Ivar Consensus Test") {
+
+        when {
+            params {
+
+            }
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'LIY15901A73'],
+                    [
+                        file("${projectDir}/tests/data/LIY15901A89.bam", checkIfExists: true)
+                    ]
+                ])
+                input[1] = [
+                        file("${projectDir}/tests/data/LIY15901A89.assembly_asm.fasta", checkIfExists: true)
+                    ]
+                input[2] = false
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}
+

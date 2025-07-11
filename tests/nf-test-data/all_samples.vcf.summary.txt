@@ -1,0 +1,5 @@
+run	sample	coord	refBase	altBase	totalDP	altDP	altQual	altFreq	altPval	GFFfeature	RefCodon	RefAA	AltCodon	AltAA
+/scicomp/home-pure/rjd0/polkapox/mpox_testing_cloud	test_sub	39148	C	T	268	268	40	1	1.8622e-174	cds-QNP13638.1	CTC	L	CTT	L
+/scicomp/home-pure/rjd0/polkapox/mpox_testing_cloud	test_sub	52894	G	A	308	308	40	1	3.15526e-200	cds-QNP13652.1	GAC	D	AAC	N
+/scicomp/home-pure/rjd0/polkapox/mpox_testing_cloud	test_sub	53353	A	C	266	3	30	0.0112782	0.0857253	cds-QNP13652.1	AAC	N	CAC	H
+/scicomp/home-pure/rjd0/polkapox/mpox_testing_cloud	test_sub	54126	G	A	284	284	41	1	3.44347e-185	cds-QNP13652.1	GAG	E	GAA	E

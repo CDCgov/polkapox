@@ -1,0 +1,25 @@
+{
+    "Create samplesheet from SRA": {
+        "content": [
+            {
+                "0": [
+                    [
+                        "test_sub",
+                        "samplesheet.csv:md5,ee90b888f2f5d5a82745270c4d2a1aff"
+                    ]
+                ],
+                "samplesheet": [
+                    [
+                        "test_sub",
+                        "samplesheet.csv:md5,ee90b888f2f5d5a82745270c4d2a1aff"
+                    ]
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-11T16:11:24.789345868"
+    }
+}

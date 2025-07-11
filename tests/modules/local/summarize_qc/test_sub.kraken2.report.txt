@@ -1,0 +1,25 @@
+  0.08	192	192	U	0	unclassified
+ 99.92	249808	1	R	1	root
+ 99.92	249807	0	D	10239	  Viruses
+ 99.92	249807	0	D1	2732004	    Varidnaviria
+ 99.92	249807	0	K	2732005	      Bamfordvirae
+ 99.92	249807	0	P	2732007	        Nucleocytoviricota
+ 99.92	249807	0	C	2732525	          Pokkesviricetes
+ 99.92	249807	0	O	2732527	            Chitovirales
+ 99.92	249807	0	F	10240	              Poxviridae
+ 99.92	249807	0	F1	10241	                Chordopoxvirinae
+ 99.92	249807	33847	G	10242	                  Orthopoxvirus
+ 81.53	203819	203819	S	10244	                    Monkeypox virus
+  1.09	2729	1815	S	10245	                    Vaccinia virus
+  0.37	914	914	S1	397342	                      Horsepox virus
+  0.69	1721	1721	S	12643	                    Ectromelia virus
+  0.61	1517	1517	S	10243	                    Cowpox virus
+  0.57	1420	1420	S	10255	                    Variola virus
+  0.52	1307	1307	S	2200830	                    Orthopoxvirus akhmetapox
+  0.34	844	0	G1	347814	                    unclassified Orthopoxvirus
+  0.34	844	844	S	2602439	                      Borealpox virus
+  0.28	705	705	S	28873	                    Camelpox virus
+  0.25	615	615	S	28874	                    Volepox virus
+  0.21	529	529	S	10256	                    Raccoonpox virus
+  0.18	457	457	S	28871	                    Taterapox virus
+  0.12	297	297	S	160796	                    Skunkpox virus

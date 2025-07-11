@@ -1,0 +1,32 @@
+nextflow_process {
+
+    name "Test Process BANDAGE"
+    script "modules/nf-core/bandage/image/main.nf"
+    process "BANDAGE"
+
+    test("Bandage/Image Test") {
+
+        when {
+            params {
+                
+            }
+            process {
+                """
+               input[0] = Channel.of([
+                    [ id: 'test_sub'],
+                    [
+                        file("${projectDir}/tests/nf-test-data/test_sub.bridges_applied.gfa", checkIfExists: true)
+                    ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

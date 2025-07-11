@@ -1,0 +1,43 @@
+{
+    "Graph Recon Test": {
+        "content": [
+            {
+                "0": [
+                    
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    
+                ],
+                "3": [
+                    
+                ],
+                "4": [
+                    
+                ],
+                "gfa_assembly": [
+                    
+                ],
+                "log": [
+                    
+                ],
+                "summary": [
+                    
+                ],
+                "unicycler_contigs": [
+                    
+                ],
+                "versions": [
+                    
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-07T16:42:49.537674556"
+    }
+}

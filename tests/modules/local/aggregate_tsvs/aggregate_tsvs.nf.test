@@ -1,0 +1,30 @@
+nextflow_process {
+
+    name "Test Process AGGREGATE_TSVS"
+    script "modules/local/aggregate_tsvs/aggregate_tsvs.nf"
+    process "AGGREGATE_TSVS"
+
+    test("Aggregate TSV Test") {
+
+        when {
+            params {
+
+            }
+            process {
+                """
+                input[0] = Channel.of(
+                    file("${projectDir}/tests/nf-test-data/test_sub_ivar_summary.txt", checkIfExists: true)
+                )
+                input[1] = false
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

@@ -1,0 +1,39 @@
+nextflow_process {
+
+    name "Test Process IVAR_CONSENSUS_DENOVO"
+    script "modules/nf-core/ivar/consensus/main_denovo.nf"
+    process "IVAR_CONSENSUS"
+
+    test("Ivar Consensus DENOVO Test") {
+
+        when {
+            params {
+
+            }
+            process {
+                """
+                    input[0] = Channel.of([
+                        [ id: 'test_sub'],
+                        [
+                            file("${projectDir}/tests/nf-test-data/test_sub.bam", checkIfExists: true)
+                        ],
+                        [
+                            file("${projectDir}/tests/nf-test-data/test_sub.assembly_asm.fasta", checkIfExists: true)
+                        ]
+                    ])
+                input[1] = false
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}
+
+
+
