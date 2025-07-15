@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 ### Written by S.Morrison, K. Knipe 20221018
+### The script orignated was apart of Mpox Response work 2022 - 2023
 ### Refactored by Kyle O'Connell with help from GPT 4o, o1-preview, and Gemini 1.5 Pro 20240730
 
 # find leng of itr from terminal to itr with 3 connections. If not one with 3 connections
@@ -40,7 +41,7 @@ def read_gfa_file(gfa_path):
         return gfa_graph, "PASS"
     except Exception as e:
         print('Issue with gfa file')
-        return None, f"WARNING: Issue with GFA file : {str(e)}"
+        return None, f"WARNING: Unable to read GFA file : {str(e)}"
 
 class Link:
     def __init__(self, from_name, to_name):
@@ -76,8 +77,8 @@ def remove_self_loops_and_terminal_nodes(links, segments):
     final_links = [
         link for link in pruned_links if graph.has_node(link.from_name) and graph.has_node(link.to_name)
     ]
-    for link in final_links:
-        print(link, link.from_name, link.to_name)
+    # for link in final_links:
+    #     print(link, link.from_name, link.to_name)
     return final_links, "PASS"
 
 def remove_self_loops(links):
@@ -91,11 +92,11 @@ def remove_self_loops(links):
     return pruned_links, "PASS"
 
 def identify_low_coverage_contigs(segments):
-    """Identify contigs below 0.5x coverage."""
+    """Identify contigs below 0.6x coverage."""
     low_cov = []
     for seg in segments:
         dp_value = seg.get('dp')  # This will return None if 'dp' is not a field in the segment
-        if dp_value is not None and float(dp_value) < 0.5:
+        if dp_value is not None and float(dp_value) < 0.6:
             low_cov.append(seg.get('name'))
 
     return low_cov, "PASS"
@@ -103,7 +104,7 @@ def identify_low_coverage_contigs(segments):
 def filter_links_by_coverage(low_cov, links):
     """Filter out links involving low coverage contigs."""
     filtered_links = [link for link in links if link.from_name not in low_cov and link.to_name not in low_cov]
-    
+    print('Filtered out for coverage', low_cov )
     return filtered_links, "PASS"
 
 def find_longest_contig(segments, output_dir):
@@ -163,7 +164,7 @@ def create_filtered_graph(links, segments):
         return graph, "PASS"
     else:
         print("FAIL: Graph is not circular")
-        return None, "WARNING: Graph is not circular, likely has extra ITRs or some recombination elements. Check graph in Bandage"
+        return None, "WARNING: Graph is not circular, either it's an incomplete assembly, or it has extra ITRs or some recombination elements. Check graph in Bandage"
 
 def identify_itr(filtered_edges, segments):
     """
@@ -185,23 +186,27 @@ def identify_itr(filtered_edges, segments):
     # Identify the terminal ITR
     terminal_itr = []
     final_itr = []
-    # for edge in filtered_edges:
-    #     print(edge,edge.from_name,edge.to_name)
+
     for itr in potential_itrs:
-        # print('itr in loop', itr)
-        from_orients = []
-        to_orients = []
+        from_orients = set()
+        to_orients = set()
+        all_orients = []
+
         for edge in filtered_edges:
-            if edge.from_name != edge.to_name: # remove self loops
-                if edge.from_name == itr:
-                    from_orients.append(edge.from_orient)
-                elif edge.to_name == itr:
-                    to_orients.append(edge.to_orient)
-        # Create set of each list
-        all_orients = from_orients + to_orients
-        from_orients = set(from_orients)
-        to_orients = set(to_orients)
-        # print(itr, from_orients, to_orients, all_orients)
+            if edge.from_name == filt_contigs:
+                print(edge)
+            if edge.from_name == edge.to_name:
+                continue  # skip self loops
+    
+            if edge.from_name == itr:
+                from_orients.add(edge.from_orient)
+                all_orients.append(edge.from_orient)
+            if edge.to_name == itr:
+                to_orients.add(edge.to_orient)
+                all_orients.append(edge.to_orient)
+    
+        # Now from_orients and to_orients are sets, all_orients is the combined list
+        print(itr, from_orients, to_orients, all_orients)
 
         # Determine if the contig is a terminal ITR based on orientations
         if (len(from_orients) == 1 and len(to_orients) == 0) or (len(from_orients) == 0 and len(to_orients) == 1):
@@ -211,6 +216,7 @@ def identify_itr(filtered_edges, segments):
                 terminal_itr.append(itr)
         if len(all_orients) > 2:
             final_itr.append(itr)
+    
     # This should be terminal ITR and then the final ITR before 1x sequence, contraining this helps remove other repeats that get flagged as ITRs
     print("Terminal ITR contigs based on links:", terminal_itr)
     print("Other end of ITR sequence based on links:", final_itr)
@@ -289,10 +295,11 @@ def get_final_paths(filtered_edges, filtered_graph, segments):
             # Construct the final path with ITRs on both ends, ensuring no duplicates
             middle_path = [node for node in path if node not in itrs]
             final_path = left_itrs + middle_path + right_itrs
+
             final_paths.append(final_path)
         # print("Found Longest Path")
         status = f"PASS: Found {len(longest_paths)} longest path(s) of length {max_length}"
-        return final_paths, itrs, itr_length, status
+        return left_itrs, middle_path, final_paths, itrs, itr_length, status
     else:
         status = "FAIL: No path found starting from any ITR."
         return [], [], [], status
@@ -323,10 +330,11 @@ def orient_longest_contig(query, reference, blast_db_dir):
     print('orientation of longest contig',orientation)
     return orientation, "PASS"
 
-def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itrs):
+def get_final_orientation(left_itrs, middle_contigs, final_paths, lnks, longest_contig, longest_orient, itrs):
     # Build a dictionary for quick lookup of links
     links_dict = {}
-    for link in lnks:     
+    for link in lnks:
+        print(link)
         # Map direct links
         key = (link.from_name, link.to_name)
         links_dict[key] = (link.from_orient, link.to_orient)
@@ -342,6 +350,7 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
     if len(final_paths) > 1:
         # Iterate over each path
         for path in final_paths:
+            print('heres the path in the loop',path)
             contig_orientations = []
             print('Processing path:', path)
 
@@ -350,6 +359,7 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
 
             # Assign orientation to the first contig
             first_contig = path[0]
+            print('first contig', first_contig)
             first_contig_orient = None
             # Find an initial orientation for the first contig
             for link in lnks:
@@ -400,69 +410,104 @@ def get_final_orientation(final_paths, lnks, longest_contig, longest_orient, itr
         return path, final_oriented_path, "PASS"
 
     else:
-        # Only one longest path
-        """
-        To Do, need to find way to traverse this path starting from longest contig for which we know the orientation
-        Then can assemble ITRs, it's possible just difficult because the longest contig is connected in both 
-        orientations to the first ITR
-        """
-        print('only one longest path')
-        for path in final_paths:
-            contig_orientations = []
-            print('Processing path:', path)
+        # Only one longest path, usually one assembled contig + ITRs
+        path = final_paths[0]
+        print('Procesing path: ',path)
+        contig_orientations = []
 
-            if not path:
-                continue  # Skip empty paths
+        first_contig = path[0]
 
-            # Assign orientation to the first contig
-            first_contig = path[0]
-            first_contig_orient = None
-            # Find an initial orientation for the first contig
-            for link in lnks:
-                if first_contig == link.from_name:
-                    first_contig_orient = link.from_orient
-                    break
-                elif first_contig == link.to_name:
-                    # Flip the orientation since it's the 'to_name' in the link
-                    first_contig_orient = '-' if link.to_orient == '+' else '+'
-                    break
-            if first_contig_orient is None:
-                print(f"Could not determine orientation for contig {first_contig}")
-                continue  # Skip this path if orientation is unknown
+        # Assign orientation to the first contig
+        first_contig = left_itrs[0]
+        first_contig_orient = None
+        # Find an initial orientation for the first contig
+        for link in lnks:
+            if first_contig == link.from_name:
+                first_contig_orient = link.from_orient
+                break
+            elif first_contig == link.to_name:
+                # Flip the orientation since it's the 'to_name' in the link
+                first_contig_orient = '-' if link.to_orient == '+' else '+'
+                break
+        if first_contig_orient is None:
+            print(f"Could not determine orientation for contig {first_contig}")
+        
+        contig_orientations.append(f"{first_contig} {first_contig_orient}")
+        previous_contig = first_contig
+        previous_orient = first_contig_orient
 
-            contig_orientations.append(f"{first_contig} {first_contig_orient}")
-            previous_contig = first_contig
-            previous_orient = first_contig_orient
-            # Process the rest of the contigs in the path
-            for current_contig in path[1:]:
-                key = (previous_contig, current_contig)
-                if key in links_dict:
-                    prev_orient_in_link, curr_orient_in_link = links_dict[key]
-                    # print(key, prev_orient_in_link, curr_orient_in_link)
-                    # Adjust current orientation based on the previous orientation
-                    if previous_orient == prev_orient_in_link:
-                        current_orient = curr_orient_in_link
-                    else:
-                        # If previous orientation doesn't match, flip the current orientation
-                        current_orient = '-' if curr_orient_in_link == '+' else '+'
-                    contig_orientations.append(f"{current_contig} {current_orient}")
-                    previous_contig = current_contig
-                    previous_orient = current_orient
+
+        # Process the rest of the itrs
+        for current_contig in left_itrs[1:]:
+            key = (previous_contig, current_contig)
+            if key in links_dict:
+                prev_orient_in_link, curr_orient_in_link = links_dict[key]
+                # Adjust current orientation based on the previous orientation
+                if previous_orient == prev_orient_in_link:
+                    current_orient = curr_orient_in_link
+
                 else:
-                    print(f"No link found between {previous_contig} and {current_contig}")
-                    break  # Cannot process further without a link
+                    # If previous orientation doesn't match, flip the current orientation
+                    current_orient = '-' if curr_orient_in_link == '+' else '+'
 
-            print('Final contig orientations:', contig_orientations)
-            # Check if this path contains the longest contig with the correct orientation
-            for contig_info in contig_orientations:
-                print(contig_info)
-                contig_name, contig_orient = contig_info.split(' ')
-                if contig_name == longest_contig and contig_orient == longest_orient.split(' ')[1]:
-                    final_oriented_path = contig_orientations
-                    break
-        #print('Only one largest contig and ITRs, current script unable to resolve these paths')
-        # return None, [], "FAIL: Unable to resolve final orientation, likely only one longest contig and ITRs"
- 
+                contig_orientations.append(f"{current_contig} {current_orient}")
+                previous_contig = current_contig
+                previous_orient = current_orient
+            else:
+                print(f"No link found between {previous_contig} and {current_contig}")
+                break  # Cannot process further without a link
+
+        # Process the single copy contigs. In this case just one! 
+        for current_contig in middle_contigs:
+            key = (previous_contig, current_contig)
+            if key in links_dict:
+                prev_orient_in_link, curr_orient_in_link = links_dict[key]
+                # Adjust current orientation based on the previous orientation
+                if previous_orient == prev_orient_in_link:
+                    current_orient = curr_orient_in_link
+
+                else:
+                    # If previous orientation doesn't match, flip the current orientation
+                    current_orient = '-' if curr_orient_in_link == '+' else '+'
+
+                contig_orientations.append(f"{current_contig} {current_orient}")
+                previous_contig = current_contig
+                previous_orient = current_orient
+            else:
+                print(f"No link found between {previous_contig} and {current_contig}")
+                break  # Cannot process further without a link
+
+        right_itrs = [
+            f"{name} {'-' if dict(co.split() for co in contig_orientations)[name] == '+' else '+'}"
+            for name in reversed(left_itrs)
+        ]         
+        for itr in right_itrs:      
+            contig_orientations.append(itr)
+        print(contig_orientations)
+        # This list will remain empty if the longest contig is oriented correctly in the first pass
+        flipped_orients = []
+
+        # Check if this path contains the longest contig with the correct orientation
+        if longest_orient in contig_orientations:
+            print('Single path matches longest contig orientation')
+        else:
+            print('Single path does not match; flipping longest contig orientation')
+            flipped_orients = [
+                longest_orient if contig_info.split(' ')[0] == longest_contig else contig_info
+                for contig_info in contig_orientations
+            ]
+
+    # After all paths have been processed
+    if not flipped_orients:
+        final_oriented_path = contig_orientations
+        print('Final oriented path with correct longest contig orientation:', final_oriented_path)
+        return path, final_oriented_path, "PASS"
+    else:
+        final_oriented_path = flipped_orients
+        print('This is the flipped orient path')
+        print('Final oriented path with correct longest contig orientation:', final_oriented_path)
+        return path, final_oriented_path, "PASS"
+
 def get_final_sequence(oriented_path, segments):
     """Generate the final sequence for a given path and orientation."""
     # Create a dictionary mapping segment names to sequences
@@ -565,7 +610,6 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         write_all_contigs(gfa_graph.segments, os.path.join(output_dir, sample_name + ".contigs.fasta"))
 
         # Start processing the graph
-        # filtered_edges, status = remove_self_loops(gfa_graph.edges)
         filtered_edges, status = remove_self_loops_and_terminal_nodes(gfa_graph.edges,gfa_graph.segments)
         
         log['01'] = {
@@ -613,7 +657,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         filtered_segments = filter_segments_by_graph(gfa_graph.segments, filtered_graph)
 
         # Find all longest paths   
-        final_paths, itrs, itr_length, status = get_final_paths(filtered_links, filtered_graph, filtered_segments)
+        left_itrs, middle_contigs, final_paths, itrs, itr_length, status = get_final_paths(filtered_links, filtered_graph, filtered_segments)
 
         log['05'] = {
             'step_name': "get_final_paths",
@@ -656,7 +700,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
             write_log_and_exit(log, status)
         # Get the final orientation for all contigs in each path using filtered links
         final_path, final_oriented_path, status = get_final_orientation(
-            final_paths, filtered_links, longest_contig, longest_orient, itrs)
+            left_itrs, middle_contigs, final_paths, filtered_links, longest_contig, longest_orient, itrs)
         
         log['08'] = {
             'step_name': "get_final_orientation",
