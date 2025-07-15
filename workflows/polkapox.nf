@@ -46,7 +46,7 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 include { INPUT_CHECK         } from '../subworkflows/local/input_check'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome'
 include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
-include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet'
+include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/create_samplesheet'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads'
 include { DENOVO              } from '../subworkflows/local/denovo'
 include { REFBASED            } from '../subworkflows/local/ref_based'
@@ -60,10 +60,10 @@ include { REFBASED            } from '../subworkflows/local/ref_based'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                                        } from '../modules/nf-core/modules/fastqc/main'
-include { MULTIQC                                       } from '../modules/nf-core/modules/multiqc/main'
-include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc'
-include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
+include { FASTQC                                        } from '../modules/nf-core/fastqc/main'
+include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/summarize_qc'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

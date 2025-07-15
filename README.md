@@ -7,7 +7,7 @@
 
 ## Introduction
 
-**PolkaPox** is a workflow for filtering, trimming, QC, reference-based analysis, and de novo assembly of Illumina sequencing reads from orthopoxviruses. 
+**PolkaPox** is a workflow for filtering, trimming, QC, reference-based analysis, and de novo assembly of **Illumina short** sequencing reads from orthopoxviruses. 
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
@@ -25,7 +25,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 **Reference-free analyses**
 1. De novo assembly. ([`Unicycler`](https://github.com/rrwick/Unicycler))
 1. Calculate assembly quality metrics. ([`QUAST`](http://quast.sourceforge.net/))
-1. Assembly graph resolution. ([`mpxv-AssemblyGraph_gfaPy.py`](/bin/mpxv-AssemblyGraph_gfaPy.py))
+1. Assembly graph resolution. ([`AssemblyGraph_gfaPy.py`](/bin/AssemblyGraph_gfaPy.py))
 1. Align reads to assembled genome. ([`BWA`](http://bio-bwa.sourceforge.net/))
 1. Correct assembly errors and ambiguities. ([`iVar`](https://andersen-lab.github.io/ivar/html/manualpage.html))
 1. Quantify assembly corrections. ([`MUMmer`](https://github.com/mummer4/mummer#dnadiff))
@@ -34,82 +34,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 1. Visualize reads metrics and summary of software versions. ([`MultiQC`](http://multiqc.info/))
 1. Compile various QC metrics. ([`summarize_qc.py`](/bin/summarize_qc.py))
 
-```mermaid
-graph TD
-  subgraph filter_reads["Filter Reads"]
-    kraken2["Kraken2<br>classify opxv reads"]
-    seqtk["Seqtk<br>subsample opxv reads"]
-    fastp["Fastp:<br>quality trim + filter"]
-    kraken2 -- read_assignments --> seqtk
-    seqtk -- subsampled_reads --> fastp
-  end
-
-subgraph ref_based["Reference-based assembly"]
-  direction LR
-  bwa["Bwa mem<br>map to reference"];
-  samtools["Samtools<br>calculate mapping stats"];
-  ivar_cons["Ivar consensus<br>generate consensus fasta"];
-  ivar_var["Ivar variants<br>call variants"]
-  var_filt[Filtered variants];
-  bwa -- bam --> samtools
-  bwa -- bam --> ivar_cons
-  bwa -- bam --> ivar_var
-  ivar_var-."if filter=true".->var_filt
-  ref_fasta([Consensus fasta]);
-  vcf([VCF]);
-
-  ivar_cons --> ref_fasta
-  ivar_var --> vcf
-end
-
-  subgraph denovo[Denovo assembly]
-    %% Assign the processes (nodes)
-    unicycler["Unicycler<br>Denovo assembly"]
-    graph_recon["graph_reconstruct.py<br>Reconstruct assembly path"]
-    bwa_denovo["Bwa mem<br>map to assembly"]
-    samtools_denovo["Samtools<br>calculate mapping stats"]
-    ivar_polish["Ivar consensus<br>generate consensus fasta"]
-    summarize_asmb["Mummer and Quast<br>Summarize assembly"]
-
-    %% Assign output files
-    assembly_fasta(["Final assembly"])
-    assembly_contigs(["Assembly contigs"])
-
-    %% Assign the arrows
-    %%fastp -- cleaned_reads --> unicycler
-    unicycler -- assembly_graph --> graph_recon
-    graph_recon -- fasta assembly --> bwa_denovo
-    graph_recon -."if unable to reconstruct graph".->  assembly_contigs
-    %%fastp -- cleaned_reads --> bwa_denovo
-    bwa_denovo -- bam --> samtools_denovo
-    bwa_denovo -- bam --> ivar_polish
-    ivar_polish --> assembly_fasta
-    graph_recon --> summarize_asmb
-    assembly_fasta --> summarize_asmb
-    end 
-
-  subgraph summarize[Summarize and QC]
-    direction LR
-    %% Assign the processes (nodes)
-    multiqc["MultiQC<br>Gather and summarize"]
-    summarizeqc["Summarize_qc.py<br>Summarize all processes"]
-
-    %% Assign output files
-    sample_summary(["sample_summary.tsv<br>Summary table of all processes"])
-
-    %% Assign the arrows
-    %%assembly_fasta --> multiqc
-    %%ref_fasta --> multiqc
-    multiqc --> summarizeqc
-    summarizeqc --> sample_summary
-  end
-  
-  %% Connect the subworkflows
-  filter_reads -- cleaned reads --> denovo
-  filter_reads -- cleaned reads --> ref_based
-  denovo --> summarize
-  ref_based --> summarize
-```
+![workflow diagram](/docs/images/polkapox_workflow.png)
 
 ## Quick Start
 
@@ -139,7 +64,7 @@ CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
    nextflow run polkapox/main.nf --input {SAMPLESHEET.csv OR input_directory} --outdir {OUTDIR} --fasta {REF.fa} -profile sge,singularity --kraken_db {PATH/TO/DB} --gff {ANNOTATION.gff} --workflow {WORKFLOW} --filter {true/false}
    ```
    
-   **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to the reference and gff in the `assets` folder of this repo, and a kraken db hosted on the SciComp file system, respectively. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.  Add `--file_levels {top (default)/nested}` if passing a directory as input. See [usage](/docs/usage.md) for details.
+   **note**: If you do not provide `--fasta`, `--gff`, or `--kraken_db`, they will default to a Clade II reference and gff in the `assets` folder of this repo, and a kraken db will be downloaded from `s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/orthopox_kdb/`. If you do not specify `--filter` then it will default to `true`. See `nextflow.config` for details.  Add `--file_levels {top (default)/nested}` if passing a directory as input. See [usage](/docs/usage.md) for details.
 
 ## Pipeline configuration
 
@@ -175,6 +100,7 @@ Pipeline outputs are organized into sub-directories for each step in the selecte
 ```
 ${outdir}/
   ├── bwa
+  ├── bandage
   ├── fastp
   ├── final_assembly
   ├── graph_recon
@@ -198,9 +124,9 @@ The **PolkaPox** pipeline includes de novo assembly optimized for the linear gen
 ## Credits
 
 Contributors:\
-Lynsey Kovar | Hunter Seabolt | Shatavia Morrison | Kristen Knipe\
-Kyle O'Connell | Ethan Hetrick | Michael Weigand | Crystal Gigante\
-Dhwani Batra | Ankush  Gupta | Jessica Rowell | Daisy McGrath\
+Kyle O'Connell | Michael Weigand | Jessica Rowell | Shatavia Morrison\
+Kristen Knipe | Ethan Hetrick | Crystal Gigante | Lynsey Kovar\
+Hunter Seabolt | Dhwani Batra | Daisy McGrath\
 Yesh Kulasekarapandian | Jason Caravas
 
 ## Contributions and Support
