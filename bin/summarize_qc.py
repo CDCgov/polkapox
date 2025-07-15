@@ -69,6 +69,7 @@ def parse_args():
     return parser.parse_args()
 
 def get_raw_filt_counts(sample):
+    print('running get raw filt counts')
     """ Get raw filter counts from fastp output
     :param search_dir: work directory
     :param sample: sample name
@@ -92,6 +93,7 @@ def get_raw_filt_counts(sample):
     return total_raw_reads, total_filtered_reads
 
 def get_kraken_stats(sample, kdb, kraken_tax_ids):
+    print('running get kraken 2 stats')
     """ Get stats from kraken output
     :param search_dir: work directory
     :param sample: sample name
@@ -137,6 +139,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     return total, opx_perc, human_perc, unclass_perc, kdb, k_tax_ids
 
 def get_flagstat_denovo(sample):
+    print('running get flagstat denovo')
     """ Get samtools flagstat results from denovo mapping
     :param search_dir: work directory
     :param sample: sample name
@@ -163,6 +166,7 @@ def get_flagstat_denovo(sample):
     return total_reads_denovo, mapped_reads_denovo, percent_mapped_denovo
 
 def get_cov_stats(sample, reference):
+    print('running get coverage stats')
     """ Get coverage stats from samtools output
     :param search_dir: work directory
     :param sample: sample name
@@ -194,6 +198,7 @@ def get_cov_stats(sample, reference):
     return avg_dp, dp_gt_20, ref_genome
 
 def get_gfa_stats(sample):
+    print('running get gfa stats')
     """ Get stats from Unicycler graph assembly output
     :param sample: sample name
     :returns: gfaResults
@@ -255,7 +260,7 @@ def get_gfa_stats(sample):
         
         # Determine notes and status report
         if 'PASS' in final_status:
-            notes = 'GFA step complete'
+            notes = 'Graph successfully reconstructed'
             status_report = 'PASS'
         elif 'WARNING' in final_status:
             notes = final_status
@@ -264,7 +269,7 @@ def get_gfa_stats(sample):
             notes = final_status
             status_report = 'FAIL'
         else:
-            notes = 'GFA step incomplete'
+            notes = 'GFA step failed, review the logs for that process for more information'
             status_report = 'FAIL'
             
         # Function to handle conversion to float
@@ -318,6 +323,7 @@ def get_gfa_stats(sample):
     return gfaResults
 
 def fix_names(df):
+    print('running fix names')
     """ Standardize the raw column names
     :param df: input dataframe with columns to standardize
     :returns: a dataframe with standardized columns
@@ -363,6 +369,7 @@ def fix_names(df):
     return df
 
 def get_total_snps(sample):
+    print('running get total snps')
     """ Grab the tsv files from ivar output (ivar_variants dir) and get total number of SNPs
     :param search_dir: work directory
     :param sample: sample name
@@ -383,6 +390,7 @@ def get_total_snps(sample):
     return total_snps
 
 def get_snp_metadata(sample, coords):
+    print('running get snp metadata')
     """ Get number of SNPs for input coordinates from ivar_summary file (in variant_summaries dir)
     :param search_dir: work directory
     :param sample: sample name
@@ -411,6 +419,7 @@ def get_snp_metadata(sample, coords):
     return C1_count, C2_count
 
 def get_polish_stats(sample):
+    print('running get polish stats')
     """ Parse the mummer report file and return # corrected SNPs and indels
     :param sample: sample name
     :returns: total number of snps and indels
@@ -441,6 +450,7 @@ def get_polish_stats(sample):
     return SNPs, Indels
 
 def count_ns_in_pileup(sample):
+    print('running count ns')
     """ Get the consensus SNPs from final mpileup file 
     :param sample: sample name
     :returns: total number of snps 
@@ -459,6 +469,7 @@ def count_ns_in_pileup(sample):
             return None
     
 def main():
+    print('running main func')
     args = parse_args()
 
     summary_file = glob(os.path.join('**/*general_stats.txt'), recursive=True)[0]
@@ -501,7 +512,6 @@ def main():
             contigs = pd.read_csv(contig_file, delimiter = "\t")
             contigsIds = list(contigs[contigs.columns[0]])
             sample_contig_notProcessed = set(samplesIds) - set(contigsIds)
-            print('made it to point 1')
             if not len(list(sample_contig_notProcessed)) == 0:
                 rowMissing = len(contigs.columns)-1
                 for i in sample_contig_notProcessed:
@@ -509,24 +519,20 @@ def main():
                     no_sample_data = [i] + naHold
                     contigs.loc[len(contigs)] = no_sample_data
                     contigs.fillna(value='NaN', inplace=True)
-            print('heres the number of contigs')
             print(contigs)
     
             contig_columns = ['>= 50000 bp', '25000-50000 bp', '10000-25000 bp', 
                               '5000-10000 bp', '1000-5000 bp', '0-1000 bp']
     
-            # --- Begin revision: Ensure all columns exist ---
             for col in contig_columns:
                 if col not in contigs.columns:
                     contigs[col] = 0
-            # --- End revision ---
     
             # Now convert column values to numeric
             contigs[contig_columns] = contigs[contig_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
     
             # Sum values row-wise
             contigs['n_contigs_unicycler'] = contigs[contig_columns].sum(axis=1)
-            print('please print this whole thing!!!!!')
             print(contigs[contig_columns].sum(axis=1))
             # Merge the summed info back into fixed_summary
             fixed_summary = fixed_summary.merge(
