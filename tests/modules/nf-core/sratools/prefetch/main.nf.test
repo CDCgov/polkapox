@@ -1,0 +1,30 @@
+nextflow_process {
+
+    name "Test Process SRATOOLS_PREFETCH"
+    script "modules/nf-core/sratools/prefetch/main.nf"
+    process "SRATOOLS_PREFETCH"
+
+    test("Prefetch Test") {
+
+        when {
+            params {
+            
+                           }
+            process {
+                """
+               input[0] = Channel.of([
+                    [ meta: 'SRR29268321'],
+                    [ id: 'SRR29268321'  ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

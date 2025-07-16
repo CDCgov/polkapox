@@ -1,0 +1,52 @@
+id: 'polkapox-summary'
+description: ' - this information is collected when the pipeline is started.'
+section_name: 'polkapox Workflow Summary'
+section_href: 'https://github.com/polkapox'
+plot_type: 'html'
+data: |
+    <p style="font-size:110%"><b>Core Nextflow options</b></p>
+    <dl class="dl-horizontal">
+        <dt>runName</dt><dd><samp>fabulous_rutherford</samp></dd>
+        <dt>containerEngine</dt><dd><samp>singularity</samp></dd>
+        <dt>launchDir</dt><dd><samp>${projectDir}</samp></dd>
+        <dt>workDir</dt><dd><samp>/scicomp/scratch/rjd0/nextflow/work</samp></dd>
+        <dt>projectDir</dt><dd><samp>${projectDir}</samp></dd>
+        <dt>userName</dt><dd><samp>rjd0</samp></dd>
+        <dt>profile</dt><dd><samp>singularity,scicomp_rosalind</samp></dd>
+        <dt>configFiles</dt><dd><samp>${projectDir}/nextflow.config, /scicomp/reference/nextflow/nextflow-conf/scicomp.config</samp></dd>
+    </dl>
+    <p style="font-size:110%"><b>Input/output options</b></p>
+    <dl class="dl-horizontal">
+        <dt>input</dt><dd><samp>test_data/samplesheet_2.csv</samp></dd>
+        <dt>outdir</dt><dd><samp>${projectDir}/mpox_testing</samp></dd>
+        <dt>paired</dt><dd><samp>true</samp></dd>
+        <dt>project_name</dt><dd><samp>test</samp></dd>
+        <dt>file_levels</dt><dd><samp>top</samp></dd>
+        <dt>workflow</dt><dd><samp>full</samp></dd>
+    </dl>
+    <p style="font-size:110%"><b>Reference genome options</b></p>
+    <dl class="dl-horizontal">
+        <dt>fasta</dt><dd><samp>${projectDir}/assets/MPXV-UK_P2.noN.fasta</samp></dd>
+    </dl>
+    <p style="font-size:110%"><b>Institutional config options</b></p>
+    <dl class="dl-horizontal">
+        <dt>config_profile_description</dt><dd><samp>HPC @ CDC</samp></dd>
+        <dt>config_profile_contact</dt><dd><samp>OAMD</samp></dd>
+        <dt>config_profile_url</dt><dd><samp>https://info.biotech.cdc.gov/info/</samp></dd>
+    </dl>
+    <p style="font-size:110%"><b>Generic options</b></p>
+    <dl class="dl-horizontal">
+        <dt>workflow</dt><dd><samp>full</samp></dd>
+        <dt>gff</dt><dd><samp>${projectDir}/assets/UK-P2.noN.gff</samp></dd>
+        <dt>filter</dt><dd><samp>true</samp></dd>
+        <dt>kraken_db</dt><dd><samp>s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/orthopox_t2t_kdb/</samp></dd>
+        <dt>kraken2_tax_ids</dt><dd><samp>${projectDir}/assets/kraken2_tax_ids.txt</samp></dd>
+        <dt>altQ_cutoff</dt><dd><samp>20</samp></dd>
+        <dt>altDP_cutoff</dt><dd><samp>3</samp></dd>
+        <dt>DP_cutoff</dt><dd><samp>5</samp></dd>
+        <dt>af_cutoff</dt><dd><samp>0.01</samp></dd>
+        <dt>fai</dt><dd><samp>${projectDir}/assets/MPXV-UK_P2.noN.fasta.fai</samp></dd>
+        <dt>coords</dt><dd><samp>39086,40204,51427,54447</samp></dd>
+        <dt>locus1_name</dt><dd><samp>F13L</samp></dd>
+        <dt>locus2_name</dt><dd><samp>E9L</samp></dd>
+    </dl>

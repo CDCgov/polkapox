@@ -1,0 +1,56 @@
+Assembly	LIY15901A89.contigs	LIY15901A74.contigs	LIY15901A73.contigs
+# contigs (>= 0 bp)	6	6	6
+# contigs (>= 1000 bp)	4	4	4
+# contigs (>= 5000 bp)	2	2	2
+# contigs (>= 10000 bp)	2	2	2
+# contigs (>= 25000 bp)	1	1	1
+# contigs (>= 50000 bp)	1	1	1
+Total length (>= 0 bp)	190573	190580	190581
+Total length (>= 1000 bp)	190548	190555	190556
+Total length (>= 5000 bp)	184240	184247	184248
+Total length (>= 10000 bp)	184240	184247	184248
+Total length (>= 25000 bp)	172668	172671	172676
+Total length (>= 50000 bp)	172668	172671	172676
+# contigs	4	4	4
+Largest contig	172668	172671	172676
+Total length	190548	190555	190556
+Reference length	197223	197223	197223
+GC (%)	32.94	32.94	32.94
+Reference GC (%)	33.02	33.02	33.02
+N50	172668	172671	172676
+NG50	172668	172671	172676
+N90	172668	172671	172676
+NG90	11572	11576	11572
+auN	157297.3	157297.4	157305.2
+auNG	151973.5	151979.3	151987.6
+L50	1	1	1
+LG50	1	1	1
+L90	1	1	1
+LG90	2	2	2
+# misassemblies	0	0	0
+# misassembled contigs	0	0	0
+Misassembled contigs length	0	0	0
+# local misassemblies	0	0	0
+# scaffold gap ext. mis.	0	0	0
+# scaffold gap loc. mis.	0	0	0
+# unaligned mis. contigs	0	0	0
+# unaligned contigs	0 + 0 part	0 + 0 part	0 + 0 part
+Unaligned length	0	0	0
+Genome fraction (%)	96.659	96.659	96.659
+Duplication ratio	1.000	1.000	1.000
+# N's per 100 kbp	0.00	0.00	0.00
+# mismatches per 100 kbp	26.76	25.19	25.19
+# indels per 100 kbp	2.62	3.15	2.62
+# genomic features	370 + 3 part	370 + 3 part	370 + 3 part
+Largest alignment	172668	172671	172676
+Total aligned length	190548	190555	190556
+NA50	172668	172671	172676
+NGA50	172668	172671	172676
+NA90	172668	172671	172676
+NGA90	11572	11576	11572
+auNA	157297.3	157297.4	157305.2
+auNGA	151973.5	151979.3	151987.6
+LA50	1	1	1
+LGA50	1	1	1
+LA90	1	1	1
+LGA90	2	2	2

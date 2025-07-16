@@ -1,0 +1,173 @@
+{
+    "00": {
+        "step_name": "initialization",
+        "step_description": "Initialize the logging process",
+        "status": "PASS",
+        "input": {
+            "gfa": "test_sub.bridges_applied.gfa",
+            "sample_name": "test_sub",
+            "output_dir": "."
+        },
+        "output": {}
+    },
+    "01": {
+        "step_name": "remove_self_loops",
+        "step_description": "Remove self-loops from link information",
+        "status": "PASS",
+        "output": {
+            "filtered_edges": [
+                "L\t6\t+\t2\t-\t0M",
+                "L\t4\t-\t1\t+\t0M",
+                "L\t4\t-\t2\t+\t0M",
+                "L\t1\t+\t6\t+\t0M",
+                "L\t4\t+\t5\t+\t0M",
+                "L\t5\t+\t3\t+\t0M"
+            ]
+        }
+    },
+    "02": {
+        "step_name": "identify_low_coverage_contigs",
+        "step_description": "Identify contigs with coverage below 0.5x",
+        "status": "PASS",
+        "output": {
+            "low_coverage_contigs": []
+        }
+    },
+    "03": {
+        "step_name": "filter_links_by_coverage",
+        "step_description": "Filter links to exclude those involving low-coverage contigs",
+        "status": "PASS",
+        "output": {
+            "filtered_links": [
+                "L\t6\t+\t2\t-\t0M",
+                "L\t4\t-\t1\t+\t0M",
+                "L\t4\t-\t2\t+\t0M",
+                "L\t1\t+\t6\t+\t0M",
+                "L\t4\t+\t5\t+\t0M",
+                "L\t5\t+\t3\t+\t0M"
+            ]
+        }
+    },
+    "04": {
+        "step_name": "create_filtered_graph",
+        "step_description": "Create a filtered NetworkX graph from links and remove disconnected nodes",
+        "status": "PASS",
+        "output": {
+            "filtered_graph": "MultiGraph with 6 nodes and 6 edges"
+        }
+    },
+    "05": {
+        "step_name": "get_final_paths",
+        "step_description": "Find all longest paths in the graph starting from any ITR",
+        "status": "PASS: Found 2 longest path(s) of length 6",
+        "output": {
+            "final_paths": [
+                [
+                    "3",
+                    "5",
+                    "4",
+                    "1",
+                    "6",
+                    "2",
+                    "4",
+                    "5",
+                    "3"
+                ],
+                [
+                    "3",
+                    "5",
+                    "4",
+                    "2",
+                    "6",
+                    "1",
+                    "4",
+                    "5",
+                    "3"
+                ]
+            ],
+            "itr_length": 6324,
+            "itrs": [
+                "3",
+                "4",
+                "5"
+            ]
+        }
+    },
+    "06": {
+        "step_name": "find_longest_contig",
+        "step_description": "Find the longest contig based on length",
+        "status": "PASS",
+        "output": {
+            "longest_contig": "1"
+        }
+    },
+    "07": {
+        "step_name": "orient_longest_contig",
+        "step_description": "Determine the orientation of the longest contig",
+        "status": "PASS",
+        "output": {
+            "longest_orient": "1 +"
+        }
+    },
+    "08": {
+        "step_name": "get_final_orientation",
+        "step_description": "Get the final orientation for all contigs",
+        "status": "PASS",
+        "output": {
+            "final_path": [
+                "3",
+                "5",
+                "4",
+                "2",
+                "6",
+                "1",
+                "4",
+                "5",
+                "3"
+            ],
+            "final_orientation": [
+                "3 -",
+                "5 -",
+                "4 -",
+                "1 +",
+                "6 +",
+                "2 -",
+                "4 +",
+                "5 +",
+                "3 +"
+            ]
+        }
+    },
+    "09": {
+        "step_name": "generate_final_sequence",
+        "step_description": "Generate the final sequence based on the best path and orientation",
+        "status": "PASS",
+        "output": {
+            "final_sequence_length": 193522,
+            "final_order_orientation_copy_number": "3 -,5 -,4 -,1 +,6 +,2 -,4 +,5 +,3 +",
+            "assembly_file": "test_sub.assembly_asm.fasta",
+            "final_path": [
+                "3",
+                "5",
+                "4",
+                "2",
+                "6",
+                "1",
+                "4",
+                "5",
+                "3"
+            ],
+            "final_orientation": [
+                "3 -",
+                "5 -",
+                "4 -",
+                "1 +",
+                "6 +",
+                "2 -",
+                "4 +",
+                "5 +",
+                "3 +"
+            ]
+        }
+    }
+}

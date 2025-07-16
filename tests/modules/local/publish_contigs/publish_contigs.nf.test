@@ -1,0 +1,31 @@
+nextflow_process {
+
+    name "Test Process PUBLISH_CONTIGS"
+    script "modules/local/publish_contigs/publish_contigs.nf"
+    process "PUBLISH_CONTIGS"
+
+    test("Publish Contig Test") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                // outdir = "tests/results"
+            }
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/test_sub.final.fa', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

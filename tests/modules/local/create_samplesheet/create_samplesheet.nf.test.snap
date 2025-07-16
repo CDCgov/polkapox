@@ -1,0 +1,48 @@
+{
+    "Test | single-end reads": {
+        "content": [
+            {
+                "0": [
+                    "Test_samplesheet.csv:md5,6d78c92cb2ea8938e0541a32c62a7d1e"
+                ],
+                "1": [
+                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                ],
+                "samplesheet": [
+                    "Test_samplesheet.csv:md5,6d78c92cb2ea8938e0541a32c62a7d1e"
+                ],
+                "versions": [
+                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-06-24T12:23:15.588289245"
+    },
+    "Test | paired-end reads": {
+        "content": [
+            {
+                "0": [
+                    "Test_samplesheet.csv:md5,462af9491a3b144c812aac6f24510382"
+                ],
+                "1": [
+                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                ],
+                "samplesheet": [
+                    "Test_samplesheet.csv:md5,462af9491a3b144c812aac6f24510382"
+                ],
+                "versions": [
+                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-06-24T12:23:09.869779873"
+    }
+}

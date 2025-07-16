@@ -1,0 +1,27 @@
+nextflow_process {
+
+    name "Test Process MULTIQC"
+    script "modules/nf-core/multiqc/main.nf"
+    process "MULTIQC"
+
+    test("Multiqc Test") {
+
+        when {
+            params {
+
+            }
+            process {
+                """
+                input[0] = file("${projectDir}/tests/modules/nf-core/multiqc")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

@@ -1,0 +1,35 @@
+{
+    "Should run without failures": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_sub"
+                        },
+                        "test_sub_ivar_summary.txt:md5,a852dca08d151c5e78014321d0dada3a"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,5f7ff2b6c7b5fe12e5c5bf1cd132705a"
+                ],
+                "vars": [
+                    [
+                        {
+                            "id": "test_sub"
+                        },
+                        "test_sub_ivar_summary.txt:md5,a852dca08d151c5e78014321d0dada3a"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,5f7ff2b6c7b5fe12e5c5bf1cd132705a"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-11T16:12:18.137315115"
+    }
+}

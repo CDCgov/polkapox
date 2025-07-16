@@ -1,0 +1,31 @@
+{
+    "Ivar Consensus Test": {
+        "content": [
+            {
+                "0": [
+                    
+                ],
+                "1": [
+                    
+                ],
+                "2": [
+                    
+                ],
+                "fasta": [
+                    
+                ],
+                "mpileup": [
+                    
+                ],
+                "versions": [
+                    
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.2",
+            "nextflow": "24.10.4"
+        },
+        "timestamp": "2025-07-07T15:18:45.344891122"
+    }
+}

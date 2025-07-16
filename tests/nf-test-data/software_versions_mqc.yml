@@ -1,0 +1,43 @@
+data: "<style>\n#nf-core-versions tbody:nth-child(even) {\n    background-color: #f2f2f2;\n\
+  }\n</style>\n<table class=\"table\" style=\"width:100%\" id=\"nf-core-versions\"\
+  >\n    <thead>\n        <tr>\n            <th> Process Name </th>\n            <th>\
+  \ Software </th>\n            <th> Version  </th>\n        </tr>\n    </thead>\n\
+  \n<tbody>\n<tr>\n    <td><samp>AGGREGATE_TSVS</samp></td>\n    <td><samp>python</samp></td>\n\
+  \    <td><samp>3.11.0</samp></td>\n</tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>BWA_INDEX</samp></td>\n\
+  \    <td><samp>bwa</samp></td>\n    <td><samp>0.7.17-r1188</samp></td>\n</tr>\n\n\
+  </tbody>\n<tbody>\n<tr>\n    <td><samp>BWA_MEM</samp></td>\n    <td><samp>bwa</samp></td>\n\
+  \    <td><samp>0.7.17-r1188</samp></td>\n</tr>\n\n<tr>\n    <td><samp></samp></td>\n\
+  \    <td><samp>samtools</samp></td>\n    <td><samp>1.15.1</samp></td>\n</tr>\n\n\
+  </tbody>\n<tbody>\n<tr>\n    <td><samp>BWA_MEM_DENOVO</samp></td>\n    <td><samp>bwa</samp></td>\n\
+  \    <td><samp>0.7.17-r1188</samp></td>\n</tr>\n\n<tr>\n    <td><samp></samp></td>\n\
+  \    <td><samp>samtools</samp></td>\n    <td><samp>1.15.1</samp></td>\n</tr>\n\n\
+  </tbody>\n<tbody>\n<tr>\n    <td><samp>CUSTOM_DUMPSOFTWAREVERSIONS</samp></td>\n\
+  \    <td><samp>python</samp></td>\n    <td><samp>3.9.5</samp></td>\n</tr>\n\n<tr>\n\
+  \    <td><samp></samp></td>\n    <td><samp>yaml</samp></td>\n    <td><samp>5.4.1</samp></td>\n\
+  </tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>FASTP</samp></td>\n    <td><samp>fastp</samp></td>\n\
+  \    <td><samp>0.23.2</samp></td>\n</tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>GRAPH_RECON</samp></td>\n\
+  \    <td><samp>python</samp></td>\n    <td><samp>3.8.19</samp></td>\n</tr>\n\n</tbody>\n\
+  <tbody>\n<tr>\n    <td><samp>IVAR_CONSENSUS_BWA</samp></td>\n    <td><samp>ivar</samp></td>\n\
+  \    <td><samp>1.3.1</samp></td>\n</tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>IVAR_VARIANTS</samp></td>\n\
+  \    <td><samp>ivar</samp></td>\n    <td><samp>1.3.1</samp></td>\n</tr>\n\n</tbody>\n\
+  <tbody>\n<tr>\n    <td><samp>KRAKEN2</samp></td>\n    <td><samp>kraken2</samp></td>\n\
+  \    <td><samp>2.1.2</samp></td>\n</tr>\n\n<tr>\n    <td><samp></samp></td>\n  \
+  \  <td><samp>pigz</samp></td>\n    <td><samp>2.6</samp></td>\n</tr>\n\n</tbody>\n\
+  <tbody>\n<tr>\n    <td><samp>QUAST</samp></td>\n    <td><samp>quast</samp></td>\n\
+  \    <td><samp>5.2.0</samp></td>\n</tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>SAMPLESHEET_CHECK</samp></td>\n\
+  \    <td><samp>python</samp></td>\n    <td><samp>3.8.3</samp></td>\n</tr>\n\n</tbody>\n\
+  <tbody>\n<tr>\n    <td><samp>SEQTK_SUBSEQ</samp></td>\n    <td><samp>seqtk</samp></td>\n\
+  \    <td><samp>1.3-r106</samp></td>\n</tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>SUMMARIZE_TSV</samp></td>\n\
+  \    <td><samp>python</samp></td>\n    <td><samp>3.11.0</samp></td>\n</tr>\n\n</tbody>\n\
+  <tbody>\n<tr>\n    <td><samp>UNICYCLER</samp></td>\n    <td><samp>unicycler</samp></td>\n\
+  \    <td><samp>0.4.8</samp></td>\n</tr>\n\n</tbody>\n<tbody>\n<tr>\n    <td><samp>VARIANT_CONVERT</samp></td>\n\
+  \    <td><samp>python</samp></td>\n    <td><samp>3.11.0</samp></td>\n</tr>\n\n</tbody>\n\
+  <tbody>\n<tr>\n    <td><samp>Workflow</samp></td>\n    <td><samp>Nextflow</samp></td>\n\
+  \    <td><samp>24.10.4</samp></td>\n</tr>\n\n<tr>\n    <td><samp></samp></td>\n\
+  \    <td><samp>polkapox</samp></td>\n    <td><samp>1.1.0</samp></td>\n</tr>\n\n\
+  </tbody>\n</table>"
+description: are collected at run time from the software output.
+id: software_versions
+plot_type: html
+section_href: https://github.com/polkapox
+section_name: polkapox Software Versions

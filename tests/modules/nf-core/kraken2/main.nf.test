@@ -1,0 +1,37 @@
+nextflow_process {
+
+    name "Test Process KRAKEN2"
+    script "../../../../modules/nf-core/kraken2/main.nf"
+    process "KRAKEN2"
+
+    tag "kraken2"
+    tag "paired"
+    tag "classified"
+
+    test("kraken2 paired-end, classified only") {
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    [
+                        file("${projectDir}/tests/nf-test-data/test_sub_1.fq.gz", checkIfExists: true),
+                        file("${projectDir}/tests/nf-test-data/test_sub_2.fq.gz", checkIfExists: true)
+                    ]
+                ])
+                input[1] = file("${projectDir}/test_data/orthopox_t2t_kdb", checkIfExists: true)
+                input[2] = true   // save_output_fastqs_classified
+                input[3] = false  // save_output_fastqs_unclassified
+                input[4] = true   // save_reads_assignment
+                """
+            }
+        }
+        then {
+            assertAll(
+                { assert process.success },
+                { assert snapshot(process.out).match() }
+            )
+        }
+    }
+}
+

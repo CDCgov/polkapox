@@ -1,0 +1,31 @@
+nextflow_process {
+
+    name "FASTQC Test"
+    script "../../../../modules/nf-core/fastqc/main.nf"
+    process "FASTQC"
+
+    tag "fastqc"
+
+    test("Single-end test") {
+        when {
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/test_sub_1.fq.gz', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            if (process.success) {
+                assert process.success
+                assert snapshot(process.out).match()
+            }
+        }
+    }
+
+}
