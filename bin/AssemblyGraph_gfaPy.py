@@ -19,18 +19,20 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+import re
+
 def clean_graph_tags(input_file, output_file):
-    # Define the regex pattern to match the LB and CL tags
-    tag_pattern = re.compile(r'\tLB:z:[^\t]+\tCL:z:[^\t]+')
+    # Remove LB and CL tags, whether they have a value or not
+    # Pattern matches: \tLB:z:... or \tCL:z:...
+    pat = re.compile(r'(?:\tLB:z:[^\t]*|\tCL:z:[^\t]*)')
 
     with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
         for line in infile:
-            # Remove the tags from the line
-            cleaned_line = re.sub(tag_pattern, '\n', line)
-            # Remove trailing tabs
-            cleaned_line = cleaned_line.rstrip('\t')
-            # Write the cleaned line to the output file, ensuring the newline character is preserved
-            outfile.write(cleaned_line)
+            cleaned = pat.sub('', line)  # remove the tags
+            cleaned = cleaned.rstrip('\t')  # optional: drop trailing tabs
+            if not cleaned.endswith('\n'):
+                cleaned += '\n'
+            outfile.write(cleaned)
 
 def clean_empty_string(input_file, output_file):
     # First pass: identify which S lines to keep (LN:i:<n> > 0 or LN:i:<n> missing => keep by policy)
@@ -881,7 +883,6 @@ def main(arguments):
         # clean up gfa tags
         cleanedtagGfa= 'graph_tags_removed.gfa'
         cleanedGfa = 'graph_cleaned.gfa'
-        
         clean_graph_tags(gfa_file, cleanedtagGfa)
 
         clean_empty_string(cleanedtagGfa, cleanedGfa)
