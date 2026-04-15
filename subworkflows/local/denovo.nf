@@ -74,7 +74,7 @@ workflow DENOVO {
     //
     IVAR_CONSENSUS_POLISH (
         ch_polishing_input,
-        false
+        true
     )
     //ch_gfapolish_compare = IVAR_CONSENSUS_POLISH.out.fasta
     ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH.out.fasta, by: 0)

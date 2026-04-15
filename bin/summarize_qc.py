@@ -380,13 +380,14 @@ def count_ns_in_pileup(sample):
     """ Count low-depth sites (<20) from mpileup """
     p = "{}.final.mpileup".format(sample)
     try:
-        command = f"cat {p} | awk '($4 < 20){{count++}} END {{print count}}'"
+        command = f"awk 'BEGIN{{count=0}} ($4 < 20){{count++}} END {{print count}}' {p}"
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         logger.info(f"Successfully parsed {p}")
     except:
         logger.error(f"Unable to parse {p}")
     if result.returncode == 0:
-        return str(result.stdout.strip())
+        out = result.stdout.strip()
+        return out if out != "" else "0"
     else:
         return None
 
