@@ -115,15 +115,11 @@ nextflow_process {
         }
 
         then {
-            // After the exit-code fix, broken assemblies must produce a non-zero exit
+            // Broken assemblies must produce a non-zero exit.
+            // Nextflow does not stage outputs from failed processes, so we can
+            // only assert on process.success here; log content is validated by
+            // the pytest unit tests in tests/test_assembly_graph.py.
             assert !process.success
-            // Log should still be written with FAIL/WARNING status
-            assert process.out.log.size() == 1
-            def logText = path(process.out.log[0]).text
-            def logJson = new groovy.json.JsonSlurper().parseText(logText)
-            def lastKey = logJson.keySet().sort().last()
-            def finalStatus = logJson[lastKey]['status']
-            assert finalStatus.startsWith('FAIL') || finalStatus.startsWith('WARNING')
         }
 
     }
@@ -147,11 +143,6 @@ nextflow_process {
 
         then {
             assert !process.success
-            assert process.out.log.size() == 1
-            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
-            def lastKey = logJson.keySet().sort().last()
-            def finalStatus = logJson[lastKey]['status']
-            assert finalStatus.startsWith('FAIL') || finalStatus.startsWith('WARNING')
         }
 
     }
@@ -175,11 +166,6 @@ nextflow_process {
 
         then {
             assert !process.success
-            assert process.out.log.size() == 1
-            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
-            def lastKey = logJson.keySet().sort().last()
-            def finalStatus = logJson[lastKey]['status']
-            assert finalStatus.startsWith('FAIL') || finalStatus.startsWith('WARNING')
         }
 
     }

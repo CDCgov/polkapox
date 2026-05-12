@@ -7,11 +7,11 @@ process GRAPH_RECON {
     tuple val(meta), path(gfa)
 
     output:
-    tuple val(meta), path('*asm.fasta', optional: true)     , emit: gfa_assembly
-    tuple val(meta), path('*contigs.fasta', optional: true) , emit: unicycler_contigs
-    path '*.log'                                             , emit: log
-    path('*.summary', optional: true)                       , emit: summary
-    path "versions.yml"                                     , emit: versions
+    tuple val(meta), path('*asm.fasta')      , emit: gfa_assembly
+    tuple val(meta), path('*contigs.fasta')  , emit: unicycler_contigs
+    path '*.log'                             , emit: log
+    path '*.summary'                         , optional: true, emit: summary
+    path "versions.yml"                      , emit: versions
 
     shell: // This script is bundled with the pipeline, in polkapox/bin/
     def prefix = task.ext.prefix ?: "${meta.id}"
