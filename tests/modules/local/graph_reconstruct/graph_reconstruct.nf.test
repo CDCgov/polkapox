@@ -4,18 +4,18 @@ nextflow_process {
     script "modules/local/graph_reconstruct/graph_reconstruct.nf"
     process "GRAPH_RECON"
 
-    test("Graph Recon Test") {
+    // -----------------------------------------------------------------------
+    // Clade II — standard graph (2 ITRs + single copy region)
+    // -----------------------------------------------------------------------
+    test("Clade II standard GFA - should PASS and produce assembly FASTA") {
 
         when {
-            params {
-                // define parameters here. Example:
-                // outdir = "tests/results"
-            }
+            params {}
             process {
                 """
                 input[0] = Channel.of([
-                    [ id: 'test_sub', single_end: true ],
-                    file('${projectDir}/tests/nf-test-data/test_sub.bridges_applied.gfa', checkIfExists: true)
+                    [ id: 'cladeII_standard', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/cladeII_standard.bridges_applied.gfa', checkIfExists: true)
                 ])
                 """
             }
@@ -23,7 +23,163 @@ nextflow_process {
 
         then {
             assert process.success
-            assert snapshot(process.out).match()
+            // Assembly FASTA and contig FASTA must be produced
+            assert process.out.gfa_assembly.size()    == 1
+            assert process.out.unicycler_contigs.size() == 1
+            // Log must be written
+            assert process.out.log.size() == 1
+            // Assembly FASTA must be non-empty
+            def asmFasta = process.out.gfa_assembly[0][1]
+            assert path(asmFasta).text.contains('>')
+            // Log must record PASS status
+            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
+            def lastKey = logJson.keySet().sort().last()
+            assert logJson[lastKey]['status'].startsWith('PASS')
+        }
+
+    }
+
+    // -----------------------------------------------------------------------
+    // Clade I — classic DRC graph
+    // -----------------------------------------------------------------------
+    test("Clade I standard GFA - should PASS and produce assembly FASTA") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'cladeI_standard', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/cladeI_standard.bridges_applied.gfa', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.gfa_assembly.size()    == 1
+            assert process.out.unicycler_contigs.size() == 1
+            assert process.out.log.size() == 1
+            def asmFasta = process.out.gfa_assembly[0][1]
+            assert path(asmFasta).text.contains('>')
+            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
+            def lastKey = logJson.keySet().sort().last()
+            assert logJson[lastKey]['status'].startsWith('PASS')
+        }
+
+    }
+
+    // -----------------------------------------------------------------------
+    // Clade II — single-ITR graph (legitimate edge case)
+    // -----------------------------------------------------------------------
+    test("Clade II single-ITR GFA - should PASS") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'cladeII_one_itr', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/cladeII_one_itr.bridges_applied.gfa', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.log.size() == 1
+            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
+            def lastKey = logJson.keySet().sort().last()
+            assert logJson[lastKey]['status'].startsWith('PASS')
+        }
+
+    }
+
+    // -----------------------------------------------------------------------
+    // Clade II — broken/incomplete graph (FAIL expected)
+    // -----------------------------------------------------------------------
+    test("Clade II broken GFA - process should FAIL with non-zero exit code") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'cladeII_broken', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/cladeII_broken.bridges_applied.gfa', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            // After the exit-code fix, broken assemblies must produce a non-zero exit
+            assert !process.success
+            // Log should still be written with FAIL/WARNING status
+            assert process.out.log.size() == 1
+            def logText = path(process.out.log[0]).text
+            def logJson = new groovy.json.JsonSlurper().parseText(logText)
+            def lastKey = logJson.keySet().sort().last()
+            def finalStatus = logJson[lastKey]['status']
+            assert finalStatus.startsWith('FAIL') || finalStatus.startsWith('WARNING')
+        }
+
+    }
+
+    // -----------------------------------------------------------------------
+    // Clade I — broken graph (FAIL expected)
+    // -----------------------------------------------------------------------
+    test("Clade I broken GFA - process should FAIL with non-zero exit code") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'cladeI_broken', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/cladeI_broken.bridges_applied.gfa', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert !process.success
+            assert process.out.log.size() == 1
+            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
+            def lastKey = logJson.keySet().sort().last()
+            def finalStatus = logJson[lastKey]['status']
+            assert finalStatus.startsWith('FAIL') || finalStatus.startsWith('WARNING')
+        }
+
+    }
+
+    // -----------------------------------------------------------------------
+    // Clade II — recombinant (complex graph, FAIL expected)
+    // -----------------------------------------------------------------------
+    test("Clade II recombinant GFA - process should FAIL") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'cladeII_recombinant', single_end: true ],
+                    file('${projectDir}/tests/nf-test-data/cladeII_recombinant.bridges_applied.gfa', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert !process.success
+            assert process.out.log.size() == 1
+            def logJson = new groovy.json.JsonSlurper().parseText(path(process.out.log[0]).text)
+            def lastKey = logJson.keySet().sort().last()
+            def finalStatus = logJson[lastKey]['status']
+            assert finalStatus.startsWith('FAIL') || finalStatus.startsWith('WARNING')
         }
 
     }

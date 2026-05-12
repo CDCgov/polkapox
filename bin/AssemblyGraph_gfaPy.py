@@ -50,11 +50,9 @@ class Link:
 
 def remove_self_loops_and_terminal_nodes(links, segments):
     """Remove self-loops and terminal nodes with length < 1000 bp using segment info."""
-    
-    # Remove self-loops first
+
     pruned_links = [link for link in links if link.from_name != link.to_name]
 
-    # Create a graph with the pruned links
     graph = nx.Graph()
 
     for link in pruned_links:
@@ -112,7 +110,8 @@ def filter_links_by_coverage(low_cov, links):
 
 def find_longest_contig(segments, output_dir):
     """Find the longest contig based on length."""
-    longest_contig = max(segments, key=lambda x: x.get('LN'))
+    # LN is optional in GFA spec; fall back to actual sequence length if absent
+    longest_contig = max(segments, key=lambda x: x.get('LN') or len(x.sequence))
     # write longest contig to file
     longest_contig_file = os.path.join(output_dir, "longest_contig.fasta")
     with open(longest_contig_file, "w") as gfaContigs:
@@ -131,46 +130,37 @@ def filter_segments_by_graph(segments, graph):
 
 def create_filtered_graph(links, segments):
     """Create a filtered NetworkX graph from links and remove disconnected nodes."""
-    graph = nx.MultiGraph()
+    # Use Graph (not MultiGraph): Unicycler emits both orientations of each edge as separate
+    # GFA link lines, so MultiGraph would double-count degrees and break the cycle check.
+    graph = nx.Graph()
 
     for link in links:
         graph.add_edge(link.from_name, link.to_name)
 
-    # Find all connected components
     components = list(nx.connected_components(graph))
-    
-    # Determine which component to keep: the main graph
     largest_component = max(components, key=len)
 
-    # Remove all nodes that are not in the largest component
     nodes_to_remove = set(graph.nodes) - largest_component
-    print('Removing nodes that are not part of the main graph, usually disconnected or forming subgraphs:', nodes_to_remove)
+    print('Removing nodes not in main graph (disconnected subgraphs):', nodes_to_remove)
     graph.remove_nodes_from(nodes_to_remove)
-    # Check if the graph is still disconnected after filtering
+
     print('Checking that the graph is still connected')
     if not nx.is_connected(graph):
         return None, "WARNING: Graph is not fully connected"
 
-    # Check if the graph forms a cycle
-    # get the number of edges for each node
     degrees = dict(graph.degree())
-
-    # figure out how many nodes have more or less than two edges, count 
     count_not_two = sum(1 for degree in degrees.values() if degree < 2)
     all_degree_two = count_not_two <= 1
 
     num_edges = graph.number_of_edges()
     num_nodes = graph.number_of_nodes()
-    # make sure the number of edges and nodes are equal (perfect loop) or one off (loop + ITR)
-    #print(num_edges)
+
     print('Checking that the graph forms a complete cycle, meaning all contigs are connected')
-    if all_degree_two and num_edges == num_nodes or num_edges == num_nodes+1:
-        print('The graph forms a complete cycle')
-        print('\n')
+    if all_degree_two and (num_edges == num_nodes or num_edges == num_nodes + 1):
+        print('The graph forms a complete cycle\n')
         return graph, "PASS"
     else:
-        print("FAIL: Graph is not circular")
-        print('\n')
+        print("FAIL: Graph is not circular\n")
         return None, "WARNING: Graph is not circular, either it's an incomplete assembly, or it has extra ITRs or some recombination elements. Check graph in Bandage"
 
 def identify_itr(filtered_edges, segments):
@@ -202,7 +192,7 @@ def identify_itr(filtered_edges, segments):
         all_orients = []
 
         for edge in filtered_edges:
-            if edge.from_name == filt_contigs:
+            if edge.from_name in filt_contigs:
                 print(edge)
             if edge.from_name == edge.to_name:
                 continue  # skip self loops
@@ -279,8 +269,7 @@ def get_final_paths(filtered_edges, filtered_graph, segments):
     """Find all longest paths in the graph starting from any ITR."""
     itrs, itr_length, itr_status, terminal_itr, final_itr = identify_itr(filtered_edges, segments)
     if not itrs or 'FAIL' in itr_status:
-        status = itr_status
-        return [], [], [], status
+        return [], [], [], [], 0, itr_status
     longest_paths = []
     max_length = 0
 
@@ -320,7 +309,7 @@ def get_final_paths(filtered_edges, filtered_graph, segments):
         return left_itrs, middle_path, final_paths, itrs, itr_length, status
     else:
         status = "FAIL: No path found starting from any ITR."
-        return [], [], [], status
+        return [], [], [], [], 0, status
         
 def orient_longest_contig(query, reference, blast_db_dir):
     print('\n')
@@ -336,19 +325,32 @@ def orient_longest_contig(query, reference, blast_db_dir):
     #print(f"Running command: {' '.join(blastn_command)}")
     result2 = subprocess.run(blastn_command, shell=False)
     
-    # Check if blastResults file is created and contains results
     if not os.path.exists(blastResults):
         print(f"BLAST results file not created: {blastResults}")
-        return None, "FAIL"
+        return None, "FAIL: BLAST results file not created"
 
+    # Select the top hit by bitscore (column 11); last-hit-wins would be non-deterministic
+    best_hit = None
     with open(blastResults, 'r') as e:
         for line in e:
-            blastHits = line.split('\t')
-           #print(blastHits)
-            sstart = int(blastHits[5])
-            send = int(blastHits[6])
+            parts = line.strip().split('\t')
+            if len(parts) < 12:
+                continue
+            try:
+                bitscore = float(parts[11])
+            except ValueError:
+                continue
+            if best_hit is None or bitscore > float(best_hit[11]):
+                best_hit = parts
+
+    if best_hit is None:
+        print("No BLAST hits found for orientation")
+        return None, "FAIL: No BLAST hits found — cannot determine contig orientation"
+
+    sstart = int(best_hit[5])
+    send = int(best_hit[6])
     orientation = '1 +' if sstart < send else '1 -'
-    print('Orientation of longest contig:',orientation)
+    print('Orientation of longest contig:', orientation)
     return orientation, "PASS"
 
 def get_final_orientation(left_itrs, middle_contigs, final_paths, lnks, longest_contig, longest_orient, itrs):
@@ -578,30 +580,6 @@ def get_final_sequence(oriented_path, segments, itrs):
     final_order_orientation_copy_number = ",".join(oriented_path)
     return final_sequence, final_sequence_length, final_order_orientation_copy_number, "PASS"
 
-# check that this writes the correct sequence
-# SHould be final_sequence from get_final_sequence
-def write_oriented_fasta(final_path, segments, output_file, input_file):
-    """Write the segments in the specified orientation to a single FASTA entry with the input file name as the header."""
-    print('Writing final oriented fasta to out file')
-    segment_dict = {seg.name: seg.sequence for seg in segments}  # Create a dictionary of segment names to sequences
-    full_sequence = ""  # Initialize an empty string to accumulate full sequence
-
-    for segment_name in final_path:
-        seq = segment_dict[segment_name.strip('+').strip('-')]  # Remove orientation symbols for lookup
-        # Check if the segment should be reversed
-        if segment_name.endswith('-'):
-            seq = str(Seq(seq).reverse_complement())  # Reverse complement the sequence if needed
-
-        full_sequence += seq  # Concatenate sequence
-
-    # Create a single SeqRecord with all concatenated sequences
-    # Use the base name of the input file as the ID for the SeqRecord
-    input_base_name = os.path.splitext(os.path.basename(input_file))[0]
-    record = SeqRecord(Seq(full_sequence), id=input_base_name, description="All contigs concatenated based on the final path")
-    # Write the single record to the output file
-    with open(output_file, 'w') as f:
-        SeqIO.write(record, f, "fasta")
-
 def write_all_contigs(segments, output_file):
     """Write all contigs to a FASTA file without considering orientation."""
     with open(output_file, 'w') as f:
@@ -613,34 +591,32 @@ def write_log_and_exit(log, status):
     log_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.log")
     summary_file = os.path.join(log['00']['input']['output_dir'], log['00']['input']['sample_name'] + ".assembly.summary")
 
-    headers = ['sample', 'status', 'longest_paths', 'final_contig_order_orientation', 'itr_length', 'assembly_length']
-    data = []
+    # Build summary row as a dict keyed by header name so column order is always correct
+    headers = ['sample', 'status', 'itr_length', 'final_contig_order_orientation', 'assembly_length']
+    row = {h: '' for h in headers}
+
     if '00' in log:
-        data.append(log['00']['input']['sample_name'])  # 'sample'
-        data.append(status)  # 'status'
+        row['sample'] = log['00']['input']['sample_name']
+    row['status'] = status
     if '05' in log:
-        data.append(",".join(str(i) for i in log['05']['output']['final_paths']))  # 'longest_paths'
+        row['itr_length'] = str(log['05']['output'].get('itr_length', ''))
     if '08' in log:
-        data.append(str(log['08']['output']['final_path']))  # 'final_path'
-        data.append(",".join(str(i) for i in log['08']['output']['final_orientation']))  # 'final_contig_order_orientation'    
-    else:
-        data.append('')  # Empty string if '08' not in log
+        row['final_contig_order_orientation'] = ','.join(
+            str(i) for i in log['08']['output'].get('final_orientation', [])
+        )
     if '09' in log:
-        data.append(str(log['09']['output']['final_sequence_length']))  # 'assembly_length'
-    else:
-        data.append('')  # Empty string if '09' not in log
-    if '05' in log:
-        data.append(str(log['05']['output']['itr_length']))  # 'itr_length'
-        data.append(str(log['05']['output']['itrs']))  # 'itr_length'
+        row['assembly_length'] = str(log['09']['output'].get('final_sequence_length', ''))
 
     with open(summary_file, 'w') as f:
         f.write('\t'.join(headers) + '\n')
-        f.write('\t'.join(data) + '\n')
-    # Error here
+        f.write('\t'.join(row[h] for h in headers) + '\n')
+
     with open(log_file, 'w') as f:
-        json_object = json.dumps(log, indent=4)
-        f.write(json_object)
-    sys.exit(0)
+        f.write(json.dumps(log, indent=4))
+
+    # Exit 1 on any failure so Nextflow marks the process as failed
+    exit_code = 0 if status == "PASS" or status.startswith("PASS") else 1
+    sys.exit(exit_code)
 
 def process_graph(gfa_graph, output_dir, input_file, reference, log):
     """Process the graph and write output."""
