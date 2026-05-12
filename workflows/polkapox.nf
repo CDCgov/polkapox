@@ -23,7 +23,7 @@ else if (params.indir) {
 else if (params.sra_ids) {
     ch_sra_id = file(params.sra_ids)
     }
-//else { exit 1, 'Must specify samplesheet, input directory of fastq files, or sra id list!' }
+else { exit 1, 'Must specify samplesheet (--input), input directory (--indir), or SRA ID list (--sra_ids)!' }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
