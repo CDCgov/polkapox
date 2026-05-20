@@ -42,7 +42,7 @@ process IVAR_CONSENSUS_POLISH_CLEANUP {
     label 'process_single'
 
     input:
-    tuple val(meta), path(fasta)
+    tuple val(meta), path(fasta, stageAs: 'ivar_consensus_input.fa')
 
     output:
     tuple val(meta), path("*.fa"), emit: fasta
@@ -53,9 +53,7 @@ process IVAR_CONSENSUS_POLISH_CLEANUP {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}.final"
     """
-    tmp="${prefix}.clean.fa"
-    cp $fasta "\$tmp"
-    sed -i 's/Consensus_//;s/^\\(N\\)\\{1,\\}//g;s/\\(N\\)\\{1,\\}\$//g' "\$tmp"
-    mv "\$tmp" ${prefix}.fa
+    cp $fasta ${prefix}.fa
+    sed -i 's/Consensus_//;s/^\\(N\\)\\{1,\\}//g;s/\\(N\\)\\{1,\\}\$//g' ${prefix}.fa
     """
 }

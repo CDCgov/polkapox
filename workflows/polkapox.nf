@@ -129,7 +129,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Only run Read Filter
     //
-
+    
     if ( params.workflow == 'filter_reads'
         || params.workflow == 'ref_based'
         || params.workflow == 'denovo'
