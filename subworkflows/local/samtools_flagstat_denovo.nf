@@ -22,5 +22,5 @@ workflow SAMTOOLS_FLAGSTAT_DENOVO {
 
     emit:
     flagstat = SAMTOOLS_FLAGSTAT_DENOVO_RUN.out.flagstat
-    versions = SAMTOOLS_FLAGSTAT_DENOVO_RUN.out.versions_samtools
+    versions = SAMTOOLS_FLAGSTAT_DENOVO_RUN.out.versions
 }

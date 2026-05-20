@@ -1,12 +1,12 @@
-include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../modules/nf-core/samtools/flagstat/main.denovo'
+include { SAMTOOLS_FLAGSTAT_DENOVO                     } from './samtools_flagstat_denovo'
 include { UNICYCLER                                     } from '../../modules/nf-core/unicycler/main'
 include { BANDAGE                                       } from '../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../modules/local/graph_reconstruct/graph_reconstruct'
-include { BWA_MEM as BWA_MEM_DENOVO                     } from '../../modules/nf-core/bwa/mem/main_denovo'
+include { BWA_MEM_DENOVO                                } from './bwa_mem_denovo'
 include { PUBLISH_CONTIGS                               } from '../../modules/local/publish_contigs/publish_contigs'
 include { MUMMER                                        } from '../../modules/nf-core/mummer/main'
 include { QUAST                                         } from '../../modules/nf-core/quast/main'
-include { IVAR_CONSENSUS as IVAR_CONSENSUS_POLISH       } from '../../modules/nf-core/ivar/consensus/main_denovo'
+include { IVAR_CONSENSUS_POLISH                         } from './ivar_consensus_polish'
 
 workflow DENOVO {
 
@@ -66,6 +66,7 @@ workflow DENOVO {
     SAMTOOLS_FLAGSTAT_DENOVO (
         ch_mapped_denovo_flagstat
     )
+    ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT_DENOVO.out.versions)
 
     ch_polishing_input = ch_mapped_denovo.join(ch_gfa_forpolishing, by: 0)
 
@@ -76,6 +77,7 @@ workflow DENOVO {
         ch_polishing_input,
         false
     )
+    ch_versions = ch_versions.mix(IVAR_CONSENSUS_POLISH.out.versions)
     //ch_gfapolish_compare = IVAR_CONSENSUS_POLISH.out.fasta
     ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH.out.fasta, by: 0)
     
