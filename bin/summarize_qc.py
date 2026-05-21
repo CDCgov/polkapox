@@ -8,6 +8,7 @@ import json
 import argparse
 import subprocess
 import logging
+import gzip
 
 logger = logging.getLogger()
 
@@ -70,12 +71,7 @@ def parse_args():
 
 def get_raw_filt_counts(sample):
     print('running get raw filt counts')
-    """ Get raw filter counts from fastp output
-    :param search_dir: work directory
-    :param sample: sample name
-    :returns: total raw reads and total filtered reads
-    :rtype: tuple
-    """
+    """ Get raw filter counts from fastp output """
     fastp_file = "{}.fastp.json".format(sample)
     if os.path.exists(fastp_file):
         logger.error(f"Path {fastp_file} found")
@@ -94,14 +90,7 @@ def get_raw_filt_counts(sample):
 
 def get_kraken_stats(sample, kdb, kraken_tax_ids):
     print('running get kraken 2 stats')
-    """ Get stats from kraken output
-    :param search_dir: work directory
-    :param sample: sample name
-    :param kraken_db: path to kraken database
-    :kraken_tax_ds: path to kraken tax ids
-    :returns: kraken statistics
-    :rtype: tuple
-    """
+    """ Get stats from kraken output """
     total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids = ('NA',) * 6
     
     kraken_reads = "{}.kraken2.classifiedreads.txt".format(sample)
@@ -135,17 +124,11 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     with open(kraken_tax_ids) as l:
         lines = [line.strip() for line in l.readlines()]
     k_tax_ids = ', '.join(lines)
-    #print('printing kraken stuff for testing',total,opx_perc, human_perc)
     return total, opx_perc, human_perc, unclass_perc, kdb, k_tax_ids
 
 def get_flagstat_denovo(sample):
     print('running get flagstat denovo')
-    """ Get samtools flagstat results from denovo mapping
-    :param search_dir: work directory
-    :param sample: sample name
-    :returns: denovo mapping statistics
-    :rtype: tuple
-    """
+    """ Get samtools flagstat results from denovo mapping """
     stats=[]
     p = "{}.denovo.flagstat".format(sample)
     if os.path.exists(p):
@@ -167,13 +150,7 @@ def get_flagstat_denovo(sample):
 
 def get_cov_stats(sample, reference):
     print('running get coverage stats')
-    """ Get coverage stats from samtools output
-    :param search_dir: work directory
-    :param sample: sample name
-    :param reference: path to reference genome
-    :returns: coverage statistics
-    :rtype: tuple
-    """
+    """ Get coverage stats from samtools output """
     depth_file = "{}.depth.tsv".format(sample)
 
     if os.path.exists(depth_file) and os.path.getsize(depth_file) > 0:
@@ -199,11 +176,7 @@ def get_cov_stats(sample, reference):
 
 def get_gfa_stats(sample):
     print('running get gfa stats')
-    """ Get stats from Unicycler graph assembly output
-    :param sample: sample name
-    :returns: gfaResults
-    :rtype: list
-    """
+    """ Get stats from Unicycler graph assembly output """
     gfa_log = "{}.assembly.log".format(sample)
     print('Running analysis for:', sample)
 
@@ -211,32 +184,20 @@ def get_gfa_stats(sample):
         with open(gfa_log) as f:
             try:
                 parsed_json = json.load(f)
-                #print(f"Data loaded from {gfa_log}")
             except json.JSONDecodeError:
                 print(f"Could not load data from {gfa_log}")
                 return ['NA', 'NA', 'NA', 'NA', 'NA']
 
-        # Initialize variables
         final_order_orientation_copy_number = 'Unknown'
         final_sequence_length = 'Unknown'
         final_itr_length = 'Unknown'
-        status = 'Unknown'
-        notes = 'Unknown'
         status_report = 'Unknown'
+        notes = 'Unknown'
         
-        # print('printing the whole json to debug')
-        # print(parsed_json)
-        
-        # List for collecting status of all steps
         status_list = []
-
-        # Sort keys explicitly to respect order
         sorted_keys = sorted(parsed_json.keys())
-        # Iterate through sorted keys
         for key in sorted_keys:
             step = parsed_json[key]
-
-            # Check output data if needed
             if 'output' in step:
                 output = step['output']
                 if 'final_orientation' in output:
@@ -246,19 +207,15 @@ def get_gfa_stats(sample):
                     final_sequence_length = output['final_sequence_length']
                 if 'itr_length' in output:
                     final_itr_length = output['itr_length']
-            # append status from each step
             if 'status' in step:
                 status_list.append(step['status'])
 
-        # final step (highest sorted key)
         final_step = parsed_json[sorted_keys[-1]]
         final_status = final_step.get('status', 'Unknown')
 
-        # Confirm results:
         print("All statuses:", status_list)
         print("Final status:", final_status)   
         
-        # Determine notes and status report
         if 'PASS' in final_status:
             notes = 'Graph successfully reconstructed'
             status_report = 'PASS'
@@ -272,46 +229,37 @@ def get_gfa_stats(sample):
             notes = 'GFA step failed, review the logs for that process for more information'
             status_report = 'FAIL'
             
-        # Function to handle conversion to float
         def extract_float(val):
             if val == 'Unknown' or val is None:
                 return 'Unknown'
             elif isinstance(val, list):
                 if len(val) == 0:
                     return 'Unknown'
-                else:
-                    # Decide how to handle list elements
-                    # Option 1: Take the first element
-                    try:
-                        return float(val[0])
-                    except (ValueError, TypeError):
-                        return 'Unknown'
-                    
+                try:
+                    return float(val[0])
+                except (ValueError, TypeError):
+                    return 'Unknown'
             else:
                 try:
                     return float(val)
                 except (ValueError, TypeError):
                     return 'Unknown'
 
-        # Apply the function to get float values
         final_sequence_length_value = extract_float(final_sequence_length)
         final_itr_length_value = extract_float(final_itr_length)
-        
-        # catch example of status PASS but no ITR/assembly
-        key_values = [final_order_orientation_copy_number, final_sequence_length, final_itr_length_value]
 
+        key_values = [final_order_orientation_copy_number, final_sequence_length, final_itr_length_value]
         if status_report == 'PASS' and any(val == 'Unknown' for val in key_values):
             status_report = 'FAIL'
             notes = 'Issue with GFA assembly'
             
         gfaResults = [
             final_order_orientation_copy_number,
-            final_sequence_length_value,
+            final_sequence_length_value,  # NOTE: will be overridden by final FASTA length later
             final_itr_length_value,
             status_report,
             notes,
         ]
-        # print('here are the final gfa results',gfaResults)
         
     else:
         status = 'Unicycler-GFA Log DOES NOT Exist'
@@ -324,11 +272,7 @@ def get_gfa_stats(sample):
 
 def fix_names(df):
     print('running fix names')
-    """ Standardize the raw column names
-    :param df: input dataframe with columns to standardize
-    :returns: a dataframe with standardized columns
-    :rtype: Dataframe object
-    """
+    """ Standardize the raw column names """
     raw_col_names = ['Sample',
                      'Samtools_mqc-generalstats-samtools-flagstat_total',
                      'Samtools_mqc-generalstats-samtools-mapped_passed',
@@ -346,13 +290,10 @@ def fix_names(df):
                      'fastp_mqc-generalstats-fastp-pct_adapter']
     
     for col_name in raw_col_names[:]:
-        # check for human, mpox virus top hit column. add any missing columns from raw_col_names list
         if col_name not in df.columns:
-            # if the missing column is either human, mpox virus top hit, remove it from the raw_col_names list
             if col_name == 'Kraken_mqc-generalstats-kraken-Homo_sapiens' or col_name == 'Kraken_mqc-generalstats-kraken-Monkeypox_virus':
                 raw_col_names.remove(col_name)
             else:
-                # add any other missing columns and give a value of NA
                 df[col_name] = "NA"
     
     df = df[raw_col_names]
@@ -370,12 +311,7 @@ def fix_names(df):
 
 def get_total_snps(sample):
     print('running get total snps')
-    """ Grab the tsv files from ivar output (ivar_variants dir) and get total number of SNPs
-    :param search_dir: work directory
-    :param sample: sample name
-    :returns: total number of snps
-    :rtype: int
-    """
+    """ Grab total number of SNPs from ivar output """
     snp_file = "{}.ivar.tsv".format(sample)
     if os.path.exists(snp_file):
         try:
@@ -391,13 +327,7 @@ def get_total_snps(sample):
 
 def get_snp_metadata(sample, coords):
     print('running get snp metadata')
-    """ Get number of SNPs for input coordinates from ivar_summary file (in variant_summaries dir)
-    :param search_dir: work directory
-    :param sample: sample name
-    :param coords: a set of 2 coordinates
-    :returns: total number of snps for each of 2 coordinates
-    :rtype: tuple
-    """    
+    """ Get number of SNPs for input coordinates from ivar_summary file """
     C1_count = 0
     C2_count = 0
     coord2_start = coords.split(',')[2]
@@ -420,11 +350,7 @@ def get_snp_metadata(sample, coords):
 
 def get_polish_stats(sample):
     print('running get polish stats')
-    """ Parse the mummer report file and return # corrected SNPs and indels
-    :param sample: sample name
-    :returns: total number of snps and indels
-    :rtype: tuple
-    """
+    """ Parse the mummer report file and return # corrected SNPs and indels """
     infile = sample + '.report'
 
     if os.path.exists(infile):
@@ -440,7 +366,7 @@ def get_polish_stats(sample):
                         parts = line.split()
                         if len(parts) >= 2:
                             Indels = round(int(parts[1]),2)
-                        break  # Stop reading after finding TotalIndels
+                        break
         except FileNotFoundError: 
             logger.error(f"Unable to open {infile}")
             SNPs, Indels = 'NA', 'NA'
@@ -451,23 +377,44 @@ def get_polish_stats(sample):
 
 def count_ns_in_pileup(sample):
     print('running count ns')
-    """ Get the consensus SNPs from final mpileup file 
-    :param sample: sample name
-    :returns: total number of snps 
-    :rtype: int
-    """
+    """ Count low-depth sites (<20) from mpileup """
     p = "{}.final.mpileup".format(sample)
     try:
-        command = f"cat {p} | awk '($4 < 20){{count++}} END {{print count}}'"
+        command = f"awk 'BEGIN{{count=0}} ($4 < 20){{count++}} END {{print count}}' {p}"
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         logger.info(f"Successfully parsed {p}")
     except:
         logger.error(f"Unable to parse {p}")
     if result.returncode == 0:
-        return str(result.stdout.strip())
+        out = result.stdout.strip()
+        return out if out != "" else "0"
     else:
-            return None
-    
+        return None
+
+def fasta_total_length(path):
+    """
+    Compute total sequence length of a FASTA (optionally .gz).
+    Counts all bases across all records, ignoring header lines.
+    Returns an integer length or 'NA' on error.
+    """
+    if not os.path.exists(path):
+        logger.info(f"{path} does not exist")
+        return 'NA'
+    try:
+        opener = gzip.open if path.endswith('.gz') else open
+        total = 0
+        with opener(path, 'rt') as fh:
+            for line in fh:
+                if not line:
+                    continue
+                if line.startswith('>'):
+                    continue
+                total += len(line.strip())
+        return total
+    except Exception as e:
+        logger.error(f"Error reading FASTA {path}: {e}")
+        return 'NA'
+
 def main():
     print('running main func')
     args = parse_args()
@@ -486,7 +433,6 @@ def main():
         logger.error(f"Unable to open {sample_file}")
         sys.exit(1)
 
-    ### Check number of entries per dataframe
     summaryIds = list(summary[summary.columns[0]])
     samplesIds = list(samples[samples.columns[0]])
 
@@ -528,13 +474,9 @@ def main():
                 if col not in contigs.columns:
                     contigs[col] = 0
     
-            # Now convert column values to numeric
             contigs[contig_columns] = contigs[contig_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
-    
-            # Sum values row-wise
             contigs['n_contigs_unicycler'] = contigs[contig_columns].sum(axis=1)
             print(contigs[contig_columns].sum(axis=1))
-            # Merge the summed info back into fixed_summary
             fixed_summary = fixed_summary.merge(
                 contigs[['Sample', 'n_contigs_unicycler']],
                 left_on='sample',
@@ -546,6 +488,7 @@ def main():
         fixed_summary['reads_total_bwa'] = pd.to_numeric(fixed_summary['reads_total_bwa'], errors='coerce')
         percent_mapped_bwa = (fixed_summary['reads_mapped_bwa'] / fixed_summary['reads_total_bwa']) * 100
         fixed_summary['percent_mapped_bwa'] = np.where(fixed_summary['reads_mapped_bwa'].isna() | fixed_summary['reads_total_bwa'].isna(), np.nan, percent_mapped_bwa).round(2)
+
     summary_full = fixed_summary.reindex(fixed_summary.columns.tolist() + ['raw_read_count_fastp', 'filtered_read_count_fastp', 'total_raw_reads', 'opx_percent_kraken','human_percent_kraken', 'unclass_percent_kraken', 'average_depth_bwa', 'count_20xdepth_bwa'], axis=1)
     summary_full.to_csv("before_adding_values.csv")
     
@@ -553,16 +496,15 @@ def main():
     for sample in summary_full['sample']:
         summary_full.loc[summary_full['sample'] == sample, ['opx_read_count_kraken', 'filtered_read_count_fastp']] = get_raw_filt_counts(sample)
         kraken_db = args.kraken_db
-        #print(summary_full)
         summary_full.loc[summary_full['sample'] == sample, ['total_raw_reads', 'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken', 'kraken_db','kraken_tax_ids']] = get_kraken_stats(sample, kraken_db, args.kraken_tax_ids)
         if args.workflow == 'ref_based':
             summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa','reference_genome']] = get_cov_stats(sample, args.reference_genome)
             summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(sample)    
             summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
-            #logic to handle if a user is not interested in variant filtering
             if args.filter == 'true':
                 summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(sample, args.coords)
         elif args.workflow == 'denovo':
+            # Fill from GFA log first (orientation, itr, status, etc.)
             summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(sample)
             summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(sample)
             summary_full.loc[summary_full['sample'] == sample, ['corrected_snps','corrected_indels']] = get_polish_stats(sample)
@@ -577,6 +519,20 @@ def main():
             if args.filter == 'true':
                 summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(sample, args.coords)
 
+    # After populating initial stats, resolve paths and OVERRIDE sequence_length with the final FASTA length
+    for idx, sample in summary_full['sample'].items():
+        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa'
+        summary_full.at[idx, 'final_assembly'] = final_assembly if final_assembly else None
+
+        # Compute final FASTA length and override the 'sequence_length' column
+        final_len = fasta_total_length(final_assembly)
+        summary_full.at[idx, 'sequence_length'] = final_len
+
+        for i in [1, 2]:
+            seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz'
+            seqtk_outfile = glob(seqtk_outfile_pattern.format(i))
+            summary_full.at[idx, f'opxv_reads_{i}'] = seqtk_outfile[0] if seqtk_outfile else None
+
     # final column order
     if args.workflow == 'filter_reads':
         summary_full = summary_full[['sample','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp']]
@@ -586,24 +542,12 @@ def main():
         if args.filter == 'false':
             summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','total_snps']]
     elif args.workflow == 'denovo':
-            summary_full = summary_full[['sample','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','corrected_snps','corrected_indels','corrected_Ns']]
+        summary_full = summary_full[['sample','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','corrected_snps','corrected_indels','corrected_Ns','final_assembly','opxv_reads_1','opxv_reads_2']]
     elif args.workflow == 'full':
         if args.filter == 'true':
-            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps',f'{args.locus1}_SNPs',f'{args.locus2}_SNPs','corrected_snps','corrected_indels','corrected_Ns']]
+            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps',f'{args.locus1}_SNPs',f'{args.locus2}_SNPs','corrected_snps','corrected_indels','corrected_Ns','final_assembly','opxv_reads_1','opxv_reads_2']]
         if args.filter == 'false':
-            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps','corrected_snps','corrected_indels','corrected_Ns']]
-
-    # Check for the files and assign to summary_full
-    for idx, sample in summary_full['sample'].items():
-        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa'
-        summary_full.at[idx, 'final_assembly'] = final_assembly if final_assembly else None
-        
-        for i in [1, 2]:
-            # get the final paths for the seqtk output R1 and R2, and final assembly n
-            seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
-            seqtk_outfile = glob(seqtk_outfile_pattern.format(i))
-            #print(seqtk_outfile)
-            summary_full.at[idx, f'opxv_reads_{i}'] = seqtk_outfile[0] if seqtk_outfile else None
+            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps','corrected_snps','corrected_indels','corrected_Ns','final_assembly','opxv_reads_1','opxv_reads_2']]
 
     summary_full.to_csv("sample_summary.tsv", sep="\t", index=False)
     logger.info(f"Summary results successfully written to sample_summary.tsv")

@@ -19,18 +19,76 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
+import re
+
 def clean_graph_tags(input_file, output_file):
-    # Define the regex pattern to match the LB and CL tags
-    tag_pattern = re.compile(r'\tLB:z:[^\t]+\tCL:z:[^\t]+')
+    # Remove LB and CL tags, whether they have a value or not
+    # Pattern matches: \tLB:z:... or \tCL:z:...
+    pat = re.compile(r'(?:\tLB:z:[^\t]*|\tCL:z:[^\t]*)')
 
     with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
         for line in infile:
-            # Remove the tags from the line
-            cleaned_line = re.sub(tag_pattern, '\n', line)
-            # Remove trailing tabs
-            cleaned_line = cleaned_line.rstrip('\t')
-            # Write the cleaned line to the output file, ensuring the newline character is preserved
-            outfile.write(cleaned_line)
+            cleaned = pat.sub('', line)  # remove the tags
+            cleaned = cleaned.rstrip('\t')  # optional: drop trailing tabs
+            if not cleaned.endswith('\n'):
+                cleaned += '\n'
+            outfile.write(cleaned)
+
+def clean_empty_string(input_file, output_file):
+    # First pass: identify which S lines to keep (LN:i:<n> > 0 or LN:i:<n> missing => keep by policy)
+    kept_segs = set()
+
+    with open(input_file, 'r') as f:
+        for raw in f:
+            line = raw.rstrip("\n")
+            if not line:
+                continue
+            cols = line.split("\t")
+            if len(cols) >= 3 and cols[0] == 'S':
+                seg_id = cols[1].strip()
+                # The tail holds tags like "LN:i:32 dp:f:1.65..."
+                tail = "\t".join(cols[3:]) if len(cols) > 3 else ""
+                m = re.search(r'LN:i:(\d+)', tail)
+                if m:
+                    length = int(m.group(1))
+                    if length > 0:
+                        kept_segs.add(seg_id)
+                    else:
+                        # length == 0: skip this segment
+                        pass
+                else:
+                    # If LN tag is missing, choose to keep or drop.
+                    # Here we conservatively keep it (no LN==0 found).
+                    kept_segs.add(seg_id)
+
+    # Second pass: write only kept S lines and L lines whose endpoints are kept
+    with open(input_file, 'r') as infile, open(output_file, 'w') as outfile:
+        for raw in infile:
+            line = raw.rstrip("\n")
+            if not line:
+                continue
+            cols = line.split("\t")
+            if not cols:
+                continue
+
+            tag = cols[0]
+            if tag == 'S':
+                if len(cols) >= 2:
+                    seg_id = cols[1].strip()
+                    if seg_id in kept_segs:
+                        outfile.write(line + "\n")
+                    # else skip
+            elif tag == 'L':
+                # L format typically: L <src> <src_strand> <dst> <dst_strand> <cigar> [optional]
+                if len(cols) >= 4:
+                    from_id = cols[1].strip()
+                    to_id = cols[3].strip()
+                    if from_id in kept_segs and to_id in kept_segs:
+                        outfile.write(line + "\n")
+                    # else skip
+            else:
+                # Copy other lines (headers/chunks) if present
+                outfile.write(line + "\n")
 
 def read_gfa_file(gfa_path):
     """Read GFA file into gfapy python structure."""
@@ -823,8 +881,11 @@ def main(arguments):
 
     try:
         # clean up gfa tags
+        cleanedtagGfa= 'graph_tags_removed.gfa'
         cleanedGfa = 'graph_cleaned.gfa'
-        clean_graph_tags(gfa_file, cleanedGfa)
+        clean_graph_tags(gfa_file, cleanedtagGfa)
+
+        clean_empty_string(cleanedtagGfa, cleanedGfa)
 
         gfa_graph, status = read_gfa_file(cleanedGfa)
         if status != "PASS":

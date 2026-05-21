@@ -285,6 +285,16 @@
                     "hidden": true,
                     "fa_icon": "fas fa-bacon"
                 },
+                "clade": {
+                    "type": "string",
+                    "default": "cladeII",
+                    "enum": [
+                        "cladeI",
+                        "cladeII"
+                    ],
+                    "description": "Select reference clade preset.",
+                    "help_text": "Used to set clade-specific default fasta/fai/gff/kraken_db values."
+                },
                 "gff": {
                     "type": "string",
                     "default": null
