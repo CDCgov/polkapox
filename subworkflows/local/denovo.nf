@@ -75,7 +75,7 @@ workflow DENOVO {
     //
     IVAR_CONSENSUS_POLISH (
         ch_polishing_input,
-        true
+        false
     )
     ch_versions = ch_versions.mix(IVAR_CONSENSUS_POLISH.out.versions)
     //ch_gfapolish_compare = IVAR_CONSENSUS_POLISH.out.fasta
