@@ -72,6 +72,12 @@
                 },
                 "workflow": {
                     "type": "string",
+                    "enum": [
+                        "read_filter",
+                        "ref_based",
+                        "denovo",
+                        "full"
+                    ],
                     "description": "Choose from: read_filter, ref_based, denovo, full.",
                     "fa_icon": "fas fa-map"
                 },
