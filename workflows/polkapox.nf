@@ -138,17 +138,7 @@ workflow POLKAPOX {
             INPUT_CHECK.out.reads,
         )
         ch_versions = ch_versions.mix(READ_FILTER.out.versions)
-    } else {
-        error """
-        Invalid value for --workflow: '${params.workflow}'
-
-        Valid options are:
-        - filter_reads
-        - ref_based
-        - denovo
-        - full
-        """
-    }
+    } 
 
     //
     // SUBWORKFLOW: Run Read Filter + Reference-based Assembly
