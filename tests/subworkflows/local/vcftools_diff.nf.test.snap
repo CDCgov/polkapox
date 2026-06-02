@@ -1,5 +1,5 @@
 {
-    "Samtools Flagstat Denovo": {
+    "Should run without failures": {
         "content": [
             {
                 "0": [
@@ -8,7 +8,7 @@
                 "1": [
                     
                 ],
-                "flagstat": [
+                "diff": [
                     
                 ],
                 "versions": [
@@ -16,10 +16,10 @@
                 ]
             }
         ],
+        "timestamp": "2026-06-02T12:13:10.408951879",
         "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "24.10.4"
-        },
-        "timestamp": "2025-06-27T13:53:10.017688368"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }
