@@ -127,7 +127,8 @@ Contributors:\
 Kyle O'Connell | Michael Weigand | Jessica Rowell | Shatavia Morrison\
 Kristen Knipe | Ethan Hetrick | Crystal Gigante | Lynsey Kovar\
 Hunter Seabolt | Dhwani Batra | Daisy McGrath\
-Yesh Kulasekarapandian | Jason Caravas
+Yesh Kulasekarapandian | Jason Caravas\
+Melchior du Lac
 
 ## Contributions and Support
 

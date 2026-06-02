@@ -1,0 +1,30 @@
+nextflow_workflow {
+
+    name "Test Workflow SAMTOOLS_FLAGSTAT_DENOVO"
+    script "subworkflows/local/samtools_flagstat_denovo.nf"
+    workflow "SAMTOOLS_FLAGSTAT_DENOVO"
+
+    test("Should run without failures") {
+
+        when {
+            params {
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub' ],
+                    file("${projectDir}/tests/nf-test-data/test_sub.bam", checkIfExists: true),
+                    file("${projectDir}/tests/nf-test-data/test_sub.bam.bai", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(workflow.out).match()
+        }
+
+    }
+
+}

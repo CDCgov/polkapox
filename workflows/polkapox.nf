@@ -129,7 +129,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Only run Read Filter
     //
-
+    
     if ( params.workflow == 'filter_reads'
         || params.workflow == 'ref_based'
         || params.workflow == 'denovo'
@@ -138,7 +138,7 @@ workflow POLKAPOX {
             INPUT_CHECK.out.reads,
         )
         ch_versions = ch_versions.mix(READ_FILTER.out.versions)
-    }
+    } 
 
     //
     // SUBWORKFLOW: Run Read Filter + Reference-based Assembly
