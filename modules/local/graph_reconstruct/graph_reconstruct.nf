@@ -1,4 +1,5 @@
 process GRAPH_RECON {
+    tag "$meta.id"
 
     conda "${moduleDir}/environment.yml"
     container "staphb/polkapox"
