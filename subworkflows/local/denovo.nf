@@ -2,7 +2,8 @@ include { SAMTOOLS_FLAGSTAT_DENOVO                     } from './samtools_flagst
 include { UNICYCLER                                     } from '../../modules/nf-core/unicycler/main'
 include { BANDAGE                                       } from '../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../modules/local/graph_reconstruct/graph_reconstruct'
-include { BWA_MEM_DENOVO                                } from './bwa_mem_denovo'
+//include { BWA_MEM_DENOVO                                } from './bwa_mem_denovo'
+include{ BWA_DENOVO                                     } from '../../modules/local/bwa_denovo/bwa_denovo'
 include { PUBLISH_CONTIGS                               } from '../../modules/local/publish_contigs/publish_contigs'
 include { MUMMER                                        } from '../../modules/nf-core/mummer/main'
 include { QUAST                                         } from '../../modules/nf-core/quast/main'
@@ -52,13 +53,21 @@ workflow DENOVO {
     //
     ch_denovo_joined = ch_graph_fasta.join(trimmed_fastq, by: 0)
 
-    BWA_MEM_DENOVO (
+    BWA_DENOVO (
         ch_denovo_joined,
         true
     )
-    ch_mapped_denovo = BWA_MEM_DENOVO.out.bam
-    ch_mapped_denovo_flagstat = BWA_MEM_DENOVO.out.bambai
-    ch_versions = ch_versions.mix(BWA_MEM_DENOVO.out.versions)
+    ch_mapped_denovo = BWA_DENOVO.out.bam
+    ch_mapped_denovo_flagstat = BWA_DENOVO.out.bambai
+    ch_versions = ch_versions.mix(BWA_DENOVO.out.versions)
+    
+    //BWA_MEM_DENOVO (
+    //    ch_denovo_joined,
+    //    true
+    //)
+    //ch_mapped_denovo = BWA_MEM_DENOVO.out.bam
+    //ch_mapped_denovo_flagstat = BWA_MEM_DENOVO.out.bambai
+    //ch_versions = ch_versions.mix(BWA_MEM_DENOVO.out.versions)
 
     //
     // Module: Calculate statistics for de novo bwa mapping
