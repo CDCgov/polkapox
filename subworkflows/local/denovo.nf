@@ -1,10 +1,11 @@
 //include { SAMTOOLS_FLAGSTAT_DENOVO                     } from './samtools_flagstat_denovo'
 include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../modules/nf-core/samtools/flagstat/main'
+include { SAMTOOLS_COVERAGE as SAMTOOLS_COVERAGE_DENOVO } from '../../modules/local/samtools_coverage/samtools_coverage'
 include { UNICYCLER                                     } from '../../modules/nf-core/unicycler/main'
 include { BANDAGE                                       } from '../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../modules/local/graph_reconstruct/graph_reconstruct'
 //include { BWA_MEM_DENOVO                                } from './bwa_mem_denovo'
-include{ BWA_DENOVO                                     } from '../../modules/local/bwa_denovo/bwa_denovo'
+include { BWA_DENOVO                                     } from '../../modules/local/bwa_denovo/bwa_denovo'
 include { PUBLISH_CONTIGS                               } from '../../modules/local/publish_contigs/publish_contigs'
 include { MUMMER                                        } from '../../modules/nf-core/mummer/main'
 include { QUAST                                         } from '../../modules/nf-core/quast/main'
@@ -60,6 +61,7 @@ workflow DENOVO {
     )
     ch_mapped_denovo = BWA_DENOVO.out.bam
     ch_mapped_denovo_flagstat = BWA_DENOVO.out.bambai
+    ch_mapped_denovo_coverage = BWA_DENOVO.out.bambai
     ch_versions = ch_versions.mix(BWA_DENOVO.out.versions)
     
     //BWA_MEM_DENOVO (
@@ -78,11 +80,17 @@ workflow DENOVO {
     )
     ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT_DENOVO.out.versions)
 
-    ch_polishing_input = ch_mapped_denovo.join(ch_gfa_forpolishing, by: 0)
+    SAMTOOLS_COVERAGE_DENOVO (
+        ch_mapped_denovo_coverage
+    )
+
+    ch_versions = ch_versions.mix(SAMTOOLS_COVERAGE_DENOVO.out.versions)    
+    
 
     //
     // Module: Polish assembly with IVAR Consensus
     //
+    ch_polishing_input = ch_mapped_denovo.join(ch_gfa_forpolishing, by: 0)
     IVAR_CONSENSUS_POLISH (
         ch_polishing_input,
         true
@@ -123,6 +131,7 @@ workflow DENOVO {
     emit:
     quast_tsv = QUAST.out.tsv
     flagstat = SAMTOOLS_FLAGSTAT_DENOVO.out.flagstat
+    coverage = SAMTOOLS_COVERAGE_DENOVO.out.coverage
     graph_recon_log = GRAPH_RECON.out.log
     gfa_assembly = GRAPH_RECON.out.gfa_assembly
     mummer_summary = MUMMER.out.summary

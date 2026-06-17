@@ -158,6 +158,24 @@ def get_flagstat_denovo(sample):
     
     return total_reads_denovo, mapped_reads_denovo, percent_mapped_denovo
 
+def get_coverage_denovo(sample):
+    """ Get samtools coverage results from denovo mapping
+    :param sample: sample name
+    :returns: denovo mean coverage depth
+    :rtype: tuple
+    """
+    stats=[]
+    p = "{}.denovo.coverage".format(sample)
+    if os.path.exists(p):
+        logger.info(f"Path {p} found")
+        fh=open(p,'r')
+        lines = fh.readlines()
+        mean_depth_denovo = round(float(lines[1].split()[6]), 2)
+    else:
+        logger.info(f"Path {p} does not exist")
+        mean_depth_denovo='NA'
+    return mean_depth_denovo
+
 def get_cov_stats(sample, reference):
     """ Get coverage stats from samtools output
     :param sample: sample name
@@ -589,6 +607,7 @@ def main():
                 row['gfa_status'], row['gfa_notes'] = gfa
             row['total_reads_denovo'], row['mapped_reads_denovo'], row['percent_mapped_denovo'] = \
                 get_flagstat_denovo(sample)
+            row['mean_depth_denovo'] = get_coverage_denovo(sample)
             row['corrected_snps'], row['corrected_indels'] = get_polish_stats(sample)
             row['corrected_Ns'] = count_ns_in_pileup(sample)
 
@@ -605,7 +624,7 @@ def main():
                    'gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp']
     BWA_COLS    = ['reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa']
     DENOVO_COLS = ['n_contigs_unicycler','assembly_length_unicycler','n50_unicycler',
-                   'mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number',
+                   'mapped_reads_denovo','percent_mapped_denovo','mean_depth_denovo','orientation_copy_number',
                    'sequence_length','itr_length','gfa_status','gfa_notes',
                    'corrected_snps','corrected_indels','corrected_Ns']
     LOCUS_COLS  = [f'{args.locus1}_SNPs', f'{args.locus2}_SNPs'] if args.locus1 and args.locus2 else []
