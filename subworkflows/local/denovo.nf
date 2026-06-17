@@ -1,4 +1,5 @@
-include { SAMTOOLS_FLAGSTAT_DENOVO                     } from './samtools_flagstat_denovo'
+//include { SAMTOOLS_FLAGSTAT_DENOVO                     } from './samtools_flagstat_denovo'
+include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../modules/nf-core/samtools/flagstat/main'
 include { UNICYCLER                                     } from '../../modules/nf-core/unicycler/main'
 include { BANDAGE                                       } from '../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../modules/local/graph_reconstruct/graph_reconstruct'
