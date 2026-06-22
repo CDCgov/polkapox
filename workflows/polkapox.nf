@@ -215,6 +215,7 @@ workflow POLKAPOX {
     }
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.flagstat.collect{it[1]}.ifEmpty([]))
+        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.coverage.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.graph_recon_log.collect().ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.gfa_assembly.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mummer_summary.collect{it[1]}.ifEmpty([]))
