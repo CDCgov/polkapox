@@ -380,16 +380,17 @@ def get_final_paths(filtered_edges, filtered_graph, segments):
         status = "FAIL: No path found starting from any ITR."
         return [], [], [], status
         
-def orient_longest_contig(query, reference, blast_db_dir):
+def orient_longest_contig(query, reference): #, blast_db_dir):
     print('\n')
     print('Orienting longest contig using F13L + Blast')
 
     blastResults = query + "_blast.out"
-    blast_db_path = os.path.join(blast_db_dir, query + "_DB")
-    makeblastdb_command = ["makeblastdb", "-in", query, "-out", blast_db_path, "-dbtype", "nucl"]
-    blastn_command = ["blastn", "-query", reference, "-db", blast_db_path, "-evalue", "1e-10", "-word_size", "28", "-outfmt", "6 qseqid sseqid pident length qcovs sstart send mismatch gapopen qlen slen bitscore", "-out", blastResults]
+    #blast_db_path = os.path.join(blast_db_dir, query + "_DB")
+    #makeblastdb_command = ["makeblastdb", "-in", query, "-out", blast_db_path, "-dbtype", "nucl"]
+    #blastn_command = ["blastn", "-query", reference, "-db", blast_db_path, "-evalue", "1e-10", "-word_size", "28", "-outfmt", "6 qseqid sseqid pident length qcovs sstart send mismatch gapopen qlen slen bitscore", "-out", blastResults]
+    blastn_command = ["blastn", "-query", reference, "-subject", query, "-evalue", "1e-10", "-word_size", "28", "-outfmt", "6 qseqid sseqid pident length qcovs sstart send mismatch gapopen qlen slen bitscore", "-out", blastResults]
     #print(f"Running command: {' '.join(makeblastdb_command)}")
-    result = subprocess.run(makeblastdb_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    #result = subprocess.run(makeblastdb_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     #print(f"Running command: {' '.join(blastn_command)}")
     result2 = subprocess.run(blastn_command, shell=False)
@@ -787,10 +788,10 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         if status != "PASS":
             write_log_and_exit(log, status)
         # Create blast database directory
-        blast_db_dir = os.path.join(output_dir, 'blast_db')
-        os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
+        #blast_db_dir = os.path.join(output_dir, 'blast_db')
+        #os.makedirs(blast_db_dir, exist_ok=True)  # Create if it doesn't exist
         # Determine the orientation of the longest contig
-        longest_orient, status = orient_longest_contig(longest_contig_file, reference, blast_db_dir)
+        longest_orient, status = orient_longest_contig(longest_contig_file, reference) #, blast_db_dir)
         log['07'] = {
             'step_name': "orient_longest_contig",
             'step_description': "Determine the orientation of the longest contig",
@@ -842,7 +843,7 @@ def process_graph(gfa_graph, output_dir, input_file, reference, log):
         print('Pipeline ran to completion!')
 
         # Remove the blast_db directory
-        shutil.rmtree(blast_db_dir)  # Remove the directory and its contents
+        #shutil.rmtree(blast_db_dir)  # Remove the directory and its contents
 
         # Write the final log and summary
         write_log_and_exit(log, "PASS")
