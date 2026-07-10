@@ -106,8 +106,8 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
         try:
             k_data = pd.read_csv(kraken_reads, sep=r'\s+', usecols=[0,1,2,3,4], header=None)
             logger.info(f"Data load from {kraken_reads}")
-        except pd.errors.ParserError:
-            logger.error(f"Unable to load data from {kraken_reads}")
+        except pd.errors.ParserError as e:
+            logger.error(f"Unable to load data from {kraken_reads}: {e}")
             return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
         total = len(k_data)
         human = (k_data[2] == 9606).sum()
@@ -649,10 +649,16 @@ def main():
     summary_full = summary_full[[c for c in cols if c in summary_full.columns]]
 
     # Check for the files and assign to summary_full
+    summary_full['final_assembly'] = pd.Series(dtype="object")
     for idx, sample in summary_full['sample'].items():
-        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa'
-        summary_full.at[idx, 'final_assembly'] = final_assembly if final_assembly else None
-        
+        final_assembly = f"{args.project_outdir}/final_assembly/{sample}.final.fa"
+        draft_assembly = f"{args.project_outdir}/final_assembly/{sample}.draft.fa"
+
+        summary_full.at[idx, 'final_assembly'] = (
+            final_assembly if os.path.exists(final_assembly)
+            else draft_assembly if os.path.exists(draft_assembly)
+            else None
+    )
         for i in [1, 2]:
             # get the final paths for the seqtk output R1 and R2, and final assembly n
             seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
