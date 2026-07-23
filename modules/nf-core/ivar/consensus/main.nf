@@ -5,8 +5,8 @@ process IVAR_CONSENSUS {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/ivar:1.3.1--h089eab3_0' :
-        'quay.io/biocontainers/ivar:1.3.1--h089eab3_0' }"
+        'https://depot.galaxyproject.org/singularity/ivar:1.4.4--h077b44d_0' :
+        'quay.io/biocontainers/ivar:1.4.4--h077b44d_0' }"
 
     input:
     tuple val(meta), path(bam)
