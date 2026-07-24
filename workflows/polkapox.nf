@@ -129,7 +129,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Only run Read Filter
     //
-
+    
     if ( params.workflow == 'filter_reads'
         || params.workflow == 'ref_based'
         || params.workflow == 'denovo'
@@ -138,7 +138,7 @@ workflow POLKAPOX {
             INPUT_CHECK.out.reads,
         )
         ch_versions = ch_versions.mix(READ_FILTER.out.versions)
-    }
+    } 
 
     //
     // SUBWORKFLOW: Run Read Filter + Reference-based Assembly
@@ -215,10 +215,9 @@ workflow POLKAPOX {
     }
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.flagstat.collect{it[1]}.ifEmpty([]))
+        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.coverage.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.graph_recon_log.collect().ifEmpty([]))
-        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.gfa_assembly.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mummer_summary.collect{it[1]}.ifEmpty([]))
-        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.fasta.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mpileup.collect{it[1]}.ifEmpty([]))
     }
 

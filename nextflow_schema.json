@@ -72,6 +72,12 @@
                 },
                 "workflow": {
                     "type": "string",
+                    "enum": [
+                        "read_filter",
+                        "ref_based",
+                        "denovo",
+                        "full"
+                    ],
                     "description": "Choose from: read_filter, ref_based, denovo, full.",
                     "fa_icon": "fas fa-map"
                 },
@@ -284,6 +290,16 @@
                     "description": "Define which entrypoint you wish to run in the workflow, options include filter_reads,ref_based,denovo, and full",
                     "hidden": true,
                     "fa_icon": "fas fa-bacon"
+                },
+                "clade": {
+                    "type": "string",
+                    "default": "cladeII",
+                    "enum": [
+                        "cladeI",
+                        "cladeII"
+                    ],
+                    "description": "Select reference clade preset.",
+                    "help_text": "Used to set clade-specific default fasta/fai/gff/kraken_db values."
                 },
                 "gff": {
                     "type": "string",

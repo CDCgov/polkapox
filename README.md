@@ -25,8 +25,10 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 **Reference-free analyses**
 1. De novo assembly. ([`Unicycler`](https://github.com/rrwick/Unicycler))
 1. Calculate assembly quality metrics. ([`QUAST`](http://quast.sourceforge.net/))
+1. Plot assembly graph visualization. ([`Bandage`](https://rrwick.github.io/Bandage/))
 1. Assembly graph resolution. ([`AssemblyGraph_gfaPy.py`](/bin/AssemblyGraph_gfaPy.py))
 1. Align reads to assembled genome. ([`BWA`](http://bio-bwa.sourceforge.net/))
+1. Calculate mapping statistics. ([`Samtools`](https://www.htslib.org/))
 1. Correct assembly errors and ambiguities. ([`iVar`](https://andersen-lab.github.io/ivar/html/manualpage.html))
 1. Quantify assembly corrections. ([`MUMmer`](https://github.com/mummer4/mummer#dnadiff))
 
@@ -34,14 +36,15 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 1. Visualize reads metrics and summary of software versions. ([`MultiQC`](http://multiqc.info/))
 1. Compile various QC metrics. ([`summarize_qc.py`](/bin/summarize_qc.py))
 
-![workflow diagram](/docs/images/polkapox_workflow.png)
+**Pipeline diagram**  
+![workflow diagram](/docs/images/polkapox_v20260616.svg)
 
 ## Quick Start
 
 1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=21.10.3`)
 
 2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(you can use [`Conda`](https://conda.io/miniconda.html) both to install Nextflow itself and also to manage software within pipelines. Please only use it within pipelines as a last resort; see [docs](https://nf-co.re/usage/configuration#basic-configuration-profiles))_.
-   - *Note*: if running this pipeline on CDC infrascructure (aspen, biolinux), use singularity containers.
+   - *Note*: if running this pipeline on CDC infrascructure (nettie, rosalind), use singularity containers.
 
 3. Clone this repo to your working environment:
 
@@ -76,7 +79,7 @@ CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 
 ## Running on CDC cluster
 
-For use on an HPC cluster (rosalind, aspen) the workflow can be run as a job by the following steps:
+For use on an HPC cluster (rosalind) the workflow can be run as a job by the following steps:
 
 1) After logging in, activate the nextflow environment:
 
@@ -99,24 +102,24 @@ Pipeline outputs are organized into sub-directories for each step in the selecte
 
 ```
 ${outdir}/
-  ├── bwa
-  ├── bandage
-  ├── fastp
-  ├── final_assembly
-  ├── graph_recon
-  ├── graph_recon_mapping
-  ├── ivar
-  ├── ivar_variants
-  ├── kraken2
-  ├── multiqc
-  ├── mummer
-  ├── pipeline_info
-  ├── quast
+  ├── bandage/
+  ├── bwa/
+  ├── fastp/
+  ├── final_assembly/
+  ├── graph_recon/
+  ├── graph_recon_mapping/
+  ├── ivar/
+  ├── ivar_variants/
+  ├── kraken2/
+  ├── multiqc/
+  ├── mummer/
+  ├── pipeline_info/
+  ├── quast/
   ├── sample_summary.tsv
-  ├── samtools
-  ├── seqtk
-  ├── unicycler
-  └── variant_summaries
+  ├── samtools/
+  ├── seqtk/
+  ├── unicycler/
+  └── variant_summaries/
 ```
 ### De novo assembly
 The **PolkaPox** pipeline includes de novo assembly optimized for the linear genome architecture of orthopoxviruses. Additional details are provided in [de novo](/docs/denovo.md).
@@ -127,7 +130,7 @@ Contributors:\
 Kyle O'Connell | Michael Weigand | Jessica Rowell | Shatavia Morrison\
 Kristen Knipe | Ethan Hetrick | Crystal Gigante | Lynsey Kovar\
 Hunter Seabolt | Dhwani Batra | Daisy McGrath\
-Yesh Kulasekarapandian | Jason Caravas
+Yesh Kulasekarapandian | Jason Caravas | Melchior du Lac  
 
 ## Contributions and Support
 

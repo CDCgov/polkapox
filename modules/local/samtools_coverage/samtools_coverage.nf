@@ -1,5 +1,5 @@
-process SAMTOOLS_FLAGSTAT {
-    tag "$meta.id"
+process SAMTOOLS_COVERAGE {
+    tag "${meta.id}"
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
@@ -11,7 +11,7 @@ process SAMTOOLS_FLAGSTAT {
     tuple val(meta), path(bam), path(bai)
 
     output:
-    tuple val(meta), path("*.flagstat"), emit: flagstat
+    tuple val(meta), path("*.coverage"), emit: coverage
     path  "versions.yml"               , emit: versions
 
     when:
@@ -22,11 +22,11 @@ process SAMTOOLS_FLAGSTAT {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     samtools \\
-        flagstat \\
-        --threads ${task.cpus-1} \\
-        $bam  \\
-        > ${prefix}.denovo.flagstat
-
+        coverage \\
+        ${args} \\
+        -o ${prefix}.coverage \\
+        $bam
+    
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')

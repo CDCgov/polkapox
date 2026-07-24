@@ -1,4 +1,4 @@
-process BWA_MEM {
+process BWA_DENOVO {
     tag "$meta.id"
     label 'process_high'
 
@@ -8,9 +8,6 @@ process BWA_MEM {
         'quay.io/biocontainers/mulled-v2-fe8faa35dbf6dc65a0f7f5d4ea12e31a79f73e40:8110a70be2bfe7f75a2ea7f2a89cda4cc7732095-0' }"
 
     input:
-    //tuple val(meta), path(reads)
-    //tuple val(meta), path(fasta)
-    //path  index
     tuple val(meta), path(fasta), path(reads)
     val   sort_bam
 
@@ -26,10 +23,10 @@ process BWA_MEM {
 
     script:
     def args = task.ext.args ?: ''
+    def args1 = task.ext.args1 ?: ''
     def args2 = task.ext.args2 ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def samtools_command = sort_bam ? 'sort' : 'view'
-    
     """
     mkdir bwa_index
     bwa \\
@@ -37,11 +34,11 @@ process BWA_MEM {
         $args \\
         -p bwa_index/${fasta.baseName} \\
         $fasta
-
+    
     INDEX=`find -L ./ -name "*.amb" | sed 's/.amb//'`
 
     bwa mem \\
-        $args \\
+        $args1 \\
         -t $task.cpus \\
         \$INDEX \\
         $reads \\
