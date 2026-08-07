@@ -2,42 +2,153 @@
     "name": "polkapox",
     "homePage": "https://github.com/CDCgov/polkapox",
     "repos": {
-        "nf-core/modules": {
-            "bbmap/align": {
+        "https://github.com/nf-core/modules.git": {
+            "modules": {
+                "nf-core": {
+                    "bandage/image": {
+                        "branch": "master",
+                        "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "bwa/index": {
+                        "branch": "master",
+                        "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "bwa/mem": {
+                        "branch": "master",
+                        "git_sha": "4f5274c3de0c9521f5033893ff61057a74c45ba9",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "custom/dumpsoftwareversions": {
+                        "branch": "master",
+                        "git_sha": "82501fe6d0d12614db67751d30af98d16e63dc59",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "fastp": {
+                        "branch": "master",
+                        "git_sha": "2c70c1c1951aaf884d2e8d8d9c871db79f7b35aa",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "fastqc": {
+                        "branch": "master",
+                        "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "ivar/consensus": {
+                        "branch": "master",
+                        "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "ivar/variants": {
+                        "branch": "master",
+                        "git_sha": "cab399507bea60d90de6d7b296163210c371b693",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "kraken2": {
+                        "branch": "master",
+                        "git_sha": "d67d33d5925fcec4691b499670fa2bd926fd2be5",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "multiqc": {
+                        "branch": "master",
+                        "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "mummer": {
+                        "branch": "master",
+                        "git_sha": "233fa70811a03a4cecb2ece483b5c8396e2cee1d",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "quast": {
+                        "branch": "master",
+                        "git_sha": "682f789f93070bd047868300dd018faf3d434e7c",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "samtools/depth": {
+                        "branch": "master",
+                        "git_sha": "f0a86eaf5bf6ca73c5571193edd00c25bfa308f5",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "samtools/flagstat": {
+                        "branch": "master",
+                        "git_sha": "bbb99cb8d679555cc01c98766de7869f83283545",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "samtools/sort": {
+                        "branch": "master",
+                        "git_sha": "d5d785b3d8b422cda9c6d84a23f629a8e9ff8cd8",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "seqtk/subseq": {
+                        "branch": "master",
+                        "git_sha": "a0443e2c54da4236fe55cd3e39eec8924ebfd646",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "sratools/fasterqdump": {
+                        "branch": "master",
+                        "git_sha": "0cdf7767a79faf424645beeff83ecfa5528b6a7c",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "sratools/prefetch": {
+                        "branch": "master",
+                        "git_sha": "1b228835e9525990db99243cb4f0d07aa6e01bc3",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "unicycler": {
+                        "branch": "master",
+                        "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "vcftools": {
+                        "branch": "master",
+                        "git_sha": "5e7b1ef9a5a2d9258635bcbf70fcf37dacd1b247",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    }
+                }
             },
-            "bbmap/bbduk": {
-            },
-            "bwa/index": {
-            },
-            "bwa/mem": {
-            },
-            "custom/dumpsoftwareversions": {
-            },
-            "fastp": {
-            },
-            "fastqc": {
-            },
-            "ivar/consensus": {
-            },
-            "kraken2/kraken2": {
-            },
-            "multiqc": {
-            },
-            "nf-core/mummer": {
-            },
-            "quast": {
-            },
-            "samtools/depth": {
-            },
-            "samtools/flagstat": {
-            },
-            "samtools/index": {
-            },
-            "samtools/sort": {
-            },
-            "seqtk/subseq": {
-            },
-            "unicycler": {
+            "subworkflows": {
+                "nf-core": {}
             }
         }
     }
