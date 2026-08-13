@@ -1,5 +1,41 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    VALIDATE INPUTS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
+
+// Validate input parameters
+WorkflowPolkapox.initialise(params, log)
+
+// Check input path parameters to see if they exist
+def checkPathParamList = [ params.kraken_db, params.multiqc_config, params.fasta, params.fai]
+for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
+
+// Check mandatory parameters
+if (params.input) { 
+    ch_input = Channel.fromPath("${params.input}", type: 'file', checkIfExists: true) 
+    }
+else if (params.indir) { 
+    ch_indir = file(params.indir)
+    } 
+else if (params.sra_ids) {
+    ch_sra_id = file(params.sra_ids)
+    }
+//else { exit 1, 'Must specify samplesheet, input directory of fastq files, or sra id list!' }
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    CONFIG FILES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+ch_multiqc_config        = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config) : Channel.empty()
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT LOCAL MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
@@ -9,7 +45,7 @@
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
-include { SRA_TOOLS           } from '../subworkflows/local/sra_tools'
+include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
 include { DENOVO              } from '../subworkflows/local/denovo/main'
@@ -35,29 +71,12 @@ include { SUMMARIZE_QC                                  } from '../modules/local
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+// Info required for completion email and summary
+def multiqc_report = []
+
 workflow POLKAPOX {
 
-    // Validate inputs and initialise
-    def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
-    WorkflowPolkapox.initialise(params, log, projectDir)
-
-    [ params.kraken_db, params.multiqc_config, params.fasta, params.fai].each { param ->
-        if (param) { file(param, checkIfExists: true) }
-    }
-
-    // Stage input channel
-    if (params.input) {
-        ch_input = Channel.fromPath("${params.input}", type: 'file', checkIfExists: true)
-    } else if (params.indir) {
-        ch_indir = file(params.indir)
-    } else if (params.sra_ids) {
-        ch_sra_id = file(params.sra_ids)
-    }
-
-    ch_multiqc_config        = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config) : Channel.empty()
-
-    ch_versions = Channel.empty()
+    ch_versions = Channel.empty() 
 
     if (params.indir) {
         //
@@ -207,14 +226,6 @@ workflow POLKAPOX {
         ch_input,
    )
 
-    workflow.onComplete {
-        if (params.email || params.email_on_fail) {
-            NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
-        }
-        NfcoreTemplate.summary(workflow, params, log)
-    }
-
-
 }
 
 /*
@@ -223,6 +234,12 @@ workflow POLKAPOX {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+workflow.onComplete {
+    if (params.email || params.email_on_fail) {
+        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
+    }
+    NfcoreTemplate.summary(workflow, params, log)
+}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
