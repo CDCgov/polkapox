@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process SRA_TO_SAMPLESHEET"
-    script "modules/local/sra_to_samplesheet/main.nf"
+    script "../main.nf"
     process "SRA_TO_SAMPLESHEET"
 
     test("Create samplesheet from SRA") {
@@ -12,8 +12,8 @@ nextflow_process {
             process {
                 """
                 // define inputs of the process here. Example:
-                input[0] = [meta: "test_sub",  fastq1: file("${projectDir}/tests/nf-test-data/test_sub_1.fq.gz")]
-                input[1] = [meta: "test_sub",  fastq2: file("${projectDir}/tests/nf-test-data/test_sub_2.fq.gz")]
+                input[0] = [meta: "test_sub",  fastq1: file("test_sub_1.fq.gz")]
+                input[1] = [meta: "test_sub",  fastq2: file("test_sub_2.fq.gz")]
                 """
             }
         }

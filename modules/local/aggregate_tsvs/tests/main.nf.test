@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process AGGREGATE_TSVS"
-    script "modules/local/aggregate_tsvs/main.nf"
+    script "../main.nf"
     process "AGGREGATE_TSVS"
 
     test("Aggregate TSV Test") {
@@ -13,7 +13,7 @@ nextflow_process {
             process {
                 """
                 input[0] = Channel.of(
-                    file("${projectDir}/tests/nf-test-data/test_sub_ivar_summary.txt", checkIfExists: true)
+                    file("test_sub_ivar_summary.txt", checkIfExists: true)
                 )
                 input[1] = false
                 """

@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process SUMMARIZE_TSV"
-    script "modules/local/summarize_tsv/main.nf"
+    script "../main.nf"
     process "SUMMARIZE_TSV"
 
     test("Should run without failures") {
@@ -18,7 +18,7 @@ nextflow_process {
                 """
                 input[0] = Channel.of(
                     [
-                        meta: [id: 'test_sub'], ivar_tsv: file("${projectDir}/tests/nf-test-data/test_sub.ivar.tsv", checkIfExists: true)
+                        meta: [id: 'test_sub'], ivar_tsv: file("test_sub.ivar.tsv", checkIfExists: true)
                     ]
                 )
                 input[1] = Channel.of(coord1_start: '39086', coord1_end: '40204', coord2_start: '51427', coord2_end: '54447')

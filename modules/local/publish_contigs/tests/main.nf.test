@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process PUBLISH_CONTIGS"
-    script "modules/local/publish_contigs/main.nf"
+    script "../main.nf"
     process "PUBLISH_CONTIGS"
 
     test("Publish Contig Test") {
@@ -15,7 +15,7 @@ nextflow_process {
                 """
                 input[0] = Channel.of([
                     [ id: 'test_sub', single_end: true ],
-                    file('${projectDir}/tests/nf-test-data/test_sub.final.fa', checkIfExists: true)
+                    file('test_sub.final.fa', checkIfExists: true)
                 ])
                 """
             }

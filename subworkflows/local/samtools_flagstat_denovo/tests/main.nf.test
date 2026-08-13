@@ -13,8 +13,8 @@ nextflow_workflow {
                 """
                 input[0] = Channel.of([
                     [ id: 'test_sub' ],
-                    file("${projectDir}/tests/nf-test-data/test_sub.bam", checkIfExists: true),
-                    file("${projectDir}/tests/nf-test-data/test_sub.bam.bai", checkIfExists: true)
+                    file("test_sub.bam", checkIfExists: true),
+                    file("test_sub.bam.bai", checkIfExists: true)
                 ])
                 """
             }

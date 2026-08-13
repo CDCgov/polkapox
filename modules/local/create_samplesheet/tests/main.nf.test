@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process CREATE_SAMPLESHEET"
-    script "modules/local/create_samplesheet/main.nf"
+    script "../main.nf"
     process "CREATE_SAMPLESHEET"
 
     test("Test | paired-end reads") {
@@ -13,6 +13,7 @@ nextflow_process {
                 outdir = ${outputDir}
             }
             process {
+                //TODO: update this to be in assets, or another location
                 """
                 // input[0] = file("path/to/input/dir")
                 input[0] = file("/scicomp/groups-pure/Projects/scbs_mpob/JRowell_ick4/mpox_testing/paired/")
@@ -36,6 +37,7 @@ nextflow_process {
                 outdir = ${outputDir}
             }
             process {
+                //TODO: update this to be in assets, or another location
                 """
                 // input[0] = file("path/to/input/dir")
                 input[0] = file("/scicomp/groups-pure/Projects/scbs_mpob/JRowell_ick4/mpox_testing/single/")

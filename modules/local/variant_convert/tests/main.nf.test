@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process VARIANT_CONVERT"
-    script "modules/local/variant_convert/main.nf"
+    script "../main.nf"
     process "VARIANT_CONVERT"
 
     test("Variant Convert Test") {
@@ -15,7 +15,7 @@ nextflow_process {
                 input[0] = Channel.of(
                     [
                         meta: [id: 'test_sub'],
-                        tsv: file("${projectDir}/tests/nf-test-data/test_sub.ivar.tsv", checkIfExists: true)
+                        tsv: file("test_sub.ivar.tsv", checkIfExists: true)
                     ]
                 )
                 input[1] = [af_cutoff: '0.01']

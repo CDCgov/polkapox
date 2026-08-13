@@ -1,7 +1,7 @@
 nextflow_process {
 
     name "Test Process GRAPH_RECON"
-    script "modules/local/graph_reconstruct/main.nf"
+    script "../main.nf"
     process "GRAPH_RECON"
 
     test("Graph Recon Test") {
@@ -15,7 +15,7 @@ nextflow_process {
                 """
                 input[0] = Channel.of([
                     [ id: 'test_sub', single_end: true ],
-                    file('${projectDir}/tests/nf-test-data/test_sub.bridges_applied.gfa', checkIfExists: true)
+                    file('test_sub.bridges_applied.gfa', checkIfExists: true)
                 ])
                 """
             }

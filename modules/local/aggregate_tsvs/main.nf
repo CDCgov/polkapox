@@ -19,7 +19,7 @@ process AGGREGATE_TSVS {
 
     script:
     def args = task.ext.args ?: ''
-    def save_aggr = save_aggr ? "| tee all_samples.vcf.summary.txt" : ""
+    def tee_output = save_aggr ? "| tee all_samples.vcf.summary.txt" : ""
     """
     aggregate_tsvs.py
     
