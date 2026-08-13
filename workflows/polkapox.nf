@@ -9,7 +9,7 @@
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
-include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
+include { SRA_TOOLS           } from '../subworkflows/local/sra_tools'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
 include { DENOVO              } from '../subworkflows/local/denovo/main'

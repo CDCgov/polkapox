@@ -13,11 +13,11 @@ nextflow_workflow {
                 """
                 input[0] = Channel.of([
                     [ id: 'test_sub' ],
-                    file("test_sub.vcf", checkIfExists: true)
+                    file("${moduleTestDir}/test_sub.vcf", checkIfExists: true)
                 ])
                 input[1] = Channel.of([
                     [ id: 'test_sub' ],
-                    file("test_sub.diff.vcf", checkIfExists: true)
+                    file("${moduleTestDir}/test_sub.diff.vcf", checkIfExists: true)
                 ])
                 """
             }

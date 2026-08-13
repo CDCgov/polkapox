@@ -13,7 +13,7 @@ nextflow_process {
             process {
                 """
                 input[0] = Channel.of(
-                    file("test_sub_ivar_summary.txt", checkIfExists: true)
+                    file("${moduleTestDir}/test_sub_ivar_summary.txt", checkIfExists: true)
                 )
                 input[1] = false
                 """

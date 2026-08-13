@@ -15,8 +15,8 @@ nextflow_workflow {
                     [ id: 'test_sub' ],
                     file("${projectDir}/assets/NC_003310_clade_I.fasta", checkIfExists: true),
                     [
-                        file("test_sub_1.fastp.fastq.gz", checkIfExists: true),
-                        file("test_sub_2.fastp.fastq.gz", checkIfExists: true)
+                        file("${moduleTestDir}/test_sub_1.fastp.fastq.gz", checkIfExists: true),
+                        file("${moduleTestDir}/test_sub_2.fastp.fastq.gz", checkIfExists: true)
                     ]
                 ])
                 input[1] = true

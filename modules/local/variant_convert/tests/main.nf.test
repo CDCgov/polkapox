@@ -15,7 +15,7 @@ nextflow_process {
                 input[0] = Channel.of(
                     [
                         meta: [id: 'test_sub'],
-                        tsv: file("test_sub.ivar.tsv", checkIfExists: true)
+                        tsv: file("${moduleTestDir}/test_sub.ivar.tsv", checkIfExists: true)
                     ]
                 )
                 input[1] = [af_cutoff: '0.01']

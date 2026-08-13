@@ -14,8 +14,8 @@ nextflow_process {
             process {
                 """
                 // define inputs of the process here. Example:
-                 input[0] = file("test_sub.final.fa")
-                 input[1] = file("samplesheet.test.csv")
+                 input[0] = file("${moduleTestDir}/test_sub.final.fa")
+                 input[1] = file("${moduleTestDir}/samplesheet.test.csv")
                 """
             }
         }
