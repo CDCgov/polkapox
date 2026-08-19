@@ -32,6 +32,7 @@ Initial release of PolkaPox for testing, created with the [nf-core](https://nf-c
 - Standard disclaimers and notices from [CDCgov](https://github.com/CDCgov/template) template.
 
 ### `Fixed`
+- Limit CI nextflow version of version 25
 
 ### `Dependencies`
 
