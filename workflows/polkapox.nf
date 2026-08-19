@@ -45,7 +45,7 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
-include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
+include { SRATOOLS_PREFETCH           } from '../subworkflows/nf-core/sra_tools/prefetch/main'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
 include { DENOVO              } from '../subworkflows/local/denovo/main'
@@ -101,12 +101,12 @@ workflow POLKAPOX {
         //
         // Subworkflow: Create samplesheet from list of SRA Accessions 
         //
-        SRA_TOOLS (
+        SRATOOLS_PREFETCH (
             ch_sra
         )
-        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions.first())
+        ch_versions = ch_versions.mix(SRATOOLS_PREFETCH.out.versions.first())
     
-        ch_reads = SRA_TOOLS.out.forward.join(SRA_TOOLS.out.reverse)
+        ch_reads = SRATOOLS_PREFETCH.out.forward.join(SRATOOLS_PREFETCH.out.reverse)
         ch_input = ch_reads
             .map { meta, fastq1, fastq2 -> "$meta,$fastq1,$fastq2" }
             .collectFile(name: 'sra-samplesheet.csv', newLine: true, seed: 'sample,fastq_1,fastq_2')
