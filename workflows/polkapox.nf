@@ -10,7 +10,8 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 WorkflowPolkapox.initialise(params, log)
 
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.kraken_db, params.multiqc_config, params.fasta, params.fai]
+//def checkPathParamList = [ params.kraken_db, params.multiqc_config, params.fasta, params.fai]
+def checkPathParamList = [ params.multiqc_config, params.fasta, params.fai]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
