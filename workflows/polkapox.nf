@@ -46,7 +46,7 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check'
 include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome'
-include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
+include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools/main'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/create_samplesheet'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads'
 include { DENOVO              } from '../subworkflows/local/denovo'
