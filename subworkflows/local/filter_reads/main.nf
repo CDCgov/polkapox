@@ -14,7 +14,7 @@
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { KRAKEN2                                       } from '../../../modules/nf-core/kraken2/main'
+include { KRAKEN2                                       } from '../../../modules/nf-core/kraken2/kraken2/main'
 include { FASTP                                         } from '../../../modules/nf-core/fastp/main'
 include { SEQTK_SUBSEQ                                  } from '../../../modules/nf-core/seqtk/subseq/main'
 
@@ -42,7 +42,6 @@ workflow READ_FILTER {
         input_reads,
         ch_kraken2_db,
         true,
-        false,
         true
     )
     ch_kreads = KRAKEN2.out.classified_reads_fastq
