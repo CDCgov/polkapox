@@ -1,9 +1,7 @@
-name: samtools_flagstat
-description: Counts the number of alignments in a BAM/CRAM/SAM file for each FLAG type
+name: samtools_index
+description: Index SAM/BAM/CRAM file
 keywords:
-  - stats
-  - mapping
-  - counts
+  - index
   - bam
   - sam
   - cram
@@ -27,23 +25,29 @@ input:
       type: file
       description: BAM/CRAM/SAM file
       pattern: "*.{bam,cram,sam}"
-  - bai:
-      type: file
-      description: Index for BAM/CRAM/SAM file
-      pattern: "*.{bai,crai,sai}"
 output:
   - meta:
       type: map
       description: |
         Groovy Map containing sample information
         e.g. [ id:'test', single_end:false ]
-  - flagstat:
+  - bai:
       type: file
-      description: File containing samtools flagstat output
-      pattern: "*.{flagstat}"
+      description: BAM/CRAM/SAM index file
+      pattern: "*.{bai,crai,sai}"
+  - crai:
+      type: file
+      description: BAM/CRAM/SAM index file
+      pattern: "*.{bai,crai,sai}"
+  - csi:
+      type: file
+      description: CSI index file
+      pattern: "*.{csi}"
   - versions:
       type: file
       description: File containing software versions
       pattern: "versions.yml"
 authors:
   - "@drpatelh"
+  - "@ewels"
+  - "@maxulysse"

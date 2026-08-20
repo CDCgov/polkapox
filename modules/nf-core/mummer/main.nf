@@ -4,7 +4,7 @@ process MUMMER {
 
     // WARN: Version information not provided by tool on CLI. Please update version string below when bumping container versions.
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mummer:3.23--pl5262h1b792b2_12' :
         'quay.io/biocontainers/mummer:3.23--pl5262h1b792b2_12' }"
 
@@ -12,9 +12,8 @@ process MUMMER {
     tuple val(meta), path(ref), path(query)
 
     output:
-    tuple val(meta), path("*.coords"), emit: coords
-    // WARN: Version information not provided by tool on CLI. Please update this string when bumping container versions.
-    tuple val("${task.process}"), val('mummer'), val("3.23"), topic: versions, emit: versions_mummer
+    tuple val(meta), path("*.report"), emit: summary
+    path "versions.yml"              , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -27,6 +26,7 @@ process MUMMER {
 
     def is_compressed_query = query.getName().endsWith(".gz") ? true : false
     def fasta_name_query = query.getName().replace(".gz", "")
+    def VERSION = '3.23' // WARN: Version information not provided by tool on CLI. Please update this string when bumping container versions.
     """
     if [ "$is_compressed_ref" == "true" ]; then
         gzip -c -d $ref > $fasta_name_ref
@@ -34,16 +34,14 @@ process MUMMER {
     if [ "$is_compressed_query" == "true" ]; then
         gzip -c -d $query > $fasta_name_query
     fi
-    mummer \\
-        $args \\
+    dnadiff \\
+        -p ${prefix} \\
         $fasta_name_ref \\
-        $fasta_name_query \\
-        > ${prefix}.coords
-    """
+        $fasta_name_query
 
-    stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    """
-    touch ${prefix}.coords
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        mummer: $VERSION
+    END_VERSIONS
     """
 }
