@@ -37,6 +37,7 @@ workflow READ_FILTER {
     //
     ch_kraken2_db = file(params.kraken_db, checkIfExists: true)
 
+    //TODO replace with KRAKEN2_KRAKEN2
     KRAKEN2 (
         input_reads,
         ch_kraken2_db,
