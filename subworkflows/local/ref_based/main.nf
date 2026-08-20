@@ -23,6 +23,7 @@ workflow REFBASED {
         BWA_MEM (
             ch_trimmed_fastq_bwa,
             ch_bwa_index,
+            [], //fasta only required for cram output
             true
         )
         ch_bwa_aln = BWA_MEM.out.bam

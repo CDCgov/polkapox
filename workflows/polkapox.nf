@@ -45,7 +45,6 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
-include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
 include { SRA_TOOLS           } from '../subworkflows/local/sra_tools/main'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
@@ -65,6 +64,7 @@ include { FASTQC                                        } from '../modules/nf-co
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
+include { BWA_INDEX                                     } from '../modules/nf-core/bwa/index/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,9 +123,8 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Prepare reference
     //
-    PREPARE_GENOME ()
-    ch_bwa_index = PREPARE_GENOME.out.bwa_index
-    ch_versions = ch_versions.mix(PREPARE_GENOME.out.versions)
+    BWA_INDEX ( file(params.fasta) )
+    ch_versions = ch_versions.mix(BWA_INDEX.out.versions_bwa)  
 
     //
     // SUBWORKFLOW: Only run Read Filter
@@ -148,7 +147,7 @@ workflow POLKAPOX {
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
         REFBASED (
             READ_FILTER.out.trimmed_fastq,
-            ch_bwa_index
+            BWA_INDEX.out.index,
         )
         ch_versions = ch_versions.mix(REFBASED.out.versions)
 

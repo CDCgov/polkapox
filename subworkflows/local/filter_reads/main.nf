@@ -14,7 +14,7 @@
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { KRAKEN2                                       } from '../../../modules/nf-core/kraken2/kraken2/main'
+include { KRAKEN2_KRAKEN2                               } from '../../../modules/nf-core/kraken2/kraken2/main'
 include { FASTP                                         } from '../../../modules/nf-core/fastp/main'
 include { SEQTK_SUBSEQ                                  } from '../../../modules/nf-core/seqtk/subseq/main'
 
@@ -30,7 +30,7 @@ workflow READ_FILTER {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = Channel.topic('versions')
 
     //
     // MODULE: Run Kraken to keep only orthopox reads 
@@ -38,22 +38,20 @@ workflow READ_FILTER {
     ch_kraken2_db = file(params.kraken_db, checkIfExists: true)
 
     //TODO replace with KRAKEN2_KRAKEN2
-    KRAKEN2 (
+    KRAKEN2_KRAKEN2 (
         input_reads,
         ch_kraken2_db,
         true,
         true
     )
-    ch_kreads = KRAKEN2.out.classified_reads_fastq
-    ch_orthoreads = KRAKEN2.out.classified_reads_assignment
-    ch_versions = ch_versions.mix(KRAKEN2.out.versions.first().ifEmpty(null))
+    ch_kreads = KRAKEN2_KRAKEN2.out.classified_reads_fastq
+    ch_orthoreads = KRAKEN2_KRAKEN2.out.classified_reads_assignment
 
     SEQTK_SUBSEQ (
         ch_kreads,
         ch_orthoreads
     )
-    ch_filt_fastq = SEQTK_SUBSEQ.out.reads
-    ch_versions = ch_versions.mix(SEQTK_SUBSEQ.out.versions)
+    ch_filt_fastq = SEQTK_SUBSEQ.out.sequences
     
     //
     // MODULE: Run Fastp
@@ -61,17 +59,17 @@ workflow READ_FILTER {
 
     FASTP (
         ch_filt_fastq,
+        false, // writes reads that pass trimming
         false,
         false
     )
-    ch_versions = ch_versions.mix(FASTP.out.versions)
 
     emit:
     trimmed_fastq = FASTP.out.reads 
     json = FASTP.out.json
-    kraken2_report = KRAKEN2.out.report
-    classified_reads_assignment = KRAKEN2.out.classified_reads_assignment
-    seqtk_reads = SEQTK_SUBSEQ.out.opxv_reads
+    kraken2_report = KRAKEN2_KRAKEN2.out.report
+    classified_reads_assignment = KRAKEN2_KRAKEN2.out.classified_reads_assignment
+    seqtk_reads = SEQTK_SUBSEQ.out.sequences
     versions      = ch_versions // channel: [ versions.yml ]
 
 }
