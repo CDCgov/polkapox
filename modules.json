@@ -45,11 +45,6 @@
                         "git_sha": "3dd0d7a2ab0e2333bcf198c7bf0b8744c24413dc",
                         "installed_by": ["modules"]
                     },
-                    "kraken2": {
-                        "branch": "master",
-                        "git_sha": "d67d33d5925fcec4691b499670fa2bd926fd2be5",
-                        "installed_by": ["modules"]
-                    },
                     "kraken2/kraken2": {
                         "branch": "master",
                         "git_sha": "d67d33d5925fcec4691b499670fa2bd926fd2be5",
@@ -75,7 +70,17 @@
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
                         "installed_by": ["modules"]
                     },
+                    "samtools/faidx": {
+                        "branch": "master",
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
+                        "installed_by": ["modules"]
+                    },
                     "samtools/flagstat": {
+                        "branch": "master",
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
+                        "installed_by": ["modules"]
+                    },
+                    "samtools/index": {
                         "branch": "master",
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
                         "installed_by": ["modules"]

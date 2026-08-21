@@ -16,7 +16,7 @@ workflow DENOVO {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = Channel.topic('versions')
 
     //
     // Module: run Unicycler
@@ -25,7 +25,6 @@ workflow DENOVO {
     UNICYCLER (
         trimmed_fastq
     )
-    ch_versions = ch_versions.mix(UNICYCLER.out.versions)
     ch_gfa = UNICYCLER.out.gfa
 
     //
@@ -41,7 +40,6 @@ workflow DENOVO {
     GRAPH_RECON (
         ch_gfa,
     )
-    ch_versions = ch_versions.mix(GRAPH_RECON.out.versions)
     ch_graph_fasta = GRAPH_RECON.out.gfa_assembly
     ch_gfaassm_compare = GRAPH_RECON.out.gfa_assembly
     ch_gfa_forpolishing = GRAPH_RECON.out.gfa_assembly
@@ -60,7 +58,6 @@ workflow DENOVO {
     ch_mapped_denovo = BWA_DENOVO.out.bam
     ch_mapped_denovo_flagstat = BWA_DENOVO.out.bambai
     ch_mapped_denovo_coverage = BWA_DENOVO.out.bambai
-    ch_versions = ch_versions.mix(BWA_DENOVO.out.versions)
 
     //
     // Module: Calculate statistics for de novo bwa mapping
@@ -68,14 +65,10 @@ workflow DENOVO {
     SAMTOOLS_FLAGSTAT_DENOVO (
         ch_mapped_denovo_flagstat
     )
-    ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT_DENOVO.out.versions)
 
     SAMTOOLS_COVERAGE_DENOVO (
         ch_mapped_denovo_coverage
-    )
-
-    ch_versions = ch_versions.mix(SAMTOOLS_COVERAGE_DENOVO.out.versions)    
-    
+    )    
 
     //
     // Module: Polish assembly with IVAR Consensus
@@ -85,7 +78,6 @@ workflow DENOVO {
         ch_polishing_input,
         true
     )
-    ch_versions = ch_versions.mix(IVAR_CONSENSUS_POLISH.out.versions)
     ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH.out.fasta, by: 0)
     
     //join unicycler contigs with the polished fasta, and only keep contigs if fasta doesn't exist
@@ -105,17 +97,16 @@ workflow DENOVO {
     MUMMER (
         ch_tocompare
     )
-    ch_mummer = MUMMER.out.summary
+    //ch_mummer = MUMMER.out.summary //No more summary in the new version - TODO: determine if this is important
 
     //
     // Module: run QUAST for assembly stats
     //
     QUAST (
-        GRAPH_RECON.out.unicycler_contigs.collect{it[1]}.ifEmpty([]),
-        true,
-        true
+        GRAPH_RECON.out.unicycler_contigs,
+        [[:], []], //no reference fasta
+        [[:], []] //no annotations
     )
-    ch_versions = ch_versions.mix(QUAST.out.versions)
     
     emit:
     quast_tsv       = QUAST.out.tsv
@@ -123,7 +114,7 @@ workflow DENOVO {
     coverage        = SAMTOOLS_COVERAGE_DENOVO.out.coverage
     graph_recon_log = GRAPH_RECON.out.log
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
-    mummer_summary  = MUMMER.out.summary
+    //mummer_summary  = MUMMER.out.summary
     fasta           = IVAR_CONSENSUS_POLISH.out.fasta
     mpileup         = IVAR_CONSENSUS_POLISH.out.mpileup
     versions        = ch_versions // channel: [ versions.yml ]

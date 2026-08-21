@@ -3,8 +3,10 @@ include { IVAR_CONSENSUS as IVAR_CONSENSUS_BWA          } from '../../../modules
 include { IVAR_VARIANTS                                 } from '../../../modules/nf-core/ivar/variants/main'
 include { VARIANT_CONVERT                               } from '../../../modules/local/variant_convert/main'
 include { SAMTOOLS_SORT                                 } from '../../../modules/nf-core/samtools/sort/main'
+include { SAMTOOLS_INDEX                                } from '../../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_FLAGSTAT                             } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_DEPTH                                } from '../../../modules/nf-core/samtools/depth/main'
+include { SAMTOOLS_FAIDX                                } from '../../../modules/nf-core/samtools/faidx/main'
 include { VCFTOOLS as VCFTOOLS_IVAR                     } from '../../../modules/nf-core/vcftools/main'
 include { SUMMARIZE_TSV                                 } from '../../../modules/local/summarize_tsv/main'
 include { AGGREGATE_TSVS                                } from '../../../modules/local/aggregate_tsvs/main'
@@ -15,7 +17,7 @@ workflow REFBASED {
         ch_bwa_index
 
     main: 
-        ch_versions = Channel.empty()
+        ch_versions = Channel.topic('versions')
 
         //
         // Module: run BWA MEM alignment
@@ -24,21 +26,21 @@ workflow REFBASED {
             ch_trimmed_fastq_bwa,
             ch_bwa_index,
             [], //fasta only required for cram output
-            true
+            true //sort the bam file
         )
-        ch_bwa_aln = BWA_MEM.out.bam
-        ch_bwa_ivar = BWA_MEM.out.bam
-        ch_bwa_depth = BWA_MEM.out.bam
-        ch_bwa_flagstat = BWA_MEM.out.bambai
-        ch_bai_lofreq = BWA_MEM.out.bai
-        ch_versions = ch_versions.mix(BWA_MEM.out.versions)
+
+        //new version of BWA_MEM does not support index
+        SAMTOOLS_INDEX(BWA_MEM.out.bam)
+
+        // Join BAM with its index for downstream tools
+        ch_bam_bai = BWA_MEM.out.bam.join(SAMTOOLS_INDEX.out.index)
 
         SAMTOOLS_FLAGSTAT (
-            ch_bwa_flagstat
+            ch_bam_bai
         )
 
         SAMTOOLS_DEPTH (
-            ch_bwa_depth
+            ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bai, [] ] } //ie. no interval files
         )
 
         //
@@ -46,25 +48,36 @@ workflow REFBASED {
         //
     
         IVAR_CONSENSUS_BWA (
-            ch_bwa_aln,
+            BWA_MEM.out.bam,
             params.fasta,
             true
         )
-        ch_versions = ch_versions.mix(IVAR_CONSENSUS_BWA.out.versions)
+
+        // Generate .fai index if not provided by the user
+        if ( params.fai ) {
+            ch_fai = file(params.fai, checkIfExists: true)
+        } else {
+            SAMTOOLS_FAIDX (
+                [ [id:'index_fasta'], file(params.fasta) , [] ],
+                false
+            )
+            ch_fai = SAMTOOLS_FAIDX.out.fai.map { meta, fai -> fai }
+        }
 
         IVAR_VARIANTS (
-            ch_bwa_ivar,
-            true
+            BWA_MEM.out.bam,
+            params.fasta,
+            ch_fai,
+            params.gff ?: [], //if the user passes gff file
+            false
         )
         ch_ivar_out = IVAR_VARIANTS.out.tsv
-        ch_versions = ch_versions.mix(IVAR_VARIANTS.out.versions)
         
         VARIANT_CONVERT (
             ch_ivar_out,
             params.af_cutoff
         )
         ch_ivar_vcf = VARIANT_CONVERT.out.vcf
-        ch_versions = ch_versions.mix(VARIANT_CONVERT.out.versions)
     
         if ( params.filter ) {
             //
@@ -78,7 +91,6 @@ workflow REFBASED {
                 true
             )
             ch_tsv_vars = SUMMARIZE_TSV.out.vars
-            ch_versions = ch_versions.mix(SUMMARIZE_TSV.out.versions)
 
             //
             // Module: aggregate ivar tsv summary files
@@ -90,7 +102,6 @@ workflow REFBASED {
                 ch_aggregate_tsvs,
                 true
             )
-            ch_versions = ch_versions.mix(AGGREGATE_TSVS.out.versions)
         }
         else {
             ch_tsv_vars = Channel.empty()

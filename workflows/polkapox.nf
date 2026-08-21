@@ -60,9 +60,8 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                                        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main' //warning deprecated
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
 include { BWA_INDEX                                     } from '../modules/nf-core/bwa/index/main'
 
@@ -123,7 +122,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Prepare reference
     //
-    BWA_INDEX ( file(params.fasta) )
+    BWA_INDEX ( [ [id:'bwa_index'], file(params.fasta) ] )
     ch_versions = ch_versions.mix(BWA_INDEX.out.versions_bwa)  
 
     //
@@ -217,7 +216,7 @@ workflow POLKAPOX {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.flagstat.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.coverage.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.graph_recon_log.collect().ifEmpty([]))
-        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mummer_summary.collect{it[1]}.ifEmpty([]))
+        //ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mummer_summary.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mpileup.collect{it[1]}.ifEmpty([]))
     }
 

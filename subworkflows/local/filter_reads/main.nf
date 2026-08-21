@@ -1,19 +1,3 @@
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT LOCAL MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT NF-CORE MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-//
-// MODULE: Installed directly from nf-core/modules
-//
 include { KRAKEN2_KRAKEN2                               } from '../../../modules/nf-core/kraken2/kraken2/main'
 include { FASTP                                         } from '../../../modules/nf-core/fastp/main'
 include { SEQTK_SUBSEQ                                  } from '../../../modules/nf-core/seqtk/subseq/main'
@@ -36,7 +20,7 @@ workflow READ_FILTER {
     // MODULE: Run Kraken to keep only orthopox reads 
     //
     ch_kraken2_db = file(params.kraken_db, checkIfExists: true)
-
+    input_reads.view { it -> "input_reads: ${it}" }
     //TODO replace with KRAKEN2_KRAKEN2
     KRAKEN2_KRAKEN2 (
         input_reads,
@@ -44,25 +28,16 @@ workflow READ_FILTER {
         true,
         true
     )
-    ch_kreads = KRAKEN2_KRAKEN2.out.classified_reads_fastq
-    ch_orthoreads = KRAKEN2_KRAKEN2.out.classified_reads_assignment
-
-    SEQTK_SUBSEQ (
-        ch_kreads,
-        ch_orthoreads
-    )
-    ch_filt_fastq = SEQTK_SUBSEQ.out.sequences
-    
-    //
-    // MODULE: Run Fastp
-    //
+  
+    //No need for subseq sibce tge 
 
     FASTP (
-        ch_filt_fastq,
+        SEQTK_SUBSEQ.out.sequences.map { meta, files -> [meta, files, []] },
         false, // writes reads that pass trimming
         false,
         false
     )
+    FASTP.out.reads.view { it -> "FASTP.out.reads: ${it}" }
 
     emit:
     trimmed_fastq = FASTP.out.reads 
