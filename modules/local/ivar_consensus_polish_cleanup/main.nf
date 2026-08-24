@@ -8,7 +8,6 @@ process IVAR_CONSENSUS_POLISH_CLEANUP {
 
     output:
     tuple val(meta), path("*.fa"), emit: fasta
-    tuple val("${task.process}"), val('ivar_consensus_polish_cleanup'), val('1.0.0'), emit: versions, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
