@@ -7,7 +7,8 @@ include { BWA_DENOVO                                    } from '../../../modules
 include { PUBLISH_CONTIGS                               } from '../../../modules/local/publish_contigs/main'
 include { MUMMER                                        } from '../../../modules/nf-core/mummer/main'
 include { QUAST                                         } from '../../../modules/nf-core/quast/main'
-include { IVAR_CONSENSUS_POLISH                         } from '../ivar_consensus_polish/main'
+include { IVAR_CONSENSUS_POLISH_CLEANUP                 } from '../../../modules/local/ivar_consensus_polish_cleanup/main'
+include { IVAR_CONSENSUS                                } from '../../../modules/nf-core/ivar/consensus/main'
 
 workflow DENOVO {
 
@@ -81,15 +82,23 @@ workflow DENOVO {
     // Module: Polish assembly with IVAR Consensus
     //
     ch_polishing_input = ch_mapped_denovo.join(ch_gfa_forpolishing, by: 0)
-    IVAR_CONSENSUS_POLISH (
-        ch_polishing_input,
-        true
+    ch_bam = ch_polishing_input.map { meta, bam, fasta -> [ meta, bam ] }
+    ch_fasta = ch_polishing_input.map { meta, bam, fasta -> fasta }
+
+    IVAR_CONSENSUS(
+        ch_bam,
+        ch_fasta,
+        true, //save_mpileup
     )
-    ch_versions = ch_versions.mix(IVAR_CONSENSUS_POLISH.out.versions)
-    ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH.out.fasta, by: 0)
-    
+    ch_versions = ch_versions.mix(IVAR_CONSENSUS.out.versions)
+
+    IVAR_CONSENSUS_POLISH_CLEANUP (
+        IVAR_CONSENSUS.out.fasta
+    )
+    ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta, by: 0)
+
     //join unicycler contigs with the polished fasta, and only keep contigs if fasta doesn't exist
-    ch_assemblies = ch_uni_contigs.join(IVAR_CONSENSUS_POLISH.out.fasta, remainder: true)
+    ch_assemblies = ch_uni_contigs.join(IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta, remainder: true)
     | map { meta, contigs, fasta -> [meta + [ "final" : "draft"], fasta ?: contigs ]}
 
     //
@@ -124,7 +133,7 @@ workflow DENOVO {
     graph_recon_log = GRAPH_RECON.out.log
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
     mummer_summary  = MUMMER.out.summary
-    fasta           = IVAR_CONSENSUS_POLISH.out.fasta
-    mpileup         = IVAR_CONSENSUS_POLISH.out.mpileup
+    fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
+    mpileup         = IVAR_CONSENSUS.out.mpileup
     versions        = ch_versions // channel: [ versions.yml ]
 }
