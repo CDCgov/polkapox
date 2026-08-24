@@ -25,9 +25,9 @@ jobs:
           # Test pipeline minimum Nextflow version
           - NXF_VER: "21.10.3"
             NXF_EDGE: ""
-          # Test latest edge release of Nextflow
-          - NXF_VER: ""
-            NXF_EDGE: "1"
+          # Test latest edge release of Nextflow (limiting the upper version number of nextflow)
+          - NXF_VER: "25.10.4"
+            NXF_EDGE: ""
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2

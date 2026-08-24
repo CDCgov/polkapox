@@ -1,0 +1,54 @@
+nextflow_process {
+
+    name "Test Process CREATE_SAMPLESHEET"
+    script "../main.nf"
+    process "CREATE_SAMPLESHEET"
+
+    test("Test | paired-end reads") {
+
+        when {
+            params {
+                project_name = "Test"
+                paired = true
+                outdir = ${outputDir}
+            }
+            process {
+                //TODO: update this to be in assets, or another location
+                """
+                // input[0] = file("path/to/input/dir")
+                input[0] = file("/scicomp/groups-pure/Projects/scbs_mpob/JRowell_ick4/mpox_testing/paired/")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+    test("Test | single-end reads") {
+
+        when {
+            params {
+                project_name = "Test"
+                paired = false
+                outdir = ${outputDir}
+            }
+            process {
+                //TODO: update this to be in assets, or another location
+                """
+                // input[0] = file("path/to/input/dir")
+                input[0] = file("/scicomp/groups-pure/Projects/scbs_mpob/JRowell_ick4/mpox_testing/single/")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+    }
+
+}
