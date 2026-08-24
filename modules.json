@@ -50,6 +50,11 @@
                         "git_sha": "d67d33d5925fcec4691b499670fa2bd926fd2be5",
                         "installed_by": ["modules"]
                     },
+                    "krakentools/extractkrakenreads": {
+                        "branch": "master",
+                        "git_sha": "03bd94fc81b464595bcef5d9dc3f06ea1f34bfa0",
+                        "installed_by": ["modules"]
+                    },
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",

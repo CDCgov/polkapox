@@ -23,7 +23,7 @@ workflow DENOVO {
     //
 
     UNICYCLER (
-        trimmed_fastq
+        trimmed_fastq.map { meta, reads -> [meta, reads, []] }
     )
     ch_gfa = UNICYCLER.out.gfa
 

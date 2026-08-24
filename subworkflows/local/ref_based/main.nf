@@ -25,7 +25,7 @@ workflow REFBASED {
         BWA_MEM (
             ch_trimmed_fastq_bwa,
             ch_bwa_index,
-            [], //fasta only required for cram output
+            [[:], []], //fasta only required for cram output
             true //sort the bam file
         )
 

@@ -53,7 +53,7 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+    IMPORT NF-CORE MODULES/WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -205,7 +205,7 @@ workflow POLKAPOX {
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.json.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.kraken2_report.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.classified_reads_assignment.collect{it[1]}.ifEmpty([]))
-    ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.seqtk_reads.collect{it[1]}.ifEmpty([]))
+    ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.orthopox_reads.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(MULTIQC.out.data.collect().ifEmpty([]))
     if ( params.workflow == 'ref_based' || params.workflow == 'full') {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(REFBASED.out.depth_tsv.collect{it[1]}.ifEmpty([]))
