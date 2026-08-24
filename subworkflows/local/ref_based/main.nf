@@ -1,5 +1,5 @@
 include { BWA_MEM                                       } from '../../../modules/nf-core/bwa/mem/main'
-include { IVAR_CONSENSUS as IVAR_CONSENSUS_BWA          } from '../../../modules/nf-core/ivar/consensus/main'
+include { IVAR_CONSENSUS                                } from '../../../modules/nf-core/ivar/consensus/main'
 include { IVAR_VARIANTS                                 } from '../../../modules/nf-core/ivar/variants/main'
 include { VARIANT_CONVERT                               } from '../../../modules/local/variant_convert/main'
 include { SAMTOOLS_SORT                                 } from '../../../modules/nf-core/samtools/sort/main'
@@ -47,7 +47,7 @@ workflow REFBASED {
         // Module: run ivar
         //
     
-        IVAR_CONSENSUS_BWA (
+        IVAR_CONSENSUS (
             BWA_MEM.out.bam,
             params.fasta,
             true
