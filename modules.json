@@ -40,13 +40,6 @@
                             "modules"
                         ]
                     },
-                    "fastqc": {
-                        "branch": "master",
-                        "git_sha": "49b18b1639f4f7104187058866a8fab33332bdfe",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
                     "ivar/consensus": {
                         "branch": "master",
                         "git_sha": "e745e167c1020928ef20ea1397b6b4d230681b4d",
@@ -103,13 +96,6 @@
                             "modules"
                         ]
                     },
-                    "samtools/sort": {
-                        "branch": "master",
-                        "git_sha": "d5d785b3d8b422cda9c6d84a23f629a8e9ff8cd8",
-                        "installed_by": [
-                            "modules"
-                        ]
-                    },
                     "seqtk/subseq": {
                         "branch": "master",
                         "git_sha": "a0443e2c54da4236fe55cd3e39eec8924ebfd646",
@@ -148,7 +134,7 @@
                 }
             },
             "subworkflows": {
-                "nf-core": {}
+                
             }
         }
     }

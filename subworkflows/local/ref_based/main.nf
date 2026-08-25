@@ -2,10 +2,8 @@ include { BWA_MEM                                       } from '../../../modules
 include { IVAR_CONSENSUS as IVAR_CONSENSUS_BWA          } from '../../../modules/nf-core/ivar/consensus/main'
 include { IVAR_VARIANTS                                 } from '../../../modules/nf-core/ivar/variants/main'
 include { VARIANT_CONVERT                               } from '../../../modules/local/variant_convert/main'
-include { SAMTOOLS_SORT                                 } from '../../../modules/nf-core/samtools/sort/main'
 include { SAMTOOLS_FLAGSTAT                             } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_DEPTH                                } from '../../../modules/nf-core/samtools/depth/main'
-include { VCFTOOLS as VCFTOOLS_IVAR                     } from '../../../modules/nf-core/vcftools/main'
 include { SUMMARIZE_TSV                                 } from '../../../modules/local/summarize_tsv/main'
 include { AGGREGATE_TSVS                                } from '../../../modules/local/aggregate_tsvs/main'
 

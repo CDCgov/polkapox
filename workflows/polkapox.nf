@@ -61,7 +61,6 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                                        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
 //note that the lower is deprecated
 include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
