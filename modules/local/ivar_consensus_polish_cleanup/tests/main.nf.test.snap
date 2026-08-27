@@ -1,5 +1,5 @@
 {
-    "Variant Convert Test": {
+    "Should remove Consensus_ prefix and leading/trailing Ns": {
         "content": [
             {
                 "0": [
@@ -7,26 +7,20 @@
                         {
                             "id": "test_sub"
                         },
-                        "test_sub.ivar.vcf:md5,c4631f24df129b68eedf2e3918610074"
+                        "test_sub.final.fa:md5,e794493d1708fc982f93a3bd160bcfd6"
                     ]
                 ],
-                "1": [
-                    "versions.yml:md5,2da3c57e9267579b70807fda70250e43"
-                ],
-                "vcf": [
+                "fasta": [
                     [
                         {
                             "id": "test_sub"
                         },
-                        "test_sub.ivar.vcf:md5,c4631f24df129b68eedf2e3918610074"
+                        "test_sub.final.fa:md5,e794493d1708fc982f93a3bd160bcfd6"
                     ]
-                ],
-                "versions": [
-                    "versions.yml:md5,2da3c57e9267579b70807fda70250e43"
                 ]
             }
         ],
-        "timestamp": "2026-08-27T17:34:52.897236383",
+        "timestamp": "2026-08-24T19:46:26.616325792",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

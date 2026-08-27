@@ -4,18 +4,21 @@ nextflow_workflow {
     script "../main.nf"
     workflow "READ_FILTER"
 
-    test("Should run without failures") {
+    test("Pair-end reads") {
 
         when {
             params {
-                // define parameters here. Example:
-                // outdir = "tests/results"
+                kraken_db = "s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/orthopox_t2t_kdb/"
             }
             workflow {
-                //TODO: define workflow inputs here. Example:
                 """
-                // define inputs of the workflow here. Example:
-                // input[0] = file("test-file.txt")
+                input[0] = Channel.of([
+                    [ id: 'sample1', single_end: false ],
+                    [
+                        file("${projectDir}/tests/nf-test-data/test_sub.classified_1.fastq.gz", checkIfExists: true),
+                        file("${projectDir}/tests/nf-test-data/test_sub.classified_2.fastq.gz", checkIfExists: true)
+                    ]
+                ])
                 """
             }
         }

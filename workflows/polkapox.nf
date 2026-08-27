@@ -15,6 +15,7 @@ def checkPathParamList = [ params.multiqc_config, params.fasta, params.fai]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
+ch_indir = NONE
 if (params.input) { 
     ch_input = Channel.fromPath("${params.input}", type: 'file', checkIfExists: true) 
     }

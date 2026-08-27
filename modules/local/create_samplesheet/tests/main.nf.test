@@ -40,7 +40,7 @@ nextflow_process {
                 //TODO: update this to be in assets, or another location
                 """
                 // input[0] = file("path/to/input/dir")
-                input[0] = file("/scicomp/groups-pure/Projects/scbs_mpob/JRowell_ick4/mpox_testing/single/")
+                input[0] = file("/scicomp/groups-pure/scbs_mpob/JRowell_ick4/mpox_testing/single/")
                 """
             }
         }

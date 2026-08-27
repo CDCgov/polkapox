@@ -23,7 +23,13 @@ nextflow_process {
 
         then {
             assert process.success
-            assert snapshot(process.out).match()
+            assert process.out.log.size() == 1
+            assert snapshot(
+                process.out.gfa_assembly,
+                process.out.unicycler_contigs,
+                process.out.summary,
+                process.out.versions
+            ).match()
         }
 
     }

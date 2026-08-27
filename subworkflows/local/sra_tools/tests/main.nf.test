@@ -1,0 +1,33 @@
+nextflow_workflow {
+
+    name "Test Subworkflow SRA_TOOLS"
+    script "../main.nf"
+    workflow "SRA_TOOLS"
+
+    test("SRA_TOOLS - download and convert SRA reads") {
+
+        tag "network"
+
+        when {
+            params {
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'SRR11140744' ],
+                    'SRR11140744'
+                ])
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.forward.size() == 1
+            assert workflow.out.reverse.size() == 1
+            assert workflow.out.versions.size() == 1
+        }
+
+    }
+
+}

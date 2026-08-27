@@ -12,13 +12,11 @@ nextflow_process {
 
             process {
                 """
-                input[0] = Channel.of(
-                    [
-                        meta: [id: 'test_sub'],
-                        tsv: file("${moduleTestDir}/test_sub.ivar.tsv", checkIfExists: true)
-                    ]
-                )
-                input[1] = [af_cutoff: '0.01']
+                input[0] = Channel.of([
+                    [ id: 'test_sub' ],
+                    file("${moduleTestDir}/test_sub.ivar.tsv", checkIfExists: true)
+                ])
+                input[1] = 0.01
                 """
             }
         }
