@@ -4,7 +4,7 @@ nextflow_workflow {
     script "../main.nf"
     workflow "READ_FILTER"
 
-    test("Pair-end reads") {
+    test("Paired-end reads") {
 
         when {
             params {
@@ -15,8 +15,8 @@ nextflow_workflow {
                 input[0] = Channel.of([
                     [ id: 'sample1', single_end: false ],
                     [
-                        file("${projectDir}/tests/nf-test-data/test_sub.classified_1.fastq.gz", checkIfExists: true),
-                        file("${projectDir}/tests/nf-test-data/test_sub.classified_2.fastq.gz", checkIfExists: true)
+                        file("s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/test_data/test_sub_1.fq.gz"),
+                        file("s3://io-pe1-prod-ncezid-oamd-nextstrain/polkapox/test_data/test_sub_2.fq.gz")
                     ]
                 ])
                 """
