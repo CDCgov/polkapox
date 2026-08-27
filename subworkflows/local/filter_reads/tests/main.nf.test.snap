@@ -1,0 +1,119 @@
+{
+    "Paired-end reads": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        [
+                            "sample1_1.fastp.fastq.gz:md5,7f2576aae5f851452871eec039ba36f5",
+                            "sample1_2.fastp.fastq.gz:md5,d631287cc76a35b3d0298a72576be4b7"
+                        ]
+                    ]
+                ],
+                "1": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.fastp.json:md5,23ff790770f9ff4ebdc990dd74f00a26"
+                    ]
+                ],
+                "2": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.kraken2.report.txt:md5,a000dea2b3f5bcd5bc45633fb4445888"
+                    ]
+                ],
+                "3": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.kraken2.classifiedreads.txt:md5,39b23bb2a971a92be98cca9af5766f78"
+                    ]
+                ],
+                "4": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.opxreads.txt:md5,637b8ab70cdb8f52c9ec38ccc9c241c3"
+                    ]
+                ],
+                "5": [
+                    "versions.yml:md5,a52d126aa622906168abafeaae7c91d2",
+                    "versions.yml:md5,b653f8c492029b4afd2c8bed09f38215",
+                    "versions.yml:md5,cb31eac53f9b539cad5dd80e34eed70c"
+                ],
+                "classified_reads_assignment": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.kraken2.classifiedreads.txt:md5,39b23bb2a971a92be98cca9af5766f78"
+                    ]
+                ],
+                "json": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.fastp.json:md5,23ff790770f9ff4ebdc990dd74f00a26"
+                    ]
+                ],
+                "kraken2_report": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.kraken2.report.txt:md5,a000dea2b3f5bcd5bc45633fb4445888"
+                    ]
+                ],
+                "seqtk_reads": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        "sample1.opxreads.txt:md5,637b8ab70cdb8f52c9ec38ccc9c241c3"
+                    ]
+                ],
+                "trimmed_fastq": [
+                    [
+                        {
+                            "id": "sample1",
+                            "single_end": false
+                        },
+                        [
+                            "sample1_1.fastp.fastq.gz:md5,7f2576aae5f851452871eec039ba36f5",
+                            "sample1_2.fastp.fastq.gz:md5,d631287cc76a35b3d0298a72576be4b7"
+                        ]
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,a52d126aa622906168abafeaae7c91d2",
+                    "versions.yml:md5,b653f8c492029b4afd2c8bed09f38215",
+                    "versions.yml:md5,cb31eac53f9b539cad5dd80e34eed70c"
+                ]
+            }
+        ],
+        "timestamp": "2026-08-27T18:14:17.477627322",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}
