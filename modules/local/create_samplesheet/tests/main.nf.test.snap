@@ -3,46 +3,46 @@
         "content": [
             {
                 "0": [
-                    "Test_samplesheet.csv:md5,6d78c92cb2ea8938e0541a32c62a7d1e"
+                    "Test_samplesheet.csv:md5,be0ae88eb54b1139991d6d6432005b9d"
                 ],
                 "1": [
-                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                    "versions.yml:md5,26b9fbab7dfb7537c6aaf5e7bf8d1615"
                 ],
                 "samplesheet": [
-                    "Test_samplesheet.csv:md5,6d78c92cb2ea8938e0541a32c62a7d1e"
+                    "Test_samplesheet.csv:md5,be0ae88eb54b1139991d6d6432005b9d"
                 ],
                 "versions": [
-                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                    "versions.yml:md5,26b9fbab7dfb7537c6aaf5e7bf8d1615"
                 ]
             }
         ],
+        "timestamp": "2026-08-27T17:27:52.770646173",
         "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "24.10.4"
-        },
-        "timestamp": "2025-06-24T12:23:15.588289245"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     },
     "Test | paired-end reads": {
         "content": [
             {
                 "0": [
-                    "Test_samplesheet.csv:md5,462af9491a3b144c812aac6f24510382"
+                    "Test_samplesheet.csv:md5,f710b349938d960c80fc82576e4493c9"
                 ],
                 "1": [
-                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                    "versions.yml:md5,26b9fbab7dfb7537c6aaf5e7bf8d1615"
                 ],
                 "samplesheet": [
-                    "Test_samplesheet.csv:md5,462af9491a3b144c812aac6f24510382"
+                    "Test_samplesheet.csv:md5,f710b349938d960c80fc82576e4493c9"
                 ],
                 "versions": [
-                    "versions.yml:md5,29c636ba5752db4630100b2d9c5e8b95"
+                    "versions.yml:md5,26b9fbab7dfb7537c6aaf5e7bf8d1615"
                 ]
             }
         ],
+        "timestamp": "2026-08-27T14:48:10.083355723",
         "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "24.10.4"
-        },
-        "timestamp": "2025-06-24T12:23:09.869779873"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

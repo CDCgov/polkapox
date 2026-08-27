@@ -1,0 +1,47 @@
+nextflow_workflow {
+
+    name "Test Subworkflow REFBASED"
+    script "../main.nf"
+    workflow "REFBASED"
+
+    test("REFBASED - paired end alignment and variant calling") {
+
+        setup {
+            run("BWA_INDEX") {
+                script "../../../../modules/nf-core/bwa/index/main.nf"
+                process {
+                    """
+                    input[0] = file("${projectDir}/assets/MPXV-UK_P2.noN.fasta", checkIfExists: true)
+                    """
+                }
+            }
+        }
+
+        when {
+            params {
+                fasta     = "${projectDir}/assets/MPXV-UK_P2.noN.fasta"
+                filter    = false
+                af_cutoff = 0.25
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    [
+                        file("${moduleTestDir}/test_sub_1.fq.gz", checkIfExists: true),
+                        file("${moduleTestDir}/test_sub_2.fq.gz", checkIfExists: true)
+                    ]
+                ])
+                input[1] = BWA_INDEX.out.index
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.versions.size() >= 1
+        }
+
+    }
+
+}

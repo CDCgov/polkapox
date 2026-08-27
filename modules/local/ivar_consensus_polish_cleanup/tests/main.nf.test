@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "Test Process IVAR_CONSENSUS_POLISH_CLEANUP"
+    script "../main.nf"
+    process "IVAR_CONSENSUS_POLISH_CLEANUP"
+
+    test("Should remove Consensus_ prefix and leading/trailing Ns") {
+
+        when {
+            params {
+
+            }
+            process {
+                """
+                input[0] = Channel.of(
+                    [ [id: 'test_sub'], file("${moduleTestDir}/test_input.fa", checkIfExists: true) ]
+                )
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert snapshot(process.out).match()
+        }
+
+    }
+
+}

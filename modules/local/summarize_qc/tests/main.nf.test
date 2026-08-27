@@ -7,15 +7,11 @@ nextflow_process {
     test("Summarize QC Test") {
 
         when {
-            params {
-                // define parameters here. Example:
-                // outdir = "tests/results"
-            }
+            params {}
             process {
                 """
-                // define inputs of the process here. Example:
-                 input[0] = file("${moduleTestDir}/test_sub.final.fa")
-                 input[1] = file("${moduleTestDir}/samplesheet.test.csv")
+                input[0] = file("${moduleTestDir}/multiqc_general_stats.txt")
+                input[1] = file("${moduleTestDir}/samplesheet.test.csv")
                 """
             }
         }

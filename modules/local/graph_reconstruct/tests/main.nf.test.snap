@@ -1,43 +1,29 @@
 {
     "Graph Recon Test": {
         "content": [
-            {
-                "0": [
-                    
-                ],
-                "1": [
-                    
-                ],
-                "2": [
-                    
-                ],
-                "3": [
-                    
-                ],
-                "4": [
-                    
-                ],
-                "gfa_assembly": [
-                    
-                ],
-                "log": [
-                    
-                ],
-                "summary": [
-                    
-                ],
-                "unicycler_contigs": [
-                    
-                ],
-                "versions": [
-                    
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": true
+                    },
+                    "test_sub.contigs.fasta:md5,d667a3ce377240a3d5f60baa0ee10295"
                 ]
-            }
+            ],
+            [
+                "test_sub.assembly.summary:md5,5bef1444668e2c7013589cc2db1dd499"
+            ],
+            [
+                "versions.yml:md5,bc28364a51e8ded7838b24b3acd348be"
+            ]
         ],
+        "timestamp": "2026-08-27T17:43:34.123880876",
         "meta": {
-            "nf-test": "0.9.2",
-            "nextflow": "24.10.4"
-        },
-        "timestamp": "2025-07-07T16:42:49.537674556"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

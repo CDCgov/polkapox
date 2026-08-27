@@ -15,6 +15,7 @@ def checkPathParamList = [ params.multiqc_config, params.fasta, params.fai]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
+ch_indir = Channel.empty()
 if (params.input) { 
     ch_input = Channel.fromPath("${params.input}", type: 'file', checkIfExists: true) 
     }
@@ -61,7 +62,6 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                                        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
 //note that the lower is deprecated
 include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'

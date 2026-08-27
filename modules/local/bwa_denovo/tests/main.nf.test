@@ -1,0 +1,65 @@
+nextflow_process {
+
+    name "Test Process BWA_DENOVO"
+    script "../main.nf"
+    process "BWA_DENOVO"
+
+    test("BWA_DENOVO - paired end - sorted bam") {
+
+        when {
+            params {
+            }
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    file('${moduleTestDir}/test_ref.fa', checkIfExists: true),
+                    [ file('${moduleTestDir}/test_sub_1.fq.gz', checkIfExists: true),
+                      file('${moduleTestDir}/test_sub_2.fq.gz', checkIfExists: true) ]
+                ])
+                input[1] = true
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.bam.size() == 1
+            assert process.out.bai.size() == 1
+            assert process.out.bambai.size() == 1
+            assert process.out.versions.size() == 1
+            assert path(process.out.bam[0][1]).exists()
+            assert path(process.out.bai[0][1]).exists()
+        }
+
+    }
+
+    test("BWA_DENOVO - paired end - unsorted bam") {
+
+        when {
+            params {
+            }
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    file('${moduleTestDir}/test_ref.fa', checkIfExists: true),
+                    [ file('${moduleTestDir}/test_sub_1.fq.gz', checkIfExists: true),
+                      file('${moduleTestDir}/test_sub_2.fq.gz', checkIfExists: true) ]
+                ])
+                input[1] = false
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.bam.size() == 1
+            assert process.out.bai.size() == 1
+            assert process.out.versions.size() == 1
+            assert path(process.out.bam[0][1]).exists()
+        }
+
+    }
+
+}
