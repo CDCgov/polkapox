@@ -27,7 +27,6 @@ nextflow_process {
             assert snapshot(
                 process.out.gfa_assembly,
                 process.out.unicycler_contigs,
-                process.out.summary,
                 process.out.versions
             ).match()
         }

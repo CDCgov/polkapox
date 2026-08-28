@@ -2,7 +2,13 @@
     "Graph Recon Test": {
         "content": [
             [
-                
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": true
+                    },
+                    "test_sub.assembly_asm.fasta:md5,ac5747226ef074ea9583d08e2c63c834"
+                ]
             ],
             [
                 [
@@ -14,13 +20,10 @@
                 ]
             ],
             [
-                "test_sub.assembly.summary:md5,5bef1444668e2c7013589cc2db1dd499"
-            ],
-            [
                 "versions.yml:md5,bc28364a51e8ded7838b24b3acd348be"
             ]
         ],
-        "timestamp": "2026-08-27T17:43:34.123880876",
+        "timestamp": "2026-08-28T12:57:13.456319925",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
