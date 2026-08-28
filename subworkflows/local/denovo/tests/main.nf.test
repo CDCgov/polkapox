@@ -8,6 +8,8 @@ nextflow_workflow {
 
         when {
             params {
+                fasta = "${projectDir}/assets/MPXV-UK_P2.noN.fasta"
+                gff   = "${projectDir}/assets/UK-P2.noN.gff"
             }
             workflow {
                 """
