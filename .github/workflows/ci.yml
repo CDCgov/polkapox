@@ -7,6 +7,9 @@ on:
   pull_request:
   release:
     types: [published]
+# Disabled: triggers replaced with workflow_dispatch only so it never runs automatically
+# on:
+#   workflow_dispatch:
 
 env:
   NXF_ANSI_LOG: false
