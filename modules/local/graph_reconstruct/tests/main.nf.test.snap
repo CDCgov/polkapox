@@ -18,12 +18,9 @@
                     },
                     "test_sub.contigs.fasta:md5,d667a3ce377240a3d5f60baa0ee10295"
                 ]
-            ],
-            [
-                "versions.yml:md5,bc28364a51e8ded7838b24b3acd348be"
             ]
         ],
-        "timestamp": "2026-08-28T12:57:13.456319925",
+        "timestamp": "2026-08-31T16:01:00.103563624",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

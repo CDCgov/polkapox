@@ -19,7 +19,8 @@ nextflow_process {
 
         then {
             assert process.success
-            assert snapshot(process.out).match()
+            assert process.out.versions.size() == 1
+            assert snapshot(process.out.csv).match()
         }
 
     }

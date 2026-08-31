@@ -1,26 +1,16 @@
 {
     "Should remove Consensus_ prefix and leading/trailing Ns": {
         "content": [
-            {
-                "0": [
-                    [
-                        {
-                            "id": "test_sub"
-                        },
-                        "test_sub.final.fa:md5,e794493d1708fc982f93a3bd160bcfd6"
-                    ]
-                ],
-                "fasta": [
-                    [
-                        {
-                            "id": "test_sub"
-                        },
-                        "test_sub.final.fa:md5,e794493d1708fc982f93a3bd160bcfd6"
-                    ]
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.final.fa:md5,e794493d1708fc982f93a3bd160bcfd6"
                 ]
-            }
+            ]
         ],
-        "timestamp": "2026-08-24T19:46:26.616325792",
+        "timestamp": "2026-08-31T16:04:33.96677311",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

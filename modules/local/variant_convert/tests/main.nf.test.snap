@@ -1,32 +1,16 @@
 {
     "Variant Convert Test": {
         "content": [
-            {
-                "0": [
-                    [
-                        {
-                            "id": "test_sub"
-                        },
-                        "test_sub.ivar.vcf:md5,c4631f24df129b68eedf2e3918610074"
-                    ]
-                ],
-                "1": [
-                    "versions.yml:md5,2da3c57e9267579b70807fda70250e43"
-                ],
-                "vcf": [
-                    [
-                        {
-                            "id": "test_sub"
-                        },
-                        "test_sub.ivar.vcf:md5,c4631f24df129b68eedf2e3918610074"
-                    ]
-                ],
-                "versions": [
-                    "versions.yml:md5,2da3c57e9267579b70807fda70250e43"
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.ivar.vcf:md5,c4631f24df129b68eedf2e3918610074"
                 ]
-            }
+            ]
         ],
-        "timestamp": "2026-08-27T17:34:52.897236383",
+        "timestamp": "2026-08-31T15:30:57.950314916",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

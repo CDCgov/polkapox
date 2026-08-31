@@ -1,25 +1,14 @@
 {
     "Validate samplesheet": {
         "content": [
-            {
-                "0": [
-                    "samplesheet.valid.csv:md5,736ba5ae4db834d3aa0bcead2c7a3ea1"
-                ],
-                "1": [
-                    "versions.yml:md5,2e676c20db9bcff00192871a00879769"
-                ],
-                "csv": [
-                    "samplesheet.valid.csv:md5,736ba5ae4db834d3aa0bcead2c7a3ea1"
-                ],
-                "versions": [
-                    "versions.yml:md5,2e676c20db9bcff00192871a00879769"
-                ]
-            }
+            [
+                "samplesheet.valid.csv:md5,736ba5ae4db834d3aa0bcead2c7a3ea1"
+            ]
         ],
-        "timestamp": "2026-08-27T14:48:47.061380893",
+        "timestamp": "2026-08-31T16:05:03.110715249",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
         }
-    },
+    }
 }

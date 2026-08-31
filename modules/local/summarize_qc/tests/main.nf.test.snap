@@ -1,22 +1,11 @@
 {
     "Summarize QC Test": {
         "content": [
-            {
-                "0": [
-                    "sample_summary.tsv:md5,a00a50fbe609f4322ac955833408b13f"
-                ],
-                "1": [
-                    "versions.yml:md5,ff44ab9fbda430f1f3eac74db82c25e1"
-                ],
-                "tsv": [
-                    "sample_summary.tsv:md5,a00a50fbe609f4322ac955833408b13f"
-                ],
-                "versions": [
-                    "versions.yml:md5,ff44ab9fbda430f1f3eac74db82c25e1"
-                ]
-            }
+            [
+                "sample_summary.tsv:md5,a00a50fbe609f4322ac955833408b13f"
+            ]
         ],
-        "timestamp": "2026-08-27T17:21:44.695948146",
+        "timestamp": "2026-08-31T16:05:25.908578722",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

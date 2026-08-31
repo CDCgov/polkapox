@@ -1,22 +1,11 @@
 {
     "Aggregate TSV Test": {
         "content": [
-            {
-                "0": [
-                    "all_samples.vcf.summary.txt:md5,a710d645b27c1fc7f8d3b81bf9222ef1"
-                ],
-                "1": [
-                    "versions.yml:md5,e39489f9c9ba1446eb9af38061f256df"
-                ],
-                "txt": [
-                    "all_samples.vcf.summary.txt:md5,a710d645b27c1fc7f8d3b81bf9222ef1"
-                ],
-                "versions": [
-                    "versions.yml:md5,e39489f9c9ba1446eb9af38061f256df"
-                ]
-            }
+            [
+                "all_samples.vcf.summary.txt:md5,a710d645b27c1fc7f8d3b81bf9222ef1"
+            ]
         ],
-        "timestamp": "2026-08-27T14:45:57.294729094",
+        "timestamp": "2026-08-31T15:25:33.52557838",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
