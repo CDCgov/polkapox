@@ -33,16 +33,18 @@ jobs:
         run: |
           nf-test test \
             modules/local/aggregate_tsvs/tests/main.nf.test \
-            modules/local/bwa_denovo/tests/main.nf.test \
             modules/local/graph_reconstruct/tests/main.nf.test \
             modules/local/summarize_qc/tests/main.nf.test \
             modules/local/variant_convert/tests/main.nf.test \
             modules/local/samplesheet_check/tests/main.nf.test \
-            modules/local/create_samplesheet/tests/main.nf.test \
             modules/local/samtools_coverage/tests/main.nf.test \
             modules/local/summarize_tsv/tests/main.nf.test \
             modules/local/publish_contigs/tests/main.nf.test \
             modules/local/ivar_consensus_polish_cleanup/tests/main.nf.test \
+            subworkflows/local/denovo/tests/main.nf.test \
             subworkflows/local/filter_reads/tests/main.nf.test \
+            subworkflows/local/input_check/tests/main.nf.test \
+            subworkflows/local/prepare_genome/tests/main.nf.test \
+            subworkflows/local/ref_based/tests/main.nf.test \
             --profile docker \
             --verbose
