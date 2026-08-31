@@ -28,12 +28,12 @@ nextflow_workflow {
             assert workflow.success
             assert workflow.out.versions.size() >= 1
             assert workflow.out.graph_recon_log.size() == 1
+            assert workflow.out.mummer_summary.size() == 1
             assert snapshot(
                 workflow.out.quast_tsv,
                 workflow.out.flagstat,
                 workflow.out.coverage,
                 workflow.out.gfa_assembly,
-                workflow.out.mummer_summary,
                 workflow.out.fasta,
                 workflow.out.mpileup
             ).match()
