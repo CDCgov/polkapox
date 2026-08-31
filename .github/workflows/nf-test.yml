@@ -45,4 +45,5 @@ jobs:
             modules/local/ivar_consensus_polish_cleanup/tests/main.nf.test \
             subworkflows/local/filter_reads/tests/main.nf.test \
             --profile docker \
+            --config tests/nextflow.config \
             --verbose
