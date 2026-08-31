@@ -21,9 +21,6 @@
                 ]
             ],
             [
-                "test_sub.assembly.log:md5,3a26cbef347e209a49bf7838e2a64a04"
-            ],
-            [
                 [
                     {
                         "id": "test_sub"
@@ -36,7 +33,7 @@
                     {
                         "id": "test_sub"
                     },
-                    "test_sub.report:md5,b14623771bc69d9e2d4a6de729e4ecfd"
+                    "test_sub.report:md5,17fc5f9f9748093d606fb6ddf8f76a4f"
                 ]
             ],
             [
@@ -56,7 +53,7 @@
                 ]
             ]
         ],
-        "timestamp": "2026-08-31T17:42:43.701942094",
+        "timestamp": "2026-08-31T18:32:26.82811152",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
