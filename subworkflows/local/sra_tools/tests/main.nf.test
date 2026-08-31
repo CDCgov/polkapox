@@ -23,12 +23,12 @@ nextflow_workflow {
 
         then {
             // sra-tools (prefetch) may not be installed in all environments
-            assert workflow.success
-            if (workflow.success) {
-                assert workflow.out.forward.size() == 1
-                assert workflow.out.reverse.size() == 1
-                assert workflow.out.versions.size() == 1
-            }
+            assert workflow.success 
+            assert workflow.out.versions.size() == 1
+            assert snapshot(
+                workflow.out.forward,
+                workflow.out.reverse
+            ).match()
         }
 
     }

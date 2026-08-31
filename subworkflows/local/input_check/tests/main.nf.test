@@ -24,8 +24,8 @@ nextflow_workflow {
 
         then {
             assert workflow.success
-            assert workflow.out.reads.size() == 1
             assert workflow.out.versions.size() == 1
+            assert snapshot(workflow.out.reads).match()
         }
 
     }

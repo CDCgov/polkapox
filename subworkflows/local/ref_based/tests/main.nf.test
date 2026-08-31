@@ -40,6 +40,12 @@ nextflow_workflow {
         then {
             assert workflow.success
             assert workflow.out.versions.size() >= 1
+            assert snapshot(
+                workflow.out.flagstat,
+                workflow.out.depth_tsv,
+                workflow.out.tsv_vars,
+                workflow.out.ivar_tsv
+            ).match()
         }
 
     }

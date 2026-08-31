@@ -26,7 +26,17 @@ nextflow_workflow {
 
         then {
             assert workflow.success
-            assert snapshot(workflow.out).match()
+            assert workflow.out.versions.size() >= 1
+            assert snapshot(
+                workflow.out.quast_tsv,
+                workflow.out.flagstat,
+                workflow.out.coverage,
+                workflow.out.graph_recon_log,
+                workflow.out.gfa_assembly,
+                workflow.out.mummer_summary,
+                workflow.out.fasta,
+                workflow.out.mpileup
+            ).match()
         }
 
     }

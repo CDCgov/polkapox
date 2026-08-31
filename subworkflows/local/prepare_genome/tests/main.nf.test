@@ -18,9 +18,11 @@ nextflow_workflow {
 
         then {
             assert workflow.success
-            assert workflow.out.fasta != null
-            assert workflow.out.bwa_index.size() == 1
             assert workflow.out.versions.size() == 1
+            assert snapshot(
+                workflow.out.fasta,
+                workflow.out.bwa_index
+            ).match()
         }
 
     }
