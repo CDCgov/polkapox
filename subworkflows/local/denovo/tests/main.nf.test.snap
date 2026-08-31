@@ -1,0 +1,65 @@
+{
+    "Should run without failures": {
+        "content": [
+            [
+                "report.tsv:md5,30ce79acac87ef8796761e1c31d408d1"
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.denovo.flagstat:md5,50ca69ba215aa6d57ae8e8955a783554"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.denovo.coverage:md5,393809a51ab6fe6b85f237f630e7cb9d"
+                ]
+            ],
+            [
+                "test_sub.assembly.log:md5,3a26cbef347e209a49bf7838e2a64a04"
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.assembly_asm.fasta:md5,ac5747226ef074ea9583d08e2c63c834"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.report:md5,b14623771bc69d9e2d4a6de729e4ecfd"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.final.fa:md5,14ef21a5bb4031df932aa5b7636bf2ed"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.final.mpileup:md5,d362a6580dbc928feb5fe805a2244a31"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T17:42:43.701942094",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}
