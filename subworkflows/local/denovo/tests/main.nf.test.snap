@@ -33,14 +33,6 @@
                     {
                         "id": "test_sub"
                     },
-                    "test_sub.report:md5,17fc5f9f9748093d606fb6ddf8f76a4f"
-                ]
-            ],
-            [
-                [
-                    {
-                        "id": "test_sub"
-                    },
                     "test_sub.final.fa:md5,14ef21a5bb4031df932aa5b7636bf2ed"
                 ]
             ],
@@ -53,7 +45,7 @@
                 ]
             ]
         ],
-        "timestamp": "2026-08-31T18:32:26.82811152",
+        "timestamp": "2026-08-31T19:55:14.717267294",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
