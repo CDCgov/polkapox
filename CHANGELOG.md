@@ -10,6 +10,7 @@ Refactoring of tests and writing of tests to ensure 100% coverage
 ### `Added`
 - Added nf-test unit tests for all local modules: `aggregate_tsvs`, `bwa_denovo`, `create_samplesheet`, `graph_reconstruct`, `ivar_consensus_polish_cleanup`, `publish_contigs`, `samplesheet_check`, `samtools_coverage`, `sra_to_samplesheet`, `summarize_qc`, `summarize_tsv`, and `variant_convert` (issue #72).
 - Added nf-test for the `filter_reads` subworkflow using publicly available S3 test data.
+- Added nf-tests for the `denovo`, `input_check`, `prepare_genome`, and `ref_based` local subworkflows and wired them into the nf-test CI workflow.
 - Added a dedicated `.github/workflows/nf-test.yml` CI workflow to run local module and subworkflow tests on every push and pull request.
 - Added local test data fixtures (FASTQs, BAMs, reference FASTA, samplesheets, MultiQC stats) co-located with each module test.
 
@@ -22,6 +23,12 @@ Refactoring of tests and writing of tests to ensure 100% coverage
 - Removed unnecessary assembly FASTA collect step in `summarize_qc`.
 - Fixed Nextflow version constraint to be compatible with AWS environments (lower bound `>=23.04.0`).
 - Fixed GitHub CI configuration so that test-profile resource settings are correctly respected at runtime.
+- Capped CPUs and memory for all test processes (2 CPUs, 6 GB) via `tests/nextflow.config` so nf-test CI runs fit within GitHub Actions runners.
+- Excluded `versions.yml` from module and subworkflow test snapshots, since its embedded tool-version strings differ between environments and caused spurious snapshot mismatches.
+- Excluded non-deterministic outputs (`graph_reconstruct` log, MUMmer `.report`) from snapshots and replaced them with existence/size assertions.
+- Made `AssemblyGraph_gfaPy.py` ITR selection deterministic (`sorted(set(...))`) to stabilise `graph_reconstruct` snapshots.
+- Skipped `QUAST` in the test profile (`ext.when = false`) because `quast.py` is unavailable in the nf-test environment.
+- Removed the stale `CUSTOM_DUMPSOFTWAREVERSIONS` selector from `conf/modules.config` to silence the "no process matching config selector" warning.
 
 ### `Dependencies`
 - Renamed all local module scripts from `<module>.nf` to `main.nf` to follow nf-core conventions.
