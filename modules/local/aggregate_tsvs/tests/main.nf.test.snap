@@ -1,0 +1,14 @@
+{
+    "Aggregate TSV Test": {
+        "content": [
+            [
+                "all_samples.vcf.summary.txt:md5,a710d645b27c1fc7f8d3b81bf9222ef1"
+            ]
+        ],
+        "timestamp": "2026-08-31T15:25:33.52557838",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

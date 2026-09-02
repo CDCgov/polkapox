@@ -1,0 +1,59 @@
+{
+    "Paired-end reads": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "sample1",
+                        "single_end": false
+                    },
+                    [
+                        "sample1_1.fastp.fastq.gz:md5,97003b788bf272896544f064eadffff2",
+                        "sample1_2.fastp.fastq.gz:md5,5b9c118657d2a1b64927ff2e25d24044"
+                    ]
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "sample1",
+                        "single_end": false
+                    },
+                    "sample1.fastp.json:md5,2fe749917b59c23d588794f1bd7e9165"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "sample1",
+                        "single_end": false
+                    },
+                    "sample1.kraken2.report.txt:md5,a000dea2b3f5bcd5bc45633fb4445888"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "sample1",
+                        "single_end": false
+                    },
+                    "sample1.kraken2.classifiedreads.txt:md5,39b23bb2a971a92be98cca9af5766f78"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "sample1",
+                        "single_end": false
+                    },
+                    "sample1.opxreads.txt:md5,637b8ab70cdb8f52c9ec38ccc9c241c3"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T17:20:56.551723591",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

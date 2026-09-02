@@ -7,6 +7,9 @@ on:
   pull_request:
   release:
     types: [published]
+# Disabled: triggers replaced with workflow_dispatch only so it never runs automatically
+# on:
+#   workflow_dispatch:
 
 env:
   NXF_ANSI_LOG: false
@@ -23,11 +26,11 @@ jobs:
         # Nextflow versions
         include:
           # Test pipeline minimum Nextflow version
-          - NXF_VER: "21.10.3"
+          - NXF_VER: "23.04.0"
             NXF_EDGE: ""
-          # Test latest edge release of Nextflow
-          - NXF_VER: ""
-            NXF_EDGE: "1"
+          # Test latest edge release of Nextflow (limiting the upper version number of nextflow)
+          - NXF_VER: "25.10.4"
+            NXF_EDGE: ""
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
