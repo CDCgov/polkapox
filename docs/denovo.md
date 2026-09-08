@@ -36,4 +36,4 @@ If PolkaPox cannot reconstruct a linear genome sequence, it may still be possibl
 1. Try another assembly tool, using the filtered and trimmed reads [`${outdir}/fastp/${sample}.fastp.fastq.gz`] as input. 
 1. Scaffold your contigs with additional long-read data (e.g. ONT) 
 
-Once you have produced a suitable scaffold, consider mapping the invidual reads back to your assembly to confirm. For example, run PolkaPox with `--workflow refbased` and provide your new assembly FASTA as the reference.
+Once you have produced a suitable scaffold, consider mapping the invidual reads back to your assembly to confirm. For example, run PolkaPox with `--workflow ref_based` and provide your new assembly FASTA as the reference.
