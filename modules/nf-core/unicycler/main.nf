@@ -11,8 +11,8 @@ process UNICYCLER {
     tuple val(meta), path(shortreads)
 
     output:
-    tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds optional true
-    tuple val(meta), path('*bridges_applied.gfa'), emit: gfa optional true
+    tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds, optional: true
+    tuple val(meta), path('*bridges_applied.gfa'), emit: gfa, optional: true
     tuple val(meta), path('*.log')            , emit: log
     path  "versions.yml"                      , emit: versions
 
@@ -44,4 +44,3 @@ process UNICYCLER {
     END_VERSIONS
     """
 }
-

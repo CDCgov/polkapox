@@ -1,0 +1,35 @@
+{
+    "Should run without failures": {
+        "content": [
+            {
+                "0": [
+                    [
+                        {
+                            "id": "test_sub"
+                        },
+                        "test_sub.denovo.flagstat:md5,7f949d0062ee437090bc53b11639cf20"
+                    ]
+                ],
+                "1": [
+                    "versions.yml:md5,f46020a1189675f89eef2e3e6d756e4b"
+                ],
+                "flagstat": [
+                    [
+                        {
+                            "id": "test_sub"
+                        },
+                        "test_sub.denovo.flagstat:md5,7f949d0062ee437090bc53b11639cf20"
+                    ]
+                ],
+                "versions": [
+                    "versions.yml:md5,f46020a1189675f89eef2e3e6d756e4b"
+                ]
+            }
+        ],
+        "timestamp": "2026-06-02T14:15:47.411805784",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

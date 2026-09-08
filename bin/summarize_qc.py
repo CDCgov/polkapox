@@ -6,7 +6,6 @@ import os, sys
 from glob import glob
 import json
 import argparse
-import subprocess
 import logging
 
 logger = logging.getLogger()
@@ -69,23 +68,21 @@ def parse_args():
     return parser.parse_args()
 
 def get_raw_filt_counts(sample):
-    print('running get raw filt counts')
     """ Get raw filter counts from fastp output
-    :param search_dir: work directory
     :param sample: sample name
     :returns: total raw reads and total filtered reads
     :rtype: tuple
     """
     fastp_file = "{}.fastp.json".format(sample)
     if os.path.exists(fastp_file):
-        logger.error(f"Path {fastp_file} found")
-        f=open(fastp_file,'r')
-        try:
-            data = json.load(f)
-            logger.error(f"Data loaded from {fastp_file}")
-        except:
-            logger.error(f"Could not load data from {fastp_file}")
-            return 'NA', 'NA'
+        logger.info(f"Path {fastp_file} found")
+        with open(fastp_file, 'r') as f:
+            try:
+                data = json.load(f)
+                logger.info(f"Data loaded from {fastp_file}")
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.error(f"Could not load data from {fastp_file}: {e}")
+                return 'NA', 'NA'
         total_raw_reads = data['summary']['before_filtering']['total_reads']
         total_filtered_reads = data['summary']['after_filtering']['total_reads']
     else:
@@ -93,12 +90,10 @@ def get_raw_filt_counts(sample):
     return total_raw_reads, total_filtered_reads
 
 def get_kraken_stats(sample, kdb, kraken_tax_ids):
-    print('running get kraken 2 stats')
     """ Get stats from kraken output
-    :param search_dir: work directory
     :param sample: sample name
-    :param kraken_db: path to kraken database
-    :kraken_tax_ds: path to kraken tax ids
+    :param kdb: path to kraken database
+    :param kraken_tax_ids: path to kraken tax ids file
     :returns: kraken statistics
     :rtype: tuple
     """
@@ -109,10 +104,10 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
 
     if os.path.exists(kraken_reads) and os.path.exists(ortho_reads):
         try:
-            k_data = pd.read_csv(kraken_reads, sep='\s+', usecols=[0,1,2,3,4], header=None)
+            k_data = pd.read_csv(kraken_reads, sep=r'\s+', usecols=[0,1,2,3,4], header=None)
             logger.info(f"Data load from {kraken_reads}")
-        except pd.errors.ParserError:
-            logger.error(f"Unable to load data from {kraken_reads}")
+        except pd.errors.ParserError as e:
+            logger.error(f"Unable to load data from {kraken_reads}: {e}")
             return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
         total = len(k_data)
         human = (k_data[2] == 9606).sum()
@@ -122,7 +117,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
 
         if os.path.getsize(ortho_reads) > 0:
             try:
-                s_data = pd.read_csv(ortho_reads, sep='\s+', header=None)
+                s_data = pd.read_csv(ortho_reads, sep=r'\s+', header=None)
                 opx = len(s_data)
                 opx_perc = round(((opx/total) * 100),2)
             except pd.errors.ParserError:
@@ -139,9 +134,7 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     return total, opx_perc, human_perc, unclass_perc, kdb, k_tax_ids
 
 def get_flagstat_denovo(sample):
-    print('running get flagstat denovo')
     """ Get samtools flagstat results from denovo mapping
-    :param search_dir: work directory
     :param sample: sample name
     :returns: denovo mapping statistics
     :rtype: tuple
@@ -165,10 +158,26 @@ def get_flagstat_denovo(sample):
     
     return total_reads_denovo, mapped_reads_denovo, percent_mapped_denovo
 
+def get_coverage_denovo(sample):
+    """ Get samtools coverage results from denovo mapping
+    :param sample: sample name
+    :returns: denovo mean coverage depth
+    :rtype: tuple
+    """
+    stats=[]
+    p = "{}.denovo.coverage".format(sample)
+    if os.path.exists(p):
+        logger.info(f"Path {p} found")
+        fh=open(p,'r')
+        lines = fh.readlines()
+        mean_depth_denovo = round(float(lines[1].split()[6]), 2)
+    else:
+        logger.info(f"Path {p} does not exist")
+        mean_depth_denovo='NA'
+    return mean_depth_denovo
+
 def get_cov_stats(sample, reference):
-    print('running get coverage stats')
     """ Get coverage stats from samtools output
-    :param search_dir: work directory
     :param sample: sample name
     :param reference: path to reference genome
     :returns: coverage statistics
@@ -198,14 +207,13 @@ def get_cov_stats(sample, reference):
     return avg_dp, dp_gt_20, ref_genome
 
 def get_gfa_stats(sample):
-    print('running get gfa stats')
     """ Get stats from Unicycler graph assembly output
     :param sample: sample name
     :returns: gfaResults
     :rtype: list
     """
     gfa_log = "{}.assembly.log".format(sample)
-    print('Running analysis for:', sample)
+    logger.info(f"Running GFA analysis for: {sample}")
 
     if os.path.exists(gfa_log):
         with open(gfa_log) as f:
@@ -254,9 +262,8 @@ def get_gfa_stats(sample):
         final_step = parsed_json[sorted_keys[-1]]
         final_status = final_step.get('status', 'Unknown')
 
-        # Confirm results:
-        print("All statuses:", status_list)
-        print("Final status:", final_status)   
+        logger.info(f"All statuses: {status_list}")
+        logger.info(f"Final status: {final_status}")
         
         # Determine notes and status report
         if 'PASS' in final_status:
@@ -323,7 +330,6 @@ def get_gfa_stats(sample):
     return gfaResults
 
 def fix_names(df):
-    print('running fix names')
     """ Standardize the raw column names
     :param df: input dataframe with columns to standardize
     :returns: a dataframe with standardized columns
@@ -357,21 +363,20 @@ def fix_names(df):
     
     df = df[raw_col_names]
 
-    if len(raw_col_names) == 14:
-        for i in range(0,len(raw_col_names)):
-            if not df.columns[i] == raw_col_names[i]:
-                logger.error(f"Unexpected column names in multiqc/*general_stats.txt file")
-                sys.exit(1)
-    else:
-        logger.error("Unexpected column names in multiqc/*general_stats.txt file")
+    # raw_col_names has 15 entries but up to 2 optional Kraken species columns may be absent,
+    # so valid lengths are 13 (both absent), 14 (one absent), or 15 (both present).
+    if not (13 <= len(raw_col_names) <= 15):
+        logger.error(f"Unexpected number of columns ({len(raw_col_names)}) in multiqc/*general_stats.txt file")
         sys.exit(1)
-    
+    for i in range(len(raw_col_names)):
+        if df.columns[i] != raw_col_names[i]:
+            logger.error(f"Unexpected column name at position {i}: '{df.columns[i]}' (expected '{raw_col_names[i]}')")
+            sys.exit(1)
+
     return df
 
 def get_total_snps(sample):
-    print('running get total snps')
     """ Grab the tsv files from ivar output (ivar_variants dir) and get total number of SNPs
-    :param search_dir: work directory
     :param sample: sample name
     :returns: total number of snps
     :rtype: int
@@ -390,36 +395,40 @@ def get_total_snps(sample):
     return total_snps
 
 def get_snp_metadata(sample, coords):
-    print('running get snp metadata')
     """ Get number of SNPs for input coordinates from ivar_summary file (in variant_summaries dir)
-    :param search_dir: work directory
     :param sample: sample name
-    :param coords: a set of 2 coordinates
-    :returns: total number of snps for each of 2 coordinates
+    :param coords: comma-separated string of four coordinates (start1,stop1,start2,stop2)
+    :returns: total number of snps for each of 2 loci
     :rtype: tuple
-    """    
+    """
     C1_count = 0
     C2_count = 0
-    coord2_start = coords.split(',')[2]
+    coord2_start = int(coords.split(',')[2])
     snp_meta = "{}_ivar_summary.txt".format(sample)
     if os.path.exists(snp_meta):
         try:
             logger.info(f"Found {snp_meta}")
             with open(snp_meta, 'r') as file:
                 for line in file:
-                    if line.split('\t')[1] < coord2_start:
+                    parts = line.split('\t')
+                    if len(parts) < 2:
+                        continue
+                    try:
+                        pos = int(parts[1])
+                    except ValueError:
+                        continue
+                    if pos < coord2_start:
                         C1_count += 1
                     else:
                         C2_count += 1
-        except FileNotFoundError:
-            logger.error(f"Unable to open {snp_meta}")
+        except OSError as e:
+            logger.error(f"Unable to open {snp_meta}: {e}")
     else:
         logger.info(f"{snp_meta} does not exist")
-    
+
     return C1_count, C2_count
 
 def get_polish_stats(sample):
-    print('running get polish stats')
     """ Parse the mummer report file and return # corrected SNPs and indels
     :param sample: sample name
     :returns: total number of snps and indels
@@ -450,40 +459,43 @@ def get_polish_stats(sample):
     return SNPs, Indels
 
 def count_ns_in_pileup(sample):
-    print('running count ns')
-    """ Get the consensus SNPs from final mpileup file 
+    """ Count positions with depth < 20 in the final mpileup file (reported as Ns in the consensus)
     :param sample: sample name
-    :returns: total number of snps 
-    :rtype: int
+    :returns: count of low-depth positions
+    :rtype: str or None
     """
     p = "{}.final.mpileup".format(sample)
+    if not os.path.exists(p):
+        logger.info(f"{p} not found")
+        return 'NA'
     try:
-        command = f"cat {p} | awk '($4 < 20){{count++}} END {{print count}}'"
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        count = 0
+        with open(p, 'r') as fh:
+            for line in fh:
+                parts = line.split('\t')
+                if len(parts) >= 4 and int(parts[3]) < 20:
+                    count += 1
         logger.info(f"Successfully parsed {p}")
-    except:
-        logger.error(f"Unable to parse {p}")
-    if result.returncode == 0:
-        return str(result.stdout.strip())
-    else:
-            return None
+        return str(count)
+    except (OSError, ValueError) as e:
+        logger.error(f"Unable to parse {p}: {e}")
+        return None
     
 def main():
-    print('running main func')
     args = parse_args()
 
     summary_file = glob(os.path.join('**/*general_stats.txt'), recursive=True)[0]
     sample_file = args.samplesheet
     logger.info(f"Running summary_qc.py for {args.workflow}")
     try:
-        summary = pd.read_csv(summary_file, delimiter = "\t")
-    except:
-        logger.error(f"Unable to open {summary_file}")
+        summary = pd.read_csv(summary_file, delimiter="\t")
+    except (OSError, pd.errors.ParserError) as e:
+        logger.error(f"Unable to open {summary_file}: {e}")
         sys.exit(1)
     try:
-        samples = pd.read_csv(sample_file, delimiter = ",")
-    except:
-        logger.error(f"Unable to open {sample_file}")
+        samples = pd.read_csv(sample_file, delimiter=",")
+    except (OSError, pd.errors.ParserError) as e:
+        logger.error(f"Unable to open {sample_file}: {e}")
         sys.exit(1)
 
     ### Check number of entries per dataframe
@@ -500,8 +512,23 @@ def main():
                summary.loc[len(summary)] = no_sample_data
                summary.fillna(value='NaN',inplace=True)
 
-    new_col_names = ['sample', 'reads_total_bwa', 'reads_mapped_bwa', 'n50_unicycler','assembly_length_unicycler','top_taxa_percent_kraken','top5_taxa_percent_kraken','unclassified_percent_kraken','percent_duplication_fastp','q30_rate_postfilter_fastp','q30_bases_postfilter_fastp','gc_content_postfilter_fastp','percent_reads_passed_fastp','percent_adapter_fastp']
+    # new_col_names length must match the number of columns returned by fix_names (13–15 depending
+    # on which optional Kraken species columns are present in the MultiQC output).
+    # The base 14 names cover the common case where exactly one species column is present;
+    # fix_names adjusts raw_col_names dynamically, and set_axis will error if sizes differ.
+    new_col_names = ['sample', 'reads_total_bwa', 'reads_mapped_bwa', 'n50_unicycler',
+                     'assembly_length_unicycler', 'top_taxa_percent_kraken',
+                     'top5_taxa_percent_kraken', 'unclassified_percent_kraken',
+                     'percent_duplication_fastp', 'q30_rate_postfilter_fastp',
+                     'q30_bases_postfilter_fastp', 'gc_content_postfilter_fastp',
+                     'percent_reads_passed_fastp', 'percent_adapter_fastp']
     fixed_summary = fix_names(summary)
+    if len(fixed_summary.columns) != len(new_col_names):
+        logger.error(
+            f"Column count mismatch: fix_names returned {len(fixed_summary.columns)} columns "
+            f"but new_col_names has {len(new_col_names)}. Check MultiQC output."
+        )
+        sys.exit(1)
     fixed_summary = fixed_summary.set_axis(new_col_names, axis=1)
 
     if args.workflow == 'denovo' or args.workflow == 'full':
@@ -509,32 +536,25 @@ def main():
         if contig_files:
             contig_file = contig_files[0]
             logger.info(f"{contig_file} found")
-            contigs = pd.read_csv(contig_file, delimiter = "\t")
+            contigs = pd.read_csv(contig_file, delimiter="\t")
             contigsIds = list(contigs[contigs.columns[0]])
             sample_contig_notProcessed = set(samplesIds) - set(contigsIds)
-            if not len(list(sample_contig_notProcessed)) == 0:
-                rowMissing = len(contigs.columns)-1
+            if sample_contig_notProcessed:
+                rowMissing = len(contigs.columns) - 1
                 for i in sample_contig_notProcessed:
-                    naHold = ['NaN'] * rowMissing
-                    no_sample_data = [i] + naHold
-                    contigs.loc[len(contigs)] = no_sample_data
-                    contigs.fillna(value='NaN', inplace=True)
-            print(contigs)
-    
-            contig_columns = ['>= 50000 bp', '25000-50000 bp', '10000-25000 bp', 
+                    contigs.loc[len(contigs)] = [i] + ['NaN'] * rowMissing
+                contigs.fillna(value='NaN', inplace=True)
+            logger.info(f"Contig table shape: {contigs.shape}")
+
+            contig_columns = ['>= 50000 bp', '25000-50000 bp', '10000-25000 bp',
                               '5000-10000 bp', '1000-5000 bp', '0-1000 bp']
-    
+
             for col in contig_columns:
                 if col not in contigs.columns:
                     contigs[col] = 0
-    
-            # Now convert column values to numeric
+
             contigs[contig_columns] = contigs[contig_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
-    
-            # Sum values row-wise
             contigs['n_contigs_unicycler'] = contigs[contig_columns].sum(axis=1)
-            print(contigs[contig_columns].sum(axis=1))
-            # Merge the summed info back into fixed_summary
             fixed_summary = fixed_summary.merge(
                 contigs[['Sample', 'n_contigs_unicycler']],
                 left_on='sample',
@@ -545,59 +565,100 @@ def main():
         fixed_summary['reads_mapped_bwa'] = pd.to_numeric(fixed_summary['reads_mapped_bwa'], errors='coerce')
         fixed_summary['reads_total_bwa'] = pd.to_numeric(fixed_summary['reads_total_bwa'], errors='coerce')
         percent_mapped_bwa = (fixed_summary['reads_mapped_bwa'] / fixed_summary['reads_total_bwa']) * 100
-        fixed_summary['percent_mapped_bwa'] = np.where(fixed_summary['reads_mapped_bwa'].isna() | fixed_summary['reads_total_bwa'].isna(), np.nan, percent_mapped_bwa).round(2)
-    summary_full = fixed_summary.reindex(fixed_summary.columns.tolist() + ['raw_read_count_fastp', 'filtered_read_count_fastp', 'total_raw_reads', 'opx_percent_kraken','human_percent_kraken', 'unclass_percent_kraken', 'average_depth_bwa', 'count_20xdepth_bwa'], axis=1)
+        fixed_summary['percent_mapped_bwa'] = np.where(
+            fixed_summary['reads_mapped_bwa'].isna() | fixed_summary['reads_total_bwa'].isna(),
+            np.nan, percent_mapped_bwa
+        ).round(2)
+
+    summary_full = fixed_summary.reindex(
+        fixed_summary.columns.tolist() + [
+            'raw_read_count_fastp', 'filtered_read_count_fastp', 'total_raw_reads',
+            'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken',
+            'average_depth_bwa', 'count_20xdepth_bwa'
+        ], axis=1
+    )
     summary_full.to_csv("before_adding_values.csv")
-    
-    # get data from other non multiqc input files:
+
+    # Collect per-sample metrics into a dict, then assign to the DataFrame in one pass
+    # to avoid the O(n²) cost of repeated full-table scans with .loc[mask].
+    per_sample = {}
     for sample in summary_full['sample']:
-        summary_full.loc[summary_full['sample'] == sample, ['opx_read_count_kraken', 'filtered_read_count_fastp']] = get_raw_filt_counts(sample)
-        kraken_db = args.kraken_db
-        #print(summary_full)
-        summary_full.loc[summary_full['sample'] == sample, ['total_raw_reads', 'opx_percent_kraken', 'human_percent_kraken', 'unclass_percent_kraken', 'kraken_db','kraken_tax_ids']] = get_kraken_stats(sample, kraken_db, args.kraken_tax_ids)
-        if args.workflow == 'ref_based':
-            summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa','reference_genome']] = get_cov_stats(sample, args.reference_genome)
-            summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(sample)    
-            summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
-            #logic to handle if a user is not interested in variant filtering
+        row = {}
+        raw_reads, filt_reads = get_raw_filt_counts(sample)
+        row['opx_read_count_kraken'] = raw_reads
+        row['filtered_read_count_fastp'] = filt_reads
+
+        kraken_vals = get_kraken_stats(sample, args.kraken_db, args.kraken_tax_ids)
+        row['total_raw_reads'], row['opx_percent_kraken'], row['human_percent_kraken'], \
+            row['unclass_percent_kraken'], row['kraken_db'], row['kraken_tax_ids'] = kraken_vals
+
+        if args.workflow in ('ref_based', 'full'):
+            row['average_depth_bwa'], row['count_20xdepth_bwa'], row['reference_genome'] = \
+                get_cov_stats(sample, args.reference_genome)
+            row['total_snps'] = get_total_snps(sample)
+            row['corrected_Ns'] = count_ns_in_pileup(sample)
             if args.filter == 'true':
-                summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(sample, args.coords)
-        elif args.workflow == 'denovo':
-            summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(sample)
-            summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(sample)
-            summary_full.loc[summary_full['sample'] == sample, ['corrected_snps','corrected_indels']] = get_polish_stats(sample)
-            summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
-        elif args.workflow == 'full':
-            summary_full.loc[summary_full['sample'] == sample, ['average_depth_bwa', 'count_20xdepth_bwa', 'reference_genome']] = get_cov_stats(sample, args.reference_genome)
-            summary_full.loc[summary_full['sample'] == sample, ['total_snps']] = get_total_snps(sample)    
-            summary_full.loc[summary_full['sample'] == sample, ['corrected_snps','corrected_indels']] = get_polish_stats(sample)    
-            summary_full.loc[summary_full['sample'] == sample, ['corrected_Ns']] = count_ns_in_pileup(sample)    
-            summary_full.loc[summary_full['sample'] == sample, ['orientation_copy_number' ,'sequence_length', 'itr_length', 'gfa_status', 'gfa_notes']] = get_gfa_stats(sample)
-            summary_full.loc[summary_full['sample'] == sample, ['total_reads_denovo','mapped_reads_denovo','percent_mapped_denovo']] = get_flagstat_denovo(sample)
-            if args.filter == 'true':
-                summary_full.loc[summary_full['sample'] == sample, [f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']] = get_snp_metadata(sample, args.coords)
+                row[f'{args.locus1}_SNPs'], row[f'{args.locus2}_SNPs'] = \
+                    get_snp_metadata(sample, args.coords)
+
+        if args.workflow in ('denovo', 'full'):
+            gfa = get_gfa_stats(sample)
+            row['orientation_copy_number'], row['sequence_length'], row['itr_length'], \
+                row['gfa_status'], row['gfa_notes'] = gfa
+            row['total_reads_denovo'], row['mapped_reads_denovo'], row['percent_mapped_denovo'] = \
+                get_flagstat_denovo(sample)
+            row['mean_depth_denovo'] = get_coverage_denovo(sample)
+            row['corrected_snps'], row['corrected_indels'] = get_polish_stats(sample)
+            row['corrected_Ns'] = count_ns_in_pileup(sample)
+
+        per_sample[sample] = row
+
+    # Assign collected values back to summary_full
+    for col in set(k for row in per_sample.values() for k in row):
+        summary_full[col] = summary_full['sample'].map(lambda s: per_sample.get(s, {}).get(col))
 
     # final column order
+    BASE_KRAKEN = ['total_raw_reads','opx_read_count_kraken','opx_percent_kraken',
+                   'human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids']
+    BASE_FASTP  = ['filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp',
+                   'gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp']
+    BWA_COLS    = ['reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa']
+    DENOVO_COLS = ['n_contigs_unicycler','assembly_length_unicycler','n50_unicycler',
+                   'mapped_reads_denovo','percent_mapped_denovo','mean_depth_denovo','orientation_copy_number',
+                   'sequence_length','itr_length','gfa_status','gfa_notes',
+                   'corrected_snps','corrected_indels','corrected_Ns']
+    LOCUS_COLS  = [f'{args.locus1}_SNPs', f'{args.locus2}_SNPs'] if args.locus1 and args.locus2 else []
+
     if args.workflow == 'filter_reads':
-        summary_full = summary_full[['sample','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp']]
+        cols = ['sample'] + BASE_KRAKEN + BASE_FASTP
     elif args.workflow == 'ref_based':
+        cols = ['sample', 'reference_genome'] + BASE_KRAKEN + BASE_FASTP + BWA_COLS + ['total_snps']
         if args.filter == 'true':
-            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','total_snps',f'{args.locus1}_SNPs',f'{args.locus2}_SNPs']]
-        if args.filter == 'false':
-            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','total_snps']]
+            cols += LOCUS_COLS
     elif args.workflow == 'denovo':
-            summary_full = summary_full[['sample','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','corrected_snps','corrected_indels','corrected_Ns']]
+        cols = ['sample'] + BASE_KRAKEN + BASE_FASTP + DENOVO_COLS
     elif args.workflow == 'full':
+        cols = (['sample', 'reference_genome'] + BASE_KRAKEN + BASE_FASTP + BWA_COLS +
+                DENOVO_COLS + ['total_snps'])
         if args.filter == 'true':
-            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps',f'{args.locus1}_SNPs',f'{args.locus2}_SNPs','corrected_snps','corrected_indels','corrected_Ns']]
-        if args.filter == 'false':
-            summary_full = summary_full[['sample','reference_genome','total_raw_reads','opx_read_count_kraken','opx_percent_kraken','human_percent_kraken','unclass_percent_kraken','kraken_db','kraken_tax_ids','filtered_read_count_fastp','percent_reads_passed_fastp','percent_adapter_fastp','gc_content_postfilter_fastp','q30_rate_postfilter_fastp','percent_duplication_fastp','reads_mapped_bwa','percent_mapped_bwa','average_depth_bwa','count_20xdepth_bwa','n_contigs_unicycler','assembly_length_unicycler','n50_unicycler','mapped_reads_denovo','percent_mapped_denovo','orientation_copy_number','sequence_length','itr_length','gfa_status','gfa_notes','total_snps','corrected_snps','corrected_indels','corrected_Ns']]
+            cols += LOCUS_COLS
+    else:
+        logger.error(f"Unknown workflow: {args.workflow}")
+        sys.exit(1)
+
+    summary_full = summary_full[[c for c in cols if c in summary_full.columns]]
 
     # Check for the files and assign to summary_full
+    summary_full['final_assembly'] = pd.Series(dtype="object")
     for idx, sample in summary_full['sample'].items():
-        final_assembly = f'{args.project_outdir}/final_assembly/{sample}.final.fa'
-        summary_full.at[idx, 'final_assembly'] = final_assembly if final_assembly else None
-        
+        final_assembly = f"{args.project_outdir}/final_assembly/{sample}.final.fa"
+        draft_assembly = f"{args.project_outdir}/final_assembly/{sample}.draft.fa"
+
+        summary_full.at[idx, 'final_assembly'] = (
+            final_assembly if os.path.exists(final_assembly)
+            else draft_assembly if os.path.exists(draft_assembly)
+            else None
+    )
         for i in [1, 2]:
             # get the final paths for the seqtk output R1 and R2, and final assembly n
             seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
