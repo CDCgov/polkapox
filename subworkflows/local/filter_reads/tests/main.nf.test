@@ -1,0 +1,30 @@
+nextflow_workflow {
+
+    name "Test Workflow READ_FILTER"
+    script "../main.nf"
+    workflow "READ_FILTER"
+
+    test("Should run without failures") {
+
+        when {
+            params {
+                // define parameters here. Example:
+                // outdir = "tests/results"
+            }
+            workflow {
+                //TODO: define workflow inputs here. Example:
+                """
+                // define inputs of the workflow here. Example:
+                // input[0] = file("test-file.txt")
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(workflow.out).match()
+        }
+
+    }
+
+}

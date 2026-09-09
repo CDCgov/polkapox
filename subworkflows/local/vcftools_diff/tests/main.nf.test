@@ -1,0 +1,33 @@
+nextflow_workflow {
+
+    name "Test subworkflow VCFTOOLS_DIFF"
+    script "../main.nf"
+    workflow "VCFTOOLS_DIFF"
+
+    test("Should run without failures") {
+
+        when {
+            params {
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub' ],
+                    file("${moduleTestDir}/test_sub.vcf", checkIfExists: true)
+                ])
+                input[1] = Channel.of([
+                    [ id: 'test_sub' ],
+                    file("${moduleTestDir}/test_sub.diff.vcf", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert snapshot(workflow.out).match()
+        }
+
+    }
+
+}

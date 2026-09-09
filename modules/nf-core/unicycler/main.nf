@@ -3,18 +3,18 @@ process UNICYCLER {
     label 'process_high'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/unicycler:0.4.8--py38h8162308_3' :
-        'quay.io/biocontainers/unicycler:0.4.8--py38h8162308_3' }"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/2b/2b9f404e2169ea74161d63d24f55d6339dc98c3745bf2442e425d5a673617fca/data' :
+        'community.wave.seqera.io/library/unicycler:0.5.1--b9d21c454db1e56b' }"
 
     input:
-    tuple val(meta), path(shortreads)
+    tuple val(meta), path(shortreads), path(longreads)
 
     output:
-    tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds, optional: true
-    tuple val(meta), path('*bridges_applied.gfa'), emit: gfa, optional: true
+    tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds
+    tuple val(meta), path('*.assembly.gfa.gz'), emit: gfa
     tuple val(meta), path('*.log')            , emit: log
-    path  "versions.yml"                      , emit: versions
+    tuple val("${task.process}"), val('unicycler'), eval('TERM=xterm unicycler --version 2>&1 | sed "s/^.*Unicycler v//; s/ .*$//"'), emit: versions_unicycler, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,24 +23,29 @@ process UNICYCLER {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def short_reads = shortreads ? ( meta.single_end ? "-s $shortreads" : "-1 ${shortreads[0]} -2 ${shortreads[1]}" ) : ""
+    def long_reads  = longreads ? "-l $longreads" : ""
     """
     unicycler \\
         --threads $task.cpus \\
         $args \\
         $short_reads \\
-        --out ./ \\
-        --keep 2
+        $long_reads \\
+        --out ./
 
-    mv unicycler.log ${prefix}.unicycler.log
     mv assembly.fasta ${prefix}.scaffolds.fa
     gzip -n ${prefix}.scaffolds.fa
-    mv *_bridges_applied.gfa ${prefix}.bridges_applied.gfa
     mv assembly.gfa ${prefix}.assembly.gfa
     gzip -n ${prefix}.assembly.gfa
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        unicycler: \$(echo \$(unicycler --version 2>&1) | sed 's/^.*Unicycler v//; s/ .*\$//')
-    END_VERSIONS
+    mv unicycler.log ${prefix}.unicycler.log
     """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+
+    echo "" | gzip > ${prefix}.scaffolds.fa.gz
+    echo "" | gzip >  ${prefix}.assembly.gfa.gz
+    touch ${prefix}.unicycler.log
+    """
+
 }
