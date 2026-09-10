@@ -1,4 +1,4 @@
-//Small mofule that cleans up the final consensus FASTA file by removing leading and trailing Ns and the 'Consensus_' prefix
+//Small module that cleans up the final consensus FASTA file by removing leading and trailing Ns and the 'Consensus_' prefix
 process IVAR_CONSENSUS_POLISH_CLEANUP {
     tag "$meta.id"
     label 'process_single'

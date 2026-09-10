@@ -143,7 +143,7 @@ workflow POLKAPOX {
     } 
 
     //
-    // SUBWORKFLOW: Run Read Filter + Reference-based Assembly
+    // SUBWORKFLOW: Run Reference-based Analyses
     //
 
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
@@ -156,7 +156,7 @@ workflow POLKAPOX {
     }
 
     //
-    // SUBWORKFLOW: Run Read Filter + Denovo Assembly
+    // SUBWORKFLOW: Run Denovo Assembly
     //
 
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {

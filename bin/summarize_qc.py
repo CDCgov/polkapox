@@ -653,10 +653,12 @@ def main():
     for idx, sample in summary_full['sample'].items():
         final_assembly = f"{args.project_outdir}/final_assembly/{sample}.final.fa"
         draft_assembly = f"{args.project_outdir}/final_assembly/{sample}.draft.fa"
+        consensus_assembly = f"{args.project_outdir}/ivar/{sample}.consensus.fa"
 
         summary_full.at[idx, 'final_assembly'] = (
             final_assembly if os.path.exists(final_assembly)
             else draft_assembly if os.path.exists(draft_assembly)
+            else consensus_assembly if os.path.exists(consensus_assembly)
             else None
     )
         for i in [1, 2]:
