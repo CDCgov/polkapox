@@ -459,12 +459,12 @@ def get_polish_stats(sample):
     return SNPs, Indels
 
 def count_ns_in_pileup(sample):
-    """ Count positions with depth < 20 in the final mpileup file (reported as Ns in the consensus)
+    """ Count positions with depth < 20 in the polished mpileup file (reported as Ns in the consensus)
     :param sample: sample name
     :returns: count of low-depth positions
     :rtype: str or None
     """
-    p = "{}.final.mpileup".format(sample)
+    p = "{}.polished.mpileup".format(sample)
     if not os.path.exists(p):
         logger.info(f"{p} not found")
         return 'NA'
