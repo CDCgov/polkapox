@@ -8,7 +8,7 @@ include { PUBLISH_CONTIGS                               } from '../../../modules
 include { MUMMER                                        } from '../../../modules/nf-core/mummer/main'
 include { QUAST                                         } from '../../../modules/nf-core/quast/main'
 include { IVAR_CONSENSUS_POLISH_CLEANUP                 } from '../../../modules/local/ivar_consensus_polish_cleanup/main'
-include { IVAR_CONSENSUS                                } from '../../../modules/nf-core/ivar/consensus/main'
+include { IVAR_CONSENSUS as IVAR_CONSENSUS_DENOVO       } from '../../../modules/nf-core/ivar/consensus/main'
 
 workflow DENOVO {
 
@@ -85,15 +85,16 @@ workflow DENOVO {
     ch_bam = ch_polishing_input.map { meta, bam, fasta -> [ meta, bam ] }
     ch_fasta = ch_polishing_input.map { meta, bam, fasta -> fasta }
 
-    IVAR_CONSENSUS(
+    IVAR_CONSENSUS_DENOVO(
         ch_bam,
         ch_fasta,
         true, //save_mpileup
     )
-    ch_versions = ch_versions.mix(IVAR_CONSENSUS.out.versions)
+    ch_versions = ch_versions.mix(IVAR_CONSENSUS_DENOVO.out.versions)
 
     IVAR_CONSENSUS_POLISH_CLEANUP (
-        IVAR_CONSENSUS.out.fasta
+        IVAR_CONSENSUS_DENOVO.out.fasta,
+        true
     )
     ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta, by: 0)
 
@@ -134,6 +135,6 @@ workflow DENOVO {
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
     mummer_summary  = MUMMER.out.summary
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
-    mpileup         = IVAR_CONSENSUS.out.mpileup
+    mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
     versions        = ch_versions // channel: [ versions.yml ]
 }

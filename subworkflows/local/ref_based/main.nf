@@ -1,5 +1,6 @@
 include { BWA_MEM                                       } from '../../../modules/nf-core/bwa/mem/main'
 include { IVAR_CONSENSUS as IVAR_CONSENSUS_BWA          } from '../../../modules/nf-core/ivar/consensus/main'
+include { IVAR_CONSENSUS_POLISH_CLEANUP as IVAR_CONSENSUS_BWA_CLEANUP } from '../../../modules/local/ivar_consensus_polish_cleanup/main'
 include { IVAR_VARIANTS                                 } from '../../../modules/nf-core/ivar/variants/main'
 include { VARIANT_CONVERT                               } from '../../../modules/local/variant_convert/main'
 include { SAMTOOLS_FLAGSTAT                             } from '../../../modules/nf-core/samtools/flagstat/main'
@@ -49,6 +50,11 @@ workflow REFBASED {
         )
         ch_versions = ch_versions.mix(IVAR_CONSENSUS_BWA.out.versions)
 
+        IVAR_CONSENSUS_BWA_CLEANUP (
+            IVAR_CONSENSUS_BWA.out.fasta,
+            false
+        )
+
         IVAR_VARIANTS (
             ch_bwa_ivar,
             true
@@ -94,9 +100,9 @@ workflow REFBASED {
         }
 
         emit:
-            flagstat = SAMTOOLS_FLAGSTAT.out.flagstat
+            flagstat  = SAMTOOLS_FLAGSTAT.out.flagstat
             depth_tsv = SAMTOOLS_DEPTH.out.tsv
-            tsv_vars = ch_tsv_vars
-            ivar_tsv = IVAR_VARIANTS.out.tsv
-            versions      = ch_versions // channel: [ versions.yml ]
+            tsv_vars  = ch_tsv_vars
+            ivar_tsv  = IVAR_VARIANTS.out.tsv
+            versions  = ch_versions // channel: [ versions.yml ]
 }
