@@ -1,0 +1,36 @@
+nextflow_process {
+
+    name "Test Process UNICYCLER"
+    script "../main.nf"
+    process "UNICYCLER"
+
+    test("MPXV - paired end") {
+
+        when {
+            params {
+            }
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    [
+                        file('${moduleTestDir}/test_sub_1.fastp.fastq.gz', checkIfExists: true),
+                        file('${moduleTestDir}/test_sub_2.fastp.fastq.gz', checkIfExists: true)
+                    ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.scaffolds.size() == 1
+            assert process.out.gfa.size() == 1
+            assert process.out.log.size() == 1
+            assert process.out.versions.size() == 1
+            assert snapshot(process.out.versions).match()
+        }
+
+    }
+
+}
