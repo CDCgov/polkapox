@@ -1,0 +1,30 @@
+nextflow_workflow {
+
+    name "Test Subworkflow PREPARE_GENOME"
+    script "../main.nf"
+    workflow "PREPARE_GENOME"
+
+    test("PREPARE_GENOME - generates BWA index") {
+
+        when {
+            params {
+                fasta = "${projectDir}/assets/MPXV-UK_P2.noN.fasta"
+            }
+            workflow {
+                """
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.versions.size() == 1
+            assert snapshot(
+                workflow.out.fasta,
+                workflow.out.bwa_index
+            ).match()
+        }
+
+    }
+
+}

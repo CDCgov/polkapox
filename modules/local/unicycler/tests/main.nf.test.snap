@@ -1,0 +1,14 @@
+{
+    "MPXV - paired end": {
+        "content": [
+            [
+                "versions.yml:md5,45075b6a6a79996b28ee8114d7ca4131"
+            ]
+        ],
+        "timestamp": "2026-09-17T14:16:36.368578293",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

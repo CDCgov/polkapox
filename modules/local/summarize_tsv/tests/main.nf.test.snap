@@ -1,0 +1,19 @@
+{
+    "Should run without failures": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub_ivar_summary.txt:md5,a852dca08d151c5e78014321d0dada3a"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T15:30:51.088395697",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

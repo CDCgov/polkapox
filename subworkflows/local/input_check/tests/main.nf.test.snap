@@ -1,0 +1,23 @@
+{
+    "INPUT_CHECK - paired end samplesheet": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": false
+                    },
+                    [
+                        "test_sub_1.fq.gz:md5,909958799e4f3f18beb2b112e5e117aa",
+                        "test_sub_2.fq.gz:md5,78fda7851c0c9d9452f1b76b02af6089"
+                    ]
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T17:02:54.159211819",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

@@ -1,0 +1,30 @@
+nextflow_process {
+
+    name "Test Process VARIANT_CONVERT"
+    script "../main.nf"
+    process "VARIANT_CONVERT"
+
+    test("Variant Convert Test") {
+
+        when {
+            params {
+            }
+
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub' ],
+                    file("${moduleTestDir}/test_sub.ivar.tsv", checkIfExists: true)
+                ])
+                input[1] = 0.01
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.versions.size() == 1
+            assert snapshot(process.out.vcf).match()
+        }
+    }
+}

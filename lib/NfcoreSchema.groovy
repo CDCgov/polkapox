@@ -30,7 +30,8 @@ class NfcoreSchema {
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
         // Check for nextflow core params and unexpected params
         def json = new File(getSchemaPath(workflow, schema_filename=schema_filename)).text
-        def Map schemaParams = (Map) new JsonSlurper().parseText(json).get('definitions')
+        def schemaRoot = (Map) new JsonSlurper().parseText(json)
+        def Map schemaParams = (Map) (schemaRoot.get('$defs') ?: schemaRoot.get('definitions'))
         def nf_params = [
             // Options for base `nextflow` command
             'bg',
@@ -139,6 +140,12 @@ class NfcoreSchema {
         // Validate parameters against the schema
         InputStream input_stream = new File(getSchemaPath(workflow, schema_filename=schema_filename)).newInputStream()
         JSONObject raw_schema = new JSONObject(new JSONTokener(input_stream))
+
+        // Normalize schema for Everit library (supports up to draft-07 only)
+        String raw_schema_str = raw_schema.toString()
+        raw_schema_str = raw_schema_str.replace('$defs', 'definitions')
+        raw_schema_str = raw_schema_str.replace('https://json-schema.org/draft/2020-12/schema', 'http://json-schema.org/draft-07/schema')
+        raw_schema = new JSONObject(raw_schema_str)
 
         // Remove anything that's in params.schema_ignore_params
         raw_schema = removeIgnoredParams(raw_schema, params)
@@ -462,7 +469,8 @@ class NfcoreSchema {
     //    -
     private static LinkedHashMap paramsRead(String json_schema) throws Exception {
         def json = new File(json_schema).text
-        def Map schema_definitions = (Map) new JsonSlurper().parseText(json).get('definitions')
+        def schemaRoot = (Map) new JsonSlurper().parseText(json)
+        def Map schema_definitions = (Map) (schemaRoot.get('$defs') ?: schemaRoot.get('definitions'))
         def Map schema_properties = (Map) new JsonSlurper().parseText(json).get('properties')
         /* Tree looks like this in nf-core schema
         * definitions <- this is what the first get('definitions') gets us

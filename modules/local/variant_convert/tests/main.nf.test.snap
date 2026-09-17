@@ -1,0 +1,19 @@
+{
+    "Variant Convert Test": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.ivar.vcf:md5,c4631f24df129b68eedf2e3918610074"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T15:30:57.950314916",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}
