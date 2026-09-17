@@ -1,9 +1,9 @@
 {
     "BWA_DENOVO - paired end": {
         "content": [
-            "test_sub.bam:md5,8112eb14b72ed2b5baa375e569e10b7c"
+            "test_sub.bam:md5,130a13bbfd7fcd695e95d84ef567a173"
         ],
-        "timestamp": "2026-08-31T15:29:41.862859721",
+        "timestamp": "2026-09-17T15:00:44.747741297",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

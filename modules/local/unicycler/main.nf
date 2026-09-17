@@ -1,4 +1,5 @@
 process UNICYCLER {
+    //This is a local module to keep the 0.4.8 version of Unicycler. If upgrading to v5 use the new version
     tag "$meta.id"
     label 'process_high'
 

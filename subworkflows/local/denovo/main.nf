@@ -1,6 +1,6 @@
 include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_COVERAGE as SAMTOOLS_COVERAGE_DENOVO } from '../../../modules/local/samtools_coverage/main'
-include { UNICYCLER                                     } from '../../../modules/nf-core/unicycler/main'
+include { UNICYCLER                                     } from '../../../modules/local/unicycler/main'
 include { BANDAGE                                       } from '../../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../../modules/local/graph_reconstruct/main'
 include { BWA_DENOVO                                    } from '../../../modules/local/bwa_denovo/main'
