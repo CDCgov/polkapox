@@ -1,10 +1,10 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/mpxvassembly/master/nextflow_schema.json",
-    "title": "nf-core/mpxvassembly pipeline parameters",
-    "description": "A workflow for filtering, trimming, and QC of mpx samples. From raw fastq to consensus and de-novo based as",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/CDCgov/polkapox/refs/heads/master/nextflow_schema.json",
+    "title": "polkapox pipeline parameters",
+    "description": "A workflow for filtering, trimming, and QC of orthopoxviruses samples. From raw fastq to consensus and de-novo based as",
     "type": "object",
-    "definitions": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
@@ -285,12 +285,6 @@
                     "hidden": true,
                     "fa_icon": "fas fa-bacon"
                 },
-                "workflow": {
-                    "type": "string",
-                    "description": "Define which entrypoint you wish to run in the workflow, options include filter_reads,ref_based,denovo, and full",
-                    "hidden": true,
-                    "fa_icon": "fas fa-bacon"
-                },
                 "clade": {
                     "type": "string",
                     "default": "cladeII",
@@ -307,7 +301,7 @@
                 },
                 "filter": {
                     "type": "boolean",
-                    "default": null,
+                    "default": true,
                     "help_text": "true/false for whether or not to filter variants from IVAR Variant to coordinates specified by the coords parameter."
                 },
                 "kraken_db": {
@@ -323,24 +317,24 @@
                 },
                 "altQ_cutoff": {
                     "type": "integer",
-                    "default": null,
+                    "default": 20,
                     "help_text": "Quality score threshold of alternative allele for a SNP to be retained during variant filtering"
                 },
                 "altDP_cutoff": {
                     "type": "integer",
-                    "default": null,
+                    "default": 3,
                     "help_text": "Sequencing depth threshold of alternative allele for a SNP to be retained during variant filtering"
 
                 },
                 "DP_cutoff": {
                     "type": "integer",
-                    "default": null,
+                    "default": 5,
                     "help_text": "Sequencing depth threshold of reference allele for a SNP to be retained during variant filtering"
 
                 },
                 "af_cutoff": {
                     "type": "number",
-                    "default": null,
+                    "default": 0.01,
                     "help_text": "Allele frequency threshold of reference allele for a SNP to be retained during variant filtering. Should be decimal like 0.05 for 5%"
 
                 },
@@ -371,19 +365,19 @@
     },
     "allOf": [
         {
-            "$ref": "#/definitions/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/reference_genome_options"
+            "$ref": "#/$defs/reference_genome_options"
         },
         {
-            "$ref": "#/definitions/institutional_config_options"
+            "$ref": "#/$defs/institutional_config_options"
         },
         {
-            "$ref": "#/definitions/max_job_request_options"
+            "$ref": "#/$defs/max_job_request_options"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }

@@ -1,0 +1,29 @@
+nextflow_process {
+
+    name "Test Process SUMMARIZE_QC"
+    script "../main.nf"
+    process "SUMMARIZE_QC"
+
+    test("Summarize QC Test") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = file("${moduleTestDir}/multiqc_general_stats.txt")
+                input[1] = file("${moduleTestDir}/samplesheet.test.csv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.versions.size() == 1
+            assert process.out.tsv.size() == 1
+            //need to move the samplesheet files to a public location to make it work on CI/CD environments
+            //assert snapshot(process.out.tsv).match()
+        }
+
+    }
+
+}
