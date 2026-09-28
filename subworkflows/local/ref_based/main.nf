@@ -1,13 +1,10 @@
 include { BWA_MEM                                       } from '../../../modules/nf-core/bwa/mem/main'
-include { IVAR_CONSENSUS                                } from '../../../modules/nf-core/ivar/consensus/main'
+include { IVAR_CONSENSUS as IVAR_CONSENSUS_BWA          } from '../../../modules/nf-core/ivar/consensus/main'
+include { IVAR_CONSENSUS_POLISH_CLEANUP as IVAR_CONSENSUS_BWA_CLEANUP } from '../../../modules/local/ivar_consensus_polish_cleanup/main'
 include { IVAR_VARIANTS                                 } from '../../../modules/nf-core/ivar/variants/main'
 include { VARIANT_CONVERT                               } from '../../../modules/local/variant_convert/main'
-include { SAMTOOLS_SORT                                 } from '../../../modules/nf-core/samtools/sort/main'
-include { SAMTOOLS_INDEX                                } from '../../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_FLAGSTAT                             } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_DEPTH                                } from '../../../modules/nf-core/samtools/depth/main'
-include { SAMTOOLS_FAIDX                                } from '../../../modules/nf-core/samtools/faidx/main'
-include { VCFTOOLS as VCFTOOLS_IVAR                     } from '../../../modules/nf-core/vcftools/main'
 include { SUMMARIZE_TSV                                 } from '../../../modules/local/summarize_tsv/main'
 include { AGGREGATE_TSVS                                } from '../../../modules/local/aggregate_tsvs/main'
 
@@ -64,6 +61,11 @@ workflow REFBASED {
             ch_fai = SAMTOOLS_FAIDX.out.fai.map { meta, fai -> fai }
         }
 
+        IVAR_CONSENSUS_BWA_CLEANUP (
+            IVAR_CONSENSUS_BWA.out.fasta,
+            false
+        )
+
         IVAR_VARIANTS (
             BWA_MEM.out.bam,
             params.fasta,
@@ -108,9 +110,9 @@ workflow REFBASED {
         }
 
         emit:
-            flagstat = SAMTOOLS_FLAGSTAT.out.flagstat
+            flagstat  = SAMTOOLS_FLAGSTAT.out.flagstat
             depth_tsv = SAMTOOLS_DEPTH.out.tsv
-            tsv_vars = ch_tsv_vars
-            ivar_tsv = IVAR_VARIANTS.out.tsv
-            versions      = ch_versions // channel: [ versions.yml ]
+            tsv_vars  = ch_tsv_vars
+            ivar_tsv  = IVAR_VARIANTS.out.tsv
+            versions  = ch_versions // channel: [ versions.yml ]
 }

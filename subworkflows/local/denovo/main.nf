@@ -1,16 +1,14 @@
 include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_COVERAGE as SAMTOOLS_COVERAGE_DENOVO } from '../../../modules/local/samtools_coverage/main'
-include { UNICYCLER                                     } from '../../../modules/nf-core/unicycler/main'
-include { BANDAGE_IMAGE                                       } from '../../../modules/nf-core/bandage/image/main'
+include { UNICYCLER                                     } from '../../../modules/local/unicycler/main'
+include { BANDAGE_IMAGE                                 } from '../../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../../modules/local/graph_reconstruct/main'
 include { BWA_DENOVO                                    } from '../../../modules/local/bwa_denovo/main'
 include { PUBLISH_CONTIGS                               } from '../../../modules/local/publish_contigs/main'
 include { MUMMER                                        } from '../../../modules/nf-core/mummer/main'
 include { QUAST                                         } from '../../../modules/nf-core/quast/main'
-//include { IVAR_CONSENSUS_POLISH                         } from '../../../modules/local/ivar_consensus_polish/main'
-include { IVAR_CONSENSUS_POLISH_RUN                     } from '../../../modules/local/ivar_consensus_polish_run/main'
-include { IVAR_CONSENSUS                                } from '../../../modules/nf-core/ivar/consensus/main'
-
+include { IVAR_CONSENSUS_POLISH_CLEANUP                 } from '../../../modules/local/ivar_consensus_polish_cleanup/main'
+include { IVAR_CONSENSUS as IVAR_CONSENSUS_DENOVO       } from '../../../modules/nf-core/ivar/consensus/main'
 
 workflow DENOVO {
 
@@ -80,27 +78,18 @@ workflow DENOVO {
     ch_bam = ch_polishing_input.map { meta, bam, fasta -> [ meta, bam ] }
     ch_fasta = ch_polishing_input.map { meta, bam, fasta -> fasta }
 
-    IVAR_CONSENSUS(
+    IVAR_CONSENSUS_DENOVO(
         ch_bam,
         ch_fasta,
         true, //save_mpileup
     )
+    ch_versions = ch_versions.mix(IVAR_CONSENSUS_DENOVO.out.versions)
 
     IVAR_CONSENSUS_POLISH_CLEANUP (
-        IVAR_CONSENSUS.out.fasta
+        IVAR_CONSENSUS_DENOVO.out.fasta,
+        true
     )
-
-    //OLD to remove once anboce is conformed
-    // ch_polishing_input = ch_mapped_denovo.join(ch_gfa_forpolishing, by: 0)
-    // IVAR_CONSENSUS_POLISH (
-    //     ch_polishing_input,
-    //     true
-    // )
-    // ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH.out.fasta, by: 0)
-    //
-
-    // fasta    = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
-    // mpileup  = IVAR_CONSENSUS_POLISH_RUN.out.mpileup
+    ch_tocompare = ch_gfaassm_compare.join(IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta, by: 0)
 
     //join unicycler contigs with the polished fasta, and only keep contigs if fasta doesn't exist
     ch_assemblies = ch_uni_contigs.join(IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta, remainder: true)
@@ -138,6 +127,6 @@ workflow DENOVO {
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
     //mummer_summary  = MUMMER.out.summary
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
-    mpileup         = IVAR_CONSENSUS.out.mpileup
+    mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
     versions        = ch_versions // channel: [ versions.yml ]
 }

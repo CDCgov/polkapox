@@ -1,0 +1,33 @@
+nextflow_process {
+
+    name "Test Process SAMTOOLS_COVERAGE"
+    script "../main.nf"
+    process "SAMTOOLS_COVERAGE"
+
+    test("SAMTOOLS_COVERAGE - basic coverage output") {
+
+        when {
+            params {
+            }
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    file('${moduleTestDir}/test_sub.bam', checkIfExists: true),
+                    file('${moduleTestDir}/test_sub.bam.bai', checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.coverage.size() == 1
+            assert process.out.versions.size() == 1
+            assert path(process.out.coverage[0][1]).exists()
+            assert path(process.out.coverage[0][1]).text.contains('ref_seq')
+        }
+
+    }
+
+}

@@ -15,6 +15,7 @@ def checkPathParamList = [ params.multiqc_config, params.fasta, params.fai]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
+ch_indir = Channel.empty()
 if (params.input) { 
     ch_input = Channel.fromPath("${params.input}", type: 'file', checkIfExists: true) 
     }
@@ -61,7 +62,8 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 // MODULE: Installed directly from nf-core/modules
 //
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main' //warning deprecated
+//note that the lower is deprecated
+include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
 include { BWA_INDEX                                     } from '../modules/nf-core/bwa/index/main'
 
@@ -140,7 +142,7 @@ workflow POLKAPOX {
     } 
 
     //
-    // SUBWORKFLOW: Run Read Filter + Reference-based Assembly
+    // SUBWORKFLOW: Run Reference-based Analyses
     //
 
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
@@ -153,7 +155,7 @@ workflow POLKAPOX {
     }
 
     //
-    // SUBWORKFLOW: Run Read Filter + Denovo Assembly
+    // SUBWORKFLOW: Run Denovo Assembly
     //
 
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {

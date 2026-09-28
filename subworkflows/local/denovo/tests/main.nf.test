@@ -8,25 +8,35 @@ nextflow_workflow {
 
         when {
             params {
+                fasta = "${projectDir}/assets/MPXV-UK_P2.noN.fasta"
+                gff   = "${projectDir}/assets/UK-P2.noN.gff"
             }
             workflow {
                 """
                 input[0] = Channel.of([
                     [ id: 'test_sub' ],
-                    file("${projectDir}/assets/NC_003310_clade_I.fasta", checkIfExists: true),
                     [
                         file("${moduleTestDir}/test_sub_1.fastp.fastq.gz", checkIfExists: true),
                         file("${moduleTestDir}/test_sub_2.fastp.fastq.gz", checkIfExists: true)
                     ]
                 ])
-                input[1] = true
                 """
             }
         }
 
         then {
             assert workflow.success
-            assert snapshot(workflow.out).match()
+            assert workflow.out.versions.size() >= 1
+            assert workflow.out.graph_recon_log.size() == 1
+            assert workflow.out.mummer_summary.size() == 1
+            assert snapshot(
+                workflow.out.quast_tsv,
+                workflow.out.flagstat,
+                workflow.out.coverage,
+                workflow.out.gfa_assembly,
+                workflow.out.fasta,
+                workflow.out.mpileup
+            ).match()
         }
 
     }
