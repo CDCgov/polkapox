@@ -5,8 +5,10 @@ include { IVAR_VARIANTS                                 } from '../../../modules
 include { VARIANT_CONVERT                               } from '../../../modules/local/variant_convert/main'
 include { SAMTOOLS_FLAGSTAT                             } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_DEPTH                                } from '../../../modules/nf-core/samtools/depth/main'
+include { SAMTOOLS_INDEX                                } from '../../../modules/nf-core/samtools/index/main'
 include { SUMMARIZE_TSV                                 } from '../../../modules/local/summarize_tsv/main'
 include { AGGREGATE_TSVS                                } from '../../../modules/local/aggregate_tsvs/main'
+include { SAMTOOLS_FAIDX                                } from '../../../modules/nf-core/samtools/faidx/main'
 
 workflow REFBASED {
     take: 
@@ -44,7 +46,7 @@ workflow REFBASED {
         // Module: run ivar
         //
     
-        IVAR_CONSENSUS (
+        IVAR_CONSENSUS_BWA (
             BWA_MEM.out.bam,
             params.fasta,
             true

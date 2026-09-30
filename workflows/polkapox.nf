@@ -124,8 +124,8 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Prepare reference
     //
-    BWA_INDEX ( [ [id:'bwa_index'], file(params.fasta) ] )
-    ch_versions = ch_versions.mix(BWA_INDEX.out.versions_bwa)  
+    BWA_INDEX ( file(params.fasta) )
+    ch_versions = ch_versions.mix(BWA_INDEX.out.versions)  
 
     //
     // SUBWORKFLOW: Only run Read Filter
