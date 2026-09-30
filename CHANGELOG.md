@@ -3,8 +3,8 @@
 All notable changes since the initial release are listed below. Whenever possible, links to relevant commits or issues are provided. A full commit history relative to the previous release is also provided. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v1.0dev - 2026-08-28
-[Full history](https://github.com/CDCgov/polkapox/pull/80)
+## v3.1.0 - 2026-09-28
+[Full history](https://github.com/CDCgov/polkapox/pull/62)
 Refactoring of tests and writing of tests to ensure 100% coverage
 
 ### `Added`
