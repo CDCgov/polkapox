@@ -37,7 +37,7 @@
                     },
                     "ivar/variants": {
                         "branch": "master",
-                        "git_sha": "cab399507bea60d90de6d7b296163210c371b693",
+                        "git_sha": "3dd0d7a2ab0e2333bcf198c7bf0b8744c24413dc",
                         "installed_by": ["modules"]
                     },
                     "kraken2/kraken2": {

@@ -36,11 +36,13 @@ workflow READ_FILTER {
         KRAKEN2_KRAKEN2.out.report                              
     )
 
+    println "Extracted Kraken2 reads:"
+    KRAKENTOOLS_EXTRACTKRAKENREADS.out.extracted_kraken2_reads.view { v -> "ch_extracted_kraken2_reads: $v" }
     FASTP (
         KRAKENTOOLS_EXTRACTKRAKENREADS.out.extracted_kraken2_reads.map { meta, files -> [meta, files, []] },
-        false, // writes reads that pass trimming
-        false,
-        false
+        false, // writes reads that pass trimming (true would be not write these)
+        false, //save trimmed fail
+        false //save merged
     )
 
     emit:

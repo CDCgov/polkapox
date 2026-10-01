@@ -18,12 +18,17 @@ workflow REFBASED {
     main: 
         ch_versions = Channel.topic('versions')
 
+        //log input channels for debugging purposes
+        println "Refbased workflow input channels:"
+        ch_trimmed_fastq_bwa.view { v -> "ch_trimmed_fastq_bwa: $v" }
+        ch_bwa_index.view { v -> "ch_bwa_index: $v" }
+
         //
         // Module: run BWA MEM alignment
         //
         BWA_MEM (
             ch_trimmed_fastq_bwa,
-            ch_bwa_index,
+            ch_bwa_index.map { index -> [ [:], index ] },
             [[:], []], //fasta only required for cram output
             true //sort the bam file
         )
@@ -73,7 +78,7 @@ workflow REFBASED {
             params.fasta,
             ch_fai,
             params.gff ?: [], //if the user passes gff file
-            false
+            false //save the mpileup file
         )
         ch_ivar_out = IVAR_VARIANTS.out.tsv
         

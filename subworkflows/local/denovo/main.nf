@@ -24,7 +24,7 @@ workflow DENOVO {
     //
 
     UNICYCLER (
-        trimmed_fastq.map { meta, reads -> [meta, reads, []] } //last is long reads
+        trimmed_fastq //local module pinned to v0.4.8, no long-read input
     )
     ch_gfa = UNICYCLER.out.gfa
 
