@@ -1,0 +1,29 @@
+{
+    "Graph Recon Test": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": true
+                    },
+                    "test_sub.assembly_asm.fasta:md5,ac5747226ef074ea9583d08e2c63c834"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": true
+                    },
+                    "test_sub.contigs.fasta:md5,d667a3ce377240a3d5f60baa0ee10295"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T16:01:00.103563624",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

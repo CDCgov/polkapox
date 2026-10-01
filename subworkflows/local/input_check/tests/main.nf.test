@@ -1,0 +1,33 @@
+nextflow_workflow {
+
+    name "Test Subworkflow INPUT_CHECK"
+    script "../main.nf"
+    workflow "INPUT_CHECK"
+
+    test("INPUT_CHECK - paired end samplesheet") {
+
+        when {
+            params {
+            }
+            workflow {
+                """
+                // Build samplesheet CSV referencing test FASTQ files
+                def fq1 = file("${moduleTestDir}/test_sub_1.fq.gz", checkIfExists: true)
+                def fq2 = file("${moduleTestDir}/test_sub_2.fq.gz", checkIfExists: true)
+                def samplesheet = file("${workDir}/samplesheet_test.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\ntest_sub,\${fq1},\${fq2}\\n"
+
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.versions.size() == 1
+            assert snapshot(workflow.out.reads).match()
+        }
+
+    }
+
+}

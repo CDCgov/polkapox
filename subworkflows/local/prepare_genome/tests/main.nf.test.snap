@@ -1,0 +1,23 @@
+{
+    "PREPARE_GENOME - generates BWA index": {
+        "content": [
+            [
+                "MPXV-UK_P2.noN.fasta:md5,71f0c25abaafbdeee71416dcba22494e"
+            ],
+            [
+                [
+                    "MPXV-UK_P2.noN.amb:md5,98ecb138221e555331c33a740fe3278a",
+                    "MPXV-UK_P2.noN.ann:md5,b13fd651dda6d577130750061a0d358d",
+                    "MPXV-UK_P2.noN.bwt:md5,903c224b2b6db34857d7b4bacebd8973",
+                    "MPXV-UK_P2.noN.pac:md5,ae3c6e16d894cd53761b0a692c0779e4",
+                    "MPXV-UK_P2.noN.sa:md5,28122d41d0a2f329d4359ec6fee0834e"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T17:03:01.225204688",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

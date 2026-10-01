@@ -1,0 +1,41 @@
+{
+    "REFBASED - paired end alignment and variant calling": {
+        "content": [
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": false
+                    },
+                    "test_sub.flagstat:md5,389f01925140181d98410c47396d4d27"
+                ]
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": false
+                    },
+                    "test_sub.depth.tsv:md5,d41d8cd98f00b204e9800998ecf8427e"
+                ]
+            ],
+            [
+                
+            ],
+            [
+                [
+                    {
+                        "id": "test_sub",
+                        "single_end": false
+                    },
+                    "test_sub.ivar.tsv:md5,07c09105635a3dcd27afa5264679dea7"
+                ]
+            ]
+        ],
+        "timestamp": "2026-08-31T17:21:37.815364795",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

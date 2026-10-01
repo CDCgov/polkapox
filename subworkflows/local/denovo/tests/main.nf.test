@@ -1,0 +1,44 @@
+nextflow_workflow {
+
+    name "Test Subworkflow DENOVO"
+    script "../main.nf"
+    workflow "DENOVO"
+
+    test("Should run without failures") {
+
+        when {
+            params {
+                fasta = "${projectDir}/assets/MPXV-UK_P2.noN.fasta"
+                gff   = "${projectDir}/assets/UK-P2.noN.gff"
+            }
+            workflow {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub' ],
+                    [
+                        file("${moduleTestDir}/test_sub_1.fastp.fastq.gz", checkIfExists: true),
+                        file("${moduleTestDir}/test_sub_2.fastp.fastq.gz", checkIfExists: true)
+                    ]
+                ])
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.versions.size() >= 1
+            assert workflow.out.graph_recon_log.size() == 1
+            assert workflow.out.mummer_summary.size() == 1
+            assert snapshot(
+                workflow.out.quast_tsv,
+                workflow.out.flagstat,
+                workflow.out.coverage,
+                workflow.out.gfa_assembly,
+                workflow.out.fasta,
+                workflow.out.mpileup
+            ).match()
+        }
+
+    }
+
+}

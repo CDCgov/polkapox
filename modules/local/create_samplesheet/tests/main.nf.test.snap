@@ -1,0 +1,26 @@
+{
+    "Test | single-end reads": {
+        "content": [
+            [
+                "Test_samplesheet.csv:md5,be0ae88eb54b1139991d6d6432005b9d"
+            ]
+        ],
+        "timestamp": "2026-08-31T15:29:55.983907879",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
+    "Test | paired-end reads": {
+        "content": [
+            [
+                "Test_samplesheet.csv:md5,f710b349938d960c80fc82576e4493c9"
+            ]
+        ],
+        "timestamp": "2026-08-31T15:29:49.092837186",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

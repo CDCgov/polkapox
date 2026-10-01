@@ -10,10 +10,12 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 WorkflowPolkapox.initialise(params, log)
 
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.kraken_db, params.multiqc_config, params.fasta, params.fai]
+//def checkPathParamList = [ params.kraken_db, params.multiqc_config, params.fasta, params.fai]
+def checkPathParamList = [ params.multiqc_config, params.fasta, params.fai]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
+ch_indir = Channel.empty()
 if (params.input) { 
     ch_input = Channel.fromPath("${params.input}", type: 'file', checkIfExists: true) 
     }
@@ -43,13 +45,13 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK         } from '../subworkflows/local/input_check'
-include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome'
-include { SRA_TOOLS           } from '../subworkflows/nf-core/sra_tools'
-include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/create_samplesheet'
-include { READ_FILTER         } from '../subworkflows/local/filter_reads'
-include { DENOVO              } from '../subworkflows/local/denovo'
-include { REFBASED            } from '../subworkflows/local/ref_based'
+include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
+include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
+include { SRA_TOOLS           } from '../subworkflows/local/sra_tools/main'
+include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
+include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
+include { DENOVO              } from '../subworkflows/local/denovo/main'
+include { REFBASED            } from '../subworkflows/local/ref_based/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,10 +62,10 @@ include { REFBASED            } from '../subworkflows/local/ref_based'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                                        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
+//note that the lower is deprecated
 include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/summarize_qc'
+include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,7 +131,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Only run Read Filter
     //
-
+    
     if ( params.workflow == 'filter_reads'
         || params.workflow == 'ref_based'
         || params.workflow == 'denovo'
@@ -138,10 +140,10 @@ workflow POLKAPOX {
             INPUT_CHECK.out.reads,
         )
         ch_versions = ch_versions.mix(READ_FILTER.out.versions)
-    }
+    } 
 
     //
-    // SUBWORKFLOW: Run Read Filter + Reference-based Assembly
+    // SUBWORKFLOW: Run Reference-based Analyses
     //
 
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
@@ -154,7 +156,7 @@ workflow POLKAPOX {
     }
 
     //
-    // SUBWORKFLOW: Run Read Filter + Denovo Assembly
+    // SUBWORKFLOW: Run Denovo Assembly
     //
 
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
@@ -215,10 +217,9 @@ workflow POLKAPOX {
     }
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.flagstat.collect{it[1]}.ifEmpty([]))
+        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.coverage.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.graph_recon_log.collect().ifEmpty([]))
-        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.gfa_assembly.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mummer_summary.collect{it[1]}.ifEmpty([]))
-        ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.fasta.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(DENOVO.out.mpileup.collect{it[1]}.ifEmpty([]))
     }
 
