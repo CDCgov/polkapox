@@ -17,16 +17,15 @@ workflow DENOVO {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = Channel.topic('versions')
 
     //
     // Module: run Unicycler
     //
 
     UNICYCLER (
-        trimmed_fastq
+        trimmed_fastq //local module pinned to v0.4.8, no long-read input
     )
-    ch_versions = ch_versions.mix(UNICYCLER.out.versions)
     ch_gfa = UNICYCLER.out.gfa
 
     //
@@ -42,7 +41,6 @@ workflow DENOVO {
     GRAPH_RECON (
         ch_gfa,
     )
-    ch_versions = ch_versions.mix(GRAPH_RECON.out.versions)
     ch_graph_fasta = GRAPH_RECON.out.gfa_assembly
     ch_gfaassm_compare = GRAPH_RECON.out.gfa_assembly
     ch_gfa_forpolishing = GRAPH_RECON.out.gfa_assembly
@@ -61,7 +59,6 @@ workflow DENOVO {
     ch_mapped_denovo = BWA_DENOVO.out.bam
     ch_mapped_denovo_flagstat = BWA_DENOVO.out.bambai
     ch_mapped_denovo_coverage = BWA_DENOVO.out.bambai
-    ch_versions = ch_versions.mix(BWA_DENOVO.out.versions)
 
     //
     // Module: Calculate statistics for de novo bwa mapping
@@ -69,14 +66,10 @@ workflow DENOVO {
     SAMTOOLS_FLAGSTAT_DENOVO (
         ch_mapped_denovo_flagstat
     )
-    ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT_DENOVO.out.versions)
 
     SAMTOOLS_COVERAGE_DENOVO (
         ch_mapped_denovo_coverage
-    )
-
-    ch_versions = ch_versions.mix(SAMTOOLS_COVERAGE_DENOVO.out.versions)    
-    
+    )    
 
     //
     // Module: Polish assembly with IVAR Consensus
@@ -115,17 +108,15 @@ workflow DENOVO {
     MUMMER (
         ch_tocompare
     )
-    ch_mummer = MUMMER.out.summary
 
     //
     // Module: run QUAST for assembly stats
     //
     QUAST (
-        GRAPH_RECON.out.unicycler_contigs.collect{it[1]}.ifEmpty([]),
-        true,
-        true
+        GRAPH_RECON.out.unicycler_contigs,
+        [[:], []], //no reference fasta
+        [[:], []] //no annotations
     )
-    ch_versions = ch_versions.mix(QUAST.out.versions)
     
     emit:
     quast_tsv       = QUAST.out.tsv

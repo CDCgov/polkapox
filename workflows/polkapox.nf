@@ -46,7 +46,6 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
-include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
 include { SRA_TOOLS           } from '../subworkflows/local/sra_tools/main'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
@@ -55,7 +54,7 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+    IMPORT NF-CORE MODULES/WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -66,6 +65,7 @@ include { MULTIQC                                       } from '../modules/nf-co
 //note that the lower is deprecated
 include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
+include { BWA_INDEX                                     } from '../modules/nf-core/bwa/index/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,9 +124,8 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Prepare reference
     //
-    PREPARE_GENOME ()
-    ch_bwa_index = PREPARE_GENOME.out.bwa_index
-    ch_versions = ch_versions.mix(PREPARE_GENOME.out.versions)
+    BWA_INDEX ( file(params.fasta) )
+    ch_versions = ch_versions.mix(BWA_INDEX.out.versions)  
 
     //
     // SUBWORKFLOW: Only run Read Filter
@@ -149,7 +148,7 @@ workflow POLKAPOX {
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
         REFBASED (
             READ_FILTER.out.trimmed_fastq,
-            ch_bwa_index
+            BWA_INDEX.out.index,
         )
         ch_versions = ch_versions.mix(REFBASED.out.versions)
 
@@ -208,7 +207,7 @@ workflow POLKAPOX {
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.json.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.kraken2_report.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.classified_reads_assignment.collect{it[1]}.ifEmpty([]))
-    ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.seqtk_reads.collect{it[1]}.ifEmpty([]))
+    ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.orthopox_reads.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(MULTIQC.out.data.collect().ifEmpty([]))
     if ( params.workflow == 'ref_based' || params.workflow == 'full') {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(REFBASED.out.depth_tsv.collect{it[1]}.ifEmpty([]))
