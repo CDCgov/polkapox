@@ -19,7 +19,6 @@ workflow REFBASED {
         ch_versions = Channel.topic('versions')
 
         //log input channels for debugging purposes
-        println "Refbased workflow input channels:"
         ch_trimmed_fastq_bwa.view { v -> "ch_trimmed_fastq_bwa: $v" }
         ch_bwa_index.view { v -> "ch_bwa_index: $v" }
 
@@ -44,7 +43,7 @@ workflow REFBASED {
         )
 
         SAMTOOLS_DEPTH (
-            ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bai, [] ] } //ie. no interval files
+            ch_bam_bai.map { meta, bam, bai -> [ meta, bam, bai, [] ] } //ie. no interval files specified as bed file
         )
 
         //
@@ -54,13 +53,13 @@ workflow REFBASED {
         IVAR_CONSENSUS_BWA (
             BWA_MEM.out.bam,
             params.fasta,
-            true
+            true // save the mpileup file
         )
 
         // Generate .fai index if not provided by the user
         if ( params.fai ) {
             ch_fai = file(params.fai, checkIfExists: true)
-        } else {
+        } else { //TODO: would be nice to have error handle that if it does not, generate the fai index
             SAMTOOLS_FAIDX (
                 [ [id:'index_fasta'], file(params.fasta) , [] ],
                 false

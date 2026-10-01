@@ -67,7 +67,7 @@
                     },
                     "samtools/depth": {
                         "branch": "master",
-                        "git_sha": "f0a86eaf5bf6ca73c5571193edd00c25bfa308f5",
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
                         "installed_by": ["modules"]
                     },
                     "samtools/faidx": {

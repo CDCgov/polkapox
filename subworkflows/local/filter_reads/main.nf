@@ -36,7 +36,6 @@ workflow READ_FILTER {
         KRAKEN2_KRAKEN2.out.report                              
     )
 
-    println "Extracted Kraken2 reads:"
     KRAKENTOOLS_EXTRACTKRAKENREADS.out.extracted_kraken2_reads.view { v -> "ch_extracted_kraken2_reads: $v" }
     FASTP (
         KRAKENTOOLS_EXTRACTKRAKENREADS.out.extracted_kraken2_reads.map { meta, files -> [meta, files, []] },
