@@ -83,7 +83,7 @@ workflow DENOVO {
         ch_fasta,
         true, //save_mpileup
     )
-    ch_versions = ch_versions.mix(IVAR_CONSENSUS_DENOVO.out.versions)
+    //ch_versions = ch_versions.mix(IVAR_CONSENSUS_DENOVO.out.versions)
 
     IVAR_CONSENSUS_POLISH_CLEANUP (
         IVAR_CONSENSUS_DENOVO.out.fasta,
