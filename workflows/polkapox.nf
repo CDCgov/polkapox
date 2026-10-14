@@ -123,8 +123,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Prepare reference
     //
-    BWA_INDEX ( file(params.fasta) )
-    ch_versions = ch_versions.mix(BWA_INDEX.out.versions)  
+    BWA_INDEX ( [id: 'reference'],  file(params.fasta) )
 
     //
     // SUBWORKFLOW: Only run Read Filter
@@ -170,7 +169,7 @@ workflow POLKAPOX {
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
-
+    )
     //
     // MODULE: MultiQC
     //
