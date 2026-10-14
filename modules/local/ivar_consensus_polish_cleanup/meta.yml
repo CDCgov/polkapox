@@ -1,0 +1,61 @@
+name: ivar_consensus_polish_cleanup
+description: Clean up a polished iVar consensus FASTA by stripping the 'Consensus_' prefix and leading/trailing Ns
+keywords:
+  - consensus
+  - fasta
+  - cleanup
+tools:
+  - sed:
+      description: GNU stream editor, used here to rewrite FASTA headers/sequence in place
+      homepage: https://www.gnu.org/software/sed/
+      documentation: https://www.gnu.org/software/sed/manual/sed.html
+      licence: ["GPL-3.0-or-later"]
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - fasta:
+        type: file
+        description: Polished iVar consensus FASTA (staged internally as `ivar_consensus_input.fa`)
+        pattern: "*.fa"
+        ontologies: []
+  - correct_ns:
+      type: boolean
+      description: If true, also collapse leading/trailing Ns and rename 'polished' to 'final' in the header
+output:
+  fasta:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*.fa":
+          type: file
+          description: Cleaned-up consensus FASTA
+          pattern: "*.fa"
+          ontologies: []
+  versions_sed:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - sed:
+          type: string
+          description: The tool name
+      - "sed --version | head -n1 | sed \"s/^sed (GNU sed) //\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - sed:
+          type: string
+          description: The tool name
+      - "sed --version | head -n1 | sed \"s/^sed (GNU sed) //\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

@@ -170,7 +170,6 @@ workflow POLKAPOX {
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
 
     //
     // MODULE: MultiQC
