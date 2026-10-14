@@ -12,7 +12,7 @@ process PUBLISH_CONTIGS {
 
     output:
     tuple val(meta), path("*draft.fa"), optional: true
-    path "versions.yml"  , emit: versions
+    tuple val("${task.process}"), val('python'), eval('python3 --version | sed "s/Python //g"'), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,11 +25,6 @@ process PUBLISH_CONTIGS {
     if [ ! -f $assembly ]
     then cp $contigs $draft_asm
     fi
-    
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }
 

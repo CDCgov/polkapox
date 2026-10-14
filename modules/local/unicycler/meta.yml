@@ -34,10 +34,6 @@ output:
       description: |
         Groovy Map containing sample information
         e.g. [ id:'test', single_end:false ]
-  - versions:
-      type: file
-      description: File containing software versions
-      pattern: "versions.yml"
   - scaffolds:
       type: file
       description: Fasta file containing scaffolds
@@ -50,10 +46,27 @@ output:
       type: file
       description: unicycler log file
       pattern: "*.{log}"
-  - versions:
-      type: file
-      description: File containing software versions
-      pattern: "versions.yml"
+  - versions_unicycler:
+      - - "${task.process}":
+            type: string
+            description: The process the versions were collected from
+        - unicycler:
+            type: string
+            description: The tool name
+        - "echo $(unicycler --version 2>&1) | sed \"s/^.*Unicycler v//; s/ .*$//\"":
+            type: string
+            description: The version of the tool
+topics:
+  versions:
+    - - process:
+          type: string
+          description: The process the versions were collected from
+      - tool:
+          type: string
+          description: The tool name
+      - version:
+          type: string
+          description: The version of the tool
 authors:
   - "@JoseEspinosa"
   - "@drpatelh"

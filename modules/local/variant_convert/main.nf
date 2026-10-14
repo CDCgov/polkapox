@@ -14,7 +14,7 @@ process VARIANT_CONVERT {
 
     output:
     tuple val(meta), path("*.vcf"), emit: vcf
-    path "versions.yml"  , emit: versions
+    tuple val("${task.process}"), val('python'), eval('python3 --version | sed "s/Python //g"'), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,10 +29,5 @@ process VARIANT_CONVERT {
         -af $af_cutoff \\
         $tsv \\
         ${prefix}.ivar.vcf
-    
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }

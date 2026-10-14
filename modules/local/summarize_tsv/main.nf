@@ -14,7 +14,7 @@ process SUMMARIZE_TSV {
 
     output:
     tuple val(meta), path("*_ivar_summary.txt"), emit: vars
-    path "versions.yml"  , emit: versions
+    tuple val("${task.process}"), val('python'), eval('python3 --version | sed "s/Python //g"'), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when
@@ -37,10 +37,5 @@ process SUMMARIZE_TSV {
         -AD ${params.altDP_cutoff} \\
         -aq ${params.altQ_cutoff} \\
         -r ${params.outdir}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }

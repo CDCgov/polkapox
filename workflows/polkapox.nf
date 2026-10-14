@@ -79,6 +79,7 @@ def multiqc_report = []
 workflow POLKAPOX {
 
     ch_versions = Channel.empty() 
+    ch_versions = ch_versions.mix(Channel.topic('versions')) //pick up modules migrated to topic-based version tracking
 
     if (params.indir) {
         //
@@ -88,7 +89,6 @@ workflow POLKAPOX {
             ch_indir
         )
         ch_input = CREATE_SAMPLESHEET.out.samplesheet
-        ch_versions = ch_versions.mix(CREATE_SAMPLESHEET.out.versions)
     }
 
     else if (params.sra_ids) {
@@ -119,7 +119,6 @@ workflow POLKAPOX {
     INPUT_CHECK (
         ch_input
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)            
 
     //
     // SUBWORKFLOW: Prepare reference

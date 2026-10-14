@@ -13,7 +13,7 @@ process GRAPH_RECON {
     tuple val(meta), path('*contigs.fasta')  , emit: unicycler_contigs, optional: true
     path '*.log'                              , emit: log
     path '*.summary'                          , emit: summary, optional: true
-    path "versions.yml"                       , emit: versions
+    tuple val("${task.process}"), val('python'), eval('python3 --version | sed "s/Python //g"'), topic: versions, emit: versions_python
 
     shell: // This script is bundled with the pipeline, in polkapox/bin/
     def prefix = task.ext.prefix ?: "${meta.id}"
@@ -26,12 +26,5 @@ process GRAPH_RECON {
         -i $gfa \\
         -r "$projectDir/assets/MPXV-UK_P2.noN_39086_40204.fasta" \\
         -o .
-
-    
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-    
-        python: \$(python3 --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }
