@@ -25,6 +25,11 @@
                         "git_sha": "82501fe6d0d12614db67751d30af98d16e63dc59",
                         "installed_by": ["modules"]
                     },
+                    "custom/sratoolsncbisettings": {
+                        "branch": "master",
+                        "git_sha": "e194f822da96a7052f544b736a2bd8a6292aa8f8",
+                        "installed_by": ["modules"]
+                    },
                     "fastp": {
                         "branch": "master",
                         "git_sha": "826a9b28d6da61097d60e1923bb8a2e51de3c5b4",
@@ -52,12 +57,12 @@
                     },
                     "multiqc": {
                         "branch": "master",
-                        "git_sha": "90aef30f432332bdf0ce9f4b9004aa5d5c4960bb",
+                        "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",
                         "installed_by": ["modules"]
                     },
                     "mummer": {
                         "branch": "master",
-                        "git_sha": "233fa70811a03a4cecb2ece483b5c8396e2cee1d",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": ["modules"]
                     },
                     "quast": {
@@ -77,7 +82,7 @@
                     },
                     "samtools/flagstat": {
                         "branch": "master",
-                        "git_sha": "bbb99cb8d679555cc01c98766de7869f83283545",
+                        "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
                         "installed_by": ["modules"]
                     },
                     "samtools/index": {
@@ -85,24 +90,19 @@
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
                         "installed_by": ["modules"]
                     },
-                    "seqtk/subseq": {
-                        "branch": "master",
-                        "git_sha": "a0443e2c54da4236fe55cd3e39eec8924ebfd646",
-                        "installed_by": ["modules"]
-                    },
                     "sratools/fasterqdump": {
                         "branch": "master",
-                        "git_sha": "0cdf7767a79faf424645beeff83ecfa5528b6a7c",
+                        "git_sha": "c8f20a5b1c9ac08e48a3e317276a97904066bd3a",
                         "installed_by": ["modules"]
                     },
                     "sratools/prefetch": {
                         "branch": "master",
-                        "git_sha": "1b228835e9525990db99243cb4f0d07aa6e01bc3",
+                        "git_sha": "c8f20a5b1c9ac08e48a3e317276a97904066bd3a",
                         "installed_by": ["modules"]
                     },
                     "vcftools": {
                         "branch": "master",
-                        "git_sha": "5e7b1ef9a5a2d9258635bcbf70fcf37dacd1b247",
+                        "git_sha": "094186cc8b196ebdded57d596d741611ff571cf3",
                         "installed_by": ["modules"]
                     }
                 }

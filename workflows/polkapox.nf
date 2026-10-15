@@ -34,7 +34,7 @@ else if (params.sra_ids) {
 */
 
 ch_multiqc_config        = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config) : Channel.empty()
+ch_multiqc_custom_config = params.multiqc_config ? file(params.multiqc_config, checkIfExists: true) : []
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,11 +106,10 @@ workflow POLKAPOX {
         SRA_TOOLS (
             ch_sra
         )
-        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions.first())
+        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions)
     
-        ch_reads = SRA_TOOLS.out.forward.join(SRA_TOOLS.out.reverse)
-        ch_input = ch_reads
-            .map { meta, fastq1, fastq2 -> "$meta,$fastq1,$fastq2" }
+        ch_input = SRA_TOOLS.out.reads
+            .map { meta, reads -> "$meta,${reads[0]},${reads.size() > 1 ? reads[1] : ''}" }
             .collectFile(name: 'sra-samplesheet.csv', newLine: true, seed: 'sample,fastq_1,fastq_2')
     }
     //
@@ -177,8 +176,6 @@ workflow POLKAPOX {
     ch_workflow_summary = Channel.value(workflow_summary)
 
     ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(Channel.from(ch_multiqc_config))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(READ_FILTER.out.json.collect{it[1]}.ifEmpty([]))
@@ -190,10 +187,13 @@ workflow POLKAPOX {
         ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_tsv.collect().ifEmpty([]))
     }
 
+    // MultiQC config: bundled default plus an optional user-supplied override (nf-core/modules multiqc dedicated `multiqc_config` input)
+    ch_multiqc_config_files = ch_multiqc_custom_config ? [ ch_multiqc_config, ch_multiqc_custom_config ] : ch_multiqc_config
+
     MULTIQC (
-        ch_multiqc_files.collect()
+        ch_multiqc_files.collect().map { files -> [ [id:'multiqc'], files, ch_multiqc_config_files, [], [], [] ] }
     )
-    multiqc_report = MULTIQC.out.report.toList()
+    multiqc_report = MULTIQC.out.report.map { meta, report -> report }.toList()
     ch_versions    = ch_versions.mix(MULTIQC.out.versions)
 
     //
@@ -205,7 +205,7 @@ workflow POLKAPOX {
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.kraken2_report.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.classified_reads_assignment.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.orthopox_reads.collect{it[1]}.ifEmpty([]))
-    ch_summarizeqc_files = ch_summarizeqc_files.mix(MULTIQC.out.data.collect().ifEmpty([]))
+    ch_summarizeqc_files = ch_summarizeqc_files.mix(MULTIQC.out.data.map { meta, data -> data }.collect().ifEmpty([]))
     if ( params.workflow == 'ref_based' || params.workflow == 'full') {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(REFBASED.out.depth_tsv.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(REFBASED.out.tsv_vars.collect{it[1]}.ifEmpty([]))

@@ -124,7 +124,7 @@ workflow DENOVO {
     coverage        = SAMTOOLS_COVERAGE_DENOVO.out.coverage
     graph_recon_log = GRAPH_RECON.out.log
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
-    mummer_summary  = MUMMER.out.summary
+    mummer_summary  = MUMMER.out.coords
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
     mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
     versions        = ch_versions // channel: [ versions.yml ]
