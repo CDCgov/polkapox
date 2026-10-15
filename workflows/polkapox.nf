@@ -62,10 +62,49 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 // MODULE: Installed directly from nf-core/modules
 //
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
-//note that the lower is deprecated
-include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
 include { BWA_INDEX                                     } from '../modules/nf-core/bwa/index/main'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// Generate workflow version string
+def getWorkflowVersion() {
+    def version_string = "" as String
+    if (workflow.manifest.version) {
+        def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
+        version_string += "${prefix_v}${workflow.manifest.version}"
+    }
+    if (workflow.commitId) {
+        def git_shortsha = workflow.commitId.substring(0, 7)
+        version_string += "-g${git_shortsha}"
+    }
+    return version_string
+}
+
+// Parse a legacy versions.yml file's contents into a trimmed YAML string
+def processVersionsFromYAML(yaml_file) {
+    def yaml = new org.yaml.snakeyaml.Yaml()
+    def versions = yaml.load(yaml_file).collectEntries { k, v -> [k.tokenize(':')[-1], v] }
+    return yaml.dumpAsMap(versions).trim()
+}
+
+// Get workflow version block for the collated versions report
+def workflowVersionToYAML() {
+    return """
+    Workflow:
+        ${workflow.manifest.name}: ${getWorkflowVersion()}
+        Nextflow: ${workflow.nextflow.version}
+    """.stripIndent().trim()
+}
+
+// Get a channel of software versions (legacy versions.yml files) in YAML format
+def softwareVersionsToYAML(ch_versions) {
+    return ch_versions.unique().map { version -> processVersionsFromYAML(version) }.unique().mix(channel.of(workflowVersionToYAML()))
+}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -163,12 +202,29 @@ workflow POLKAPOX {
     }
 
     //
-    // MODULE: Dump all software versions used
+    // Collate software versions used (replaces CUSTOM_DUMPSOFTWAREVERSIONS; handles both
+    // legacy versions.yml files and topic-channel version tuples)
     //
+    ch_topic_versions = ch_versions
+        .distinct()
+        .branch { entry ->
+            versions_file: entry instanceof Path
+            versions_tuple: true
+        }
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    ch_topic_versions_string = ch_topic_versions.versions_tuple
+        .map { process, tool, version ->
+            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+        }
+        .groupTuple(by:0)
+        .map { process, tool_versions ->
+            tool_versions.unique().sort()
+            "${process}:\n${tool_versions.join('\n')}"
+        }
+
+    ch_collated_versions = softwareVersionsToYAML(ch_topic_versions.versions_file)
+        .mix(ch_topic_versions_string)
+        .collectFile(storeDir: "${params.outdir}/pipeline_info", name: 'collated_versions.yml', sort: true, newLine: true)
     //
     // MODULE: MultiQC
     //
@@ -177,7 +233,7 @@ workflow POLKAPOX {
 
     ch_multiqc_files = Channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions.collect())
     ch_multiqc_files = ch_multiqc_files.mix(READ_FILTER.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(READ_FILTER.out.kraken2_report.collect{it[1]}.ifEmpty([]))
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
