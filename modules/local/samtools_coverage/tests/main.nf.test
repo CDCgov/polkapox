@@ -23,7 +23,7 @@ nextflow_process {
         then {
             assert process.success
             assert process.out.coverage.size() == 1
-            assert process.out.versions.size() == 1
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
             assert path(process.out.coverage[0][1]).exists()
             assert path(process.out.coverage[0][1]).text.contains('ref_seq')
         }

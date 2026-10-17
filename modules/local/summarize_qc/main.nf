@@ -11,7 +11,9 @@ process SUMMARIZE_QC {
 
     output:
     path '*.tsv'       , emit: tsv
-    path "versions.yml", emit: versions
+    // not topic:versions -- SUMMARIZE_QC runs after MULTIQC and consumes its output, so
+    // pushing to the shared versions topic here creates a circular wait that deadlocks the pipeline
+    tuple val("${task.process}"), val('python'), eval('python --version | sed "s/Python //g"'), emit: versions
 
     script: // This script is bundled with the pipeline, in polkapox/bin/
     def args = task.ext.args   ?: ''
@@ -30,10 +32,5 @@ process SUMMARIZE_QC {
         --coords ${params.coords} \\
         --locus1 ${params.locus1_name} \\
         --locus2 ${params.locus2_name}
-        
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }

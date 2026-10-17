@@ -9,6 +9,7 @@ process IVAR_CONSENSUS_POLISH_CLEANUP {
 
     output:
     tuple val(meta), path("*.fa"), emit: fasta
+    tuple val("${task.process}"), val('sed'), eval('sed --version | head -n1 | sed "s/^sed (GNU sed) //"'), topic: versions, emit: versions_sed
 
     when:
     task.ext.when == null || task.ext.when

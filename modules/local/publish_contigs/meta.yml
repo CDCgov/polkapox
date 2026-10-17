@@ -1,0 +1,59 @@
+name: publish_contigs
+description: Publish draft Unicycler contigs as the final assembly when an iVar-polished consensus FASTA isn't available
+keywords:
+  - assembly
+  - contigs
+  - publish
+tools:
+  - publish_contigs:
+      description: Pipeline-bundled conditional copy step (no dedicated external tool; uses the Python interpreter from the module's container)
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - assembly:
+        type: file
+        description: Unicycler contigs and/or the final polished assembly FASTA for this sample
+        ontologies: []
+output:
+  # main.nf declares this output without an explicit `emit:` name (accessed positionally as process.out[0])
+  draft_fasta:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*draft.fa":
+          type: file
+          description: Draft contigs, published only when no polished final assembly FASTA exists
+          pattern: "*draft.fa"
+          optional: true
+          ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

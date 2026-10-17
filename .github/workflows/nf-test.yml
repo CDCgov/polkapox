@@ -44,7 +44,6 @@ jobs:
             subworkflows/local/denovo/tests/main.nf.test \
             subworkflows/local/filter_reads/tests/main.nf.test \
             subworkflows/local/input_check/tests/main.nf.test \
-            subworkflows/local/prepare_genome/tests/main.nf.test \
             subworkflows/local/ref_based/tests/main.nf.test \
             --profile docker \
             --verbose

@@ -1,0 +1,65 @@
+name: samtools_coverage
+description: Compute per-contig coverage statistics for a BAM file with `samtools coverage`
+keywords:
+  - coverage
+  - bam
+  - samtools
+tools:
+  - samtools:
+      description: Tools for manipulating SAM/BAM/CRAM files
+      homepage: http://www.htslib.org/
+      documentation: http://www.htslib.org/doc/samtools.html
+      doi: 10.1093/bioinformatics/btp352
+      licence: ["MIT"]
+      identifier: biotools:samtools
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - bam:
+        type: file
+        description: Sorted BAM file
+        pattern: "*.bam"
+        ontologies: []
+    - bai:
+        type: file
+        description: BAM index file
+        pattern: "*.bai"
+        ontologies: []
+output:
+  coverage:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*.coverage":
+          type: file
+          description: Per-contig coverage statistics from `samtools coverage`
+          pattern: "*.coverage"
+          ontologies: []
+  versions_samtools:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - samtools:
+          type: string
+          description: The tool name
+      - "samtools --version 2>&1 | sed \"s/^.*samtools //; s/Using.*$//\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - samtools:
+          type: string
+          description: The tool name
+      - "samtools --version 2>&1 | sed \"s/^.*samtools //; s/Using.*$//\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

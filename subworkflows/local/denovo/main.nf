@@ -1,7 +1,7 @@
 include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_COVERAGE as SAMTOOLS_COVERAGE_DENOVO } from '../../../modules/local/samtools_coverage/main'
 include { UNICYCLER                                     } from '../../../modules/local/unicycler/main'
-include { BANDAGE                                       } from '../../../modules/nf-core/bandage/image/main'
+include { BANDAGE_IMAGE as BANDAGE                      } from '../../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../../modules/local/graph_reconstruct/main'
 include { BWA_DENOVO                                    } from '../../../modules/local/bwa_denovo/main'
 include { PUBLISH_CONTIGS                               } from '../../../modules/local/publish_contigs/main'
@@ -17,16 +17,15 @@ workflow DENOVO {
 
     main:
 
-    ch_versions = Channel.empty()
+    //ch_versions = Channel.topic('versions')
 
     //
     // Module: run Unicycler
     //
 
     UNICYCLER (
-        trimmed_fastq
+        trimmed_fastq //local module pinned to v0.4.8, no long-read input
     )
-    ch_versions = ch_versions.mix(UNICYCLER.out.versions)
     ch_gfa = UNICYCLER.out.gfa
 
     //
@@ -42,7 +41,6 @@ workflow DENOVO {
     GRAPH_RECON (
         ch_gfa,
     )
-    ch_versions = ch_versions.mix(GRAPH_RECON.out.versions)
     ch_graph_fasta = GRAPH_RECON.out.gfa_assembly
     ch_gfaassm_compare = GRAPH_RECON.out.gfa_assembly
     ch_gfa_forpolishing = GRAPH_RECON.out.gfa_assembly
@@ -61,7 +59,6 @@ workflow DENOVO {
     ch_mapped_denovo = BWA_DENOVO.out.bam
     ch_mapped_denovo_flagstat = BWA_DENOVO.out.bambai
     ch_mapped_denovo_coverage = BWA_DENOVO.out.bambai
-    ch_versions = ch_versions.mix(BWA_DENOVO.out.versions)
 
     //
     // Module: Calculate statistics for de novo bwa mapping
@@ -69,14 +66,10 @@ workflow DENOVO {
     SAMTOOLS_FLAGSTAT_DENOVO (
         ch_mapped_denovo_flagstat
     )
-    ch_versions = ch_versions.mix(SAMTOOLS_FLAGSTAT_DENOVO.out.versions)
 
     SAMTOOLS_COVERAGE_DENOVO (
         ch_mapped_denovo_coverage
-    )
-
-    ch_versions = ch_versions.mix(SAMTOOLS_COVERAGE_DENOVO.out.versions)    
-    
+    )    
 
     //
     // Module: Polish assembly with IVAR Consensus
@@ -90,7 +83,7 @@ workflow DENOVO {
         ch_fasta,
         true, //save_mpileup
     )
-    ch_versions = ch_versions.mix(IVAR_CONSENSUS_DENOVO.out.versions)
+    //ch_versions = ch_versions.mix(IVAR_CONSENSUS_DENOVO.out.versions)
 
     IVAR_CONSENSUS_POLISH_CLEANUP (
         IVAR_CONSENSUS_DENOVO.out.fasta,
@@ -115,17 +108,15 @@ workflow DENOVO {
     MUMMER (
         ch_tocompare
     )
-    ch_mummer = MUMMER.out.summary
 
     //
     // Module: run QUAST for assembly stats
     //
     QUAST (
-        GRAPH_RECON.out.unicycler_contigs.collect{it[1]}.ifEmpty([]),
-        true,
-        true
+        GRAPH_RECON.out.unicycler_contigs,
+        [[:], []], //no reference fasta
+        [[:], []] //no annotations
     )
-    ch_versions = ch_versions.mix(QUAST.out.versions)
     
     emit:
     quast_tsv       = QUAST.out.tsv
@@ -133,8 +124,8 @@ workflow DENOVO {
     coverage        = SAMTOOLS_COVERAGE_DENOVO.out.coverage
     graph_recon_log = GRAPH_RECON.out.log
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
-    mummer_summary  = MUMMER.out.summary
+    mummer_summary  = MUMMER.out.coords
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
     mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
-    versions        = ch_versions // channel: [ versions.yml ]
+    //versions        = ch_versions // channel: [ versions.yml ]
 }

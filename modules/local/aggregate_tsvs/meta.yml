@@ -1,0 +1,54 @@
+name: aggregate_tsvs
+description: Concatenate per-sample variant summary TSV files into a single aggregated file
+keywords:
+  - aggregate
+  - tsv
+  - variants
+  - summary
+tools:
+  - aggregate_tsvs:
+      description: Pipeline-bundled Python script (bin/aggregate_tsvs.py) that concatenates per-sample variant summary files
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - individual_tsvs:
+      type: file
+      description: Per-sample variant summary files to aggregate
+      pattern: "*.txt"
+      ontologies: []
+  - save_aggr:
+      type: boolean
+      description: Whether to also tee a combined `all_samples.vcf.summary.txt` file
+output:
+  txt:
+    - "*.txt":
+        type: file
+        description: Aggregated variant summary file(s)
+        pattern: "*.txt"
+        ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

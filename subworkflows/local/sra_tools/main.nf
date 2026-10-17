@@ -1,6 +1,6 @@
+include { CUSTOM_SRATOOLSNCBISETTINGS } from '../../../modules/nf-core/custom/sratoolsncbisettings/main'
 include { SRATOOLS_PREFETCH           } from '../../../modules/nf-core/sratools/prefetch/main'
 include { SRATOOLS_FASTERQDUMP        } from '../../../modules/nf-core/sratools/fasterqdump/main'
-include { SRA_TO_SAMPLESHEET          } from '../../../modules/local/sra_to_samplesheet/main'
 //
 // Download FASTQ sequencing reads from the NCBI's Sequence Read Archive (SRA).
 //
@@ -10,31 +10,25 @@ workflow SRA_TOOLS {
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = Channel.topic('versions')
+
+    //
+    // Detect existing NCBI user settings or create new ones (required by the updated SRATOOLS_FASTERQDUMP).
+    //
+    CUSTOM_SRATOOLSNCBISETTINGS ( ch_sra_ids.collect() )
+    ch_ncbi_settings = CUSTOM_SRATOOLSNCBISETTINGS.out.ncbi_settings
 
     //
     // Prefetch sequencing reads in SRA format.
     //
-    SRATOOLS_PREFETCH ( ch_sra_ids )
-    //ch_versions = ch_versions.mix(SRATOOLS_PREFETCH.out.versions.first())
+    SRATOOLS_PREFETCH ( ch_sra_ids, ch_ncbi_settings, [] ) //no dbgap certificate used
 
     //
     // Convert the SRA format into one or more compressed FASTQ files.
     //
-    SRATOOLS_FASTERQDUMP ( SRATOOLS_PREFETCH.out.sra )
-    ch_versions = ch_versions.mix(SRATOOLS_FASTERQDUMP.out.versions.first())
-
-    //
-    // Convert reads ch to samplesheet
-    //
-    // SRA_TO_SAMPLESHEET (
-    //     SRATOOLS_FASTERQDUMP.out.forward, 
-    //     SRATOOLS_FASTERQDUMP.out.reverse 
-    //     )
+    SRATOOLS_FASTERQDUMP ( SRATOOLS_PREFETCH.out.sra, ch_ncbi_settings, [] ) //no dbgap certificate used
 
     emit:
-    //samplesheet = SRA_TO_SAMPLESHEET.out.samplesheet 
-    forward = SRATOOLS_FASTERQDUMP.out.forward
-    reverse = SRATOOLS_FASTERQDUMP.out.reverse
+    reads    = SRATOOLS_FASTERQDUMP.out.reads // channel: [ val(meta), [ reads ] ]
     versions = ch_versions                    // channel: [ versions.yml ]
 }

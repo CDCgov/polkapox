@@ -27,7 +27,7 @@ nextflow_process {
             assert process.out.bam.size() == 1
             assert process.out.bai.size() == 1
             assert process.out.bambai.size() == 1
-            assert process.out.versions.size() == 1
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 2
             assert snapshot(process.out.bam[0][1]).match()
         }
 

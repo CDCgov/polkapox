@@ -9,7 +9,7 @@ path indir
 
 output:
 path("*.csv"),       emit: samplesheet
-path "versions.yml", emit: versions
+tuple val("${task.process}"), val('python'), eval('python --version | sed "s/Python //g"'), topic: versions, emit: versions_python
 
 script: // This script is bundled with the pipeline, in polkapox/bin
 single = params.paired ? "" : "--single"  // $single is empty string if paired=true, '--single' if paired=false
@@ -24,10 +24,5 @@ project_name = params.project_name ? "--project_name ${params.project_name}" : "
         --file_levels ${params.file_levels} \\
         $single \\
         $project_name
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }
