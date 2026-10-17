@@ -16,7 +16,7 @@ workflow REFBASED {
         ch_bwa_index
 
     main: 
-        ch_versions = Channel.topic('versions')
+        //ch_versions = Channel.topic('versions')
 
         //log input channels for debugging purposes
         ch_trimmed_fastq_bwa.view { v -> "ch_trimmed_fastq_bwa: $v" }
@@ -27,7 +27,7 @@ workflow REFBASED {
         //
         BWA_MEM (
             ch_trimmed_fastq_bwa,
-            ch_bwa_index.map { index -> [ [:], index ] },
+            ch_bwa_index, //already a (meta, path) tuple from BWA_INDEX
             [[:], []], //fasta only required for cram output
             true //sort the bam file
         )
@@ -120,5 +120,5 @@ workflow REFBASED {
             depth_tsv = SAMTOOLS_DEPTH.out.tsv
             tsv_vars  = ch_tsv_vars
             ivar_tsv  = IVAR_VARIANTS.out.tsv
-            versions  = ch_versions // channel: [ versions.yml ]
+            //versions  = ch_versions // channel: [ versions.yml ]
 }

@@ -1,7 +1,7 @@
 include { SAMTOOLS_FLAGSTAT as SAMTOOLS_FLAGSTAT_DENOVO } from '../../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_COVERAGE as SAMTOOLS_COVERAGE_DENOVO } from '../../../modules/local/samtools_coverage/main'
 include { UNICYCLER                                     } from '../../../modules/local/unicycler/main'
-include { BANDAGE                                       } from '../../../modules/nf-core/bandage/image/main'
+include { BANDAGE_IMAGE as BANDAGE                      } from '../../../modules/nf-core/bandage/image/main'
 include { GRAPH_RECON                                   } from '../../../modules/local/graph_reconstruct/main'
 include { BWA_DENOVO                                    } from '../../../modules/local/bwa_denovo/main'
 include { PUBLISH_CONTIGS                               } from '../../../modules/local/publish_contigs/main'
@@ -17,7 +17,7 @@ workflow DENOVO {
 
     main:
 
-    ch_versions = Channel.topic('versions')
+    //ch_versions = Channel.topic('versions')
 
     //
     // Module: run Unicycler
@@ -127,5 +127,5 @@ workflow DENOVO {
     mummer_summary  = MUMMER.out.coords
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
     mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
-    versions        = ch_versions // channel: [ versions.yml ]
+    //versions        = ch_versions // channel: [ versions.yml ]
 }

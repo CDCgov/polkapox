@@ -85,13 +85,6 @@ def getWorkflowVersion() {
     return version_string
 }
 
-// Parse a legacy versions.yml file's contents into a trimmed YAML string
-def processVersionsFromYAML(yaml_file) {
-    def yaml = new org.yaml.snakeyaml.Yaml()
-    def versions = yaml.load(yaml_file).collectEntries { k, v -> [k.tokenize(':')[-1], v] }
-    return yaml.dumpAsMap(versions).trim()
-}
-
 // Get workflow version block for the collated versions report
 def workflowVersionToYAML() {
     return """
@@ -99,11 +92,6 @@ def workflowVersionToYAML() {
         ${workflow.manifest.name}: ${getWorkflowVersion()}
         Nextflow: ${workflow.nextflow.version}
     """.stripIndent().trim()
-}
-
-// Get a channel of software versions (legacy versions.yml files) in YAML format
-def softwareVersionsToYAML(ch_versions) {
-    return ch_versions.unique().map { version -> processVersionsFromYAML(version) }.unique().mix(channel.of(workflowVersionToYAML()))
 }
 
 /*
@@ -116,9 +104,6 @@ def softwareVersionsToYAML(ch_versions) {
 def multiqc_report = []
 
 workflow POLKAPOX {
-
-    ch_versions = Channel.empty() 
-    ch_versions = ch_versions.mix(Channel.topic('versions')) //pick up modules migrated to topic-based version tracking
 
     if (params.indir) {
         //
@@ -145,8 +130,7 @@ workflow POLKAPOX {
         SRA_TOOLS (
             ch_sra
         )
-        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions)
-    
+
         ch_input = SRA_TOOLS.out.reads
             .map { meta, reads -> "$meta,${reads[0]},${reads.size() > 1 ? reads[1] : ''}" }
             .collectFile(name: 'sra-samplesheet.csv', newLine: true, seed: 'sample,fastq_1,fastq_2')
@@ -161,7 +145,7 @@ workflow POLKAPOX {
     //
     // SUBWORKFLOW: Prepare reference
     //
-    BWA_INDEX ( [id: 'reference'],  file(params.fasta) )
+    BWA_INDEX ( [ [id: 'reference'], file(params.fasta) ] )
 
     //
     // SUBWORKFLOW: Only run Read Filter
@@ -174,7 +158,6 @@ workflow POLKAPOX {
         READ_FILTER (
             INPUT_CHECK.out.reads,
         )
-        ch_versions = ch_versions.mix(READ_FILTER.out.versions)
     } 
 
     //
@@ -186,8 +169,6 @@ workflow POLKAPOX {
             READ_FILTER.out.trimmed_fastq,
             BWA_INDEX.out.index,
         )
-        ch_versions = ch_versions.mix(REFBASED.out.versions)
-
     }
 
     //
@@ -198,21 +179,14 @@ workflow POLKAPOX {
         DENOVO (
             READ_FILTER.out.trimmed_fastq,
         )
-        ch_versions = ch_versions.mix(DENOVO.out.versions)
     }
 
     //
-    // Collate software versions used (replaces CUSTOM_DUMPSOFTWAREVERSIONS; handles both
-    // legacy versions.yml files and topic-channel version tuples)
+    // Collate software versions used (replaces CUSTOM_DUMPSOFTWAREVERSIONS; topic-channel
+    // based only -- read after all version-emitting modules/subworkflows above have run)
     //
-    ch_topic_versions = ch_versions
+    ch_collated_versions = Channel.topic('versions')
         .distinct()
-        .branch { entry ->
-            versions_file: entry instanceof Path
-            versions_tuple: true
-        }
-
-    ch_topic_versions_string = ch_topic_versions.versions_tuple
         .map { process, tool, version ->
             [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
         }
@@ -221,9 +195,7 @@ workflow POLKAPOX {
             tool_versions.unique().sort()
             "${process}:\n${tool_versions.join('\n')}"
         }
-
-    ch_collated_versions = softwareVersionsToYAML(ch_topic_versions.versions_file)
-        .mix(ch_topic_versions_string)
+        .mix(Channel.of(workflowVersionToYAML()))
         .collectFile(storeDir: "${params.outdir}/pipeline_info", name: 'collated_versions.yml', sort: true, newLine: true)
     //
     // MODULE: MultiQC
@@ -240,7 +212,7 @@ workflow POLKAPOX {
         ch_multiqc_files = ch_multiqc_files.mix(REFBASED.out.flagstat.collect{it[1]}.ifEmpty([]))
     }
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
-        ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_tsv.collect().ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_tsv.collect{it[1]}.ifEmpty([]))
     }
 
     // MultiQC config: bundled default plus an optional user-supplied override (nf-core/modules multiqc dedicated `multiqc_config` input)
@@ -250,7 +222,6 @@ workflow POLKAPOX {
         ch_multiqc_files.collect().map { files -> [ [id:'multiqc'], files, ch_multiqc_config_files, [], [], [] ] }
     )
     multiqc_report = MULTIQC.out.report.map { meta, report -> report }.toList()
-    ch_versions    = ch_versions.mix(MULTIQC.out.versions)
 
     //
     // MODULE: summarize_qc.py

@@ -18,7 +18,7 @@ workflow IVAR_CONSENSUS_POLISH {
     save_mpileup
 
     main:
-    ch_versions = Channel.topic('versions')
+    //ch_versions = Channel.topic('versions')
 
     ch_bam = bam_fasta.map { meta, bam, fasta -> [ meta, bam ] }
     ch_fasta = bam_fasta.map { meta, bam, fasta -> fasta }
@@ -36,7 +36,7 @@ workflow IVAR_CONSENSUS_POLISH {
     emit:
     fasta    = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
     mpileup  = IVAR_CONSENSUS_POLISH_RUN.out.mpileup
-    versions = ch_versions
+    //versions = ch_versions
 }
 
 process IVAR_CONSENSUS_POLISH_CLEANUP {
