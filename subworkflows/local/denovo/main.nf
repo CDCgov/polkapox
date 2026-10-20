@@ -120,6 +120,7 @@ workflow DENOVO {
     
     emit:
     quast_tsv       = QUAST.out.tsv
+    quast_results   = QUAST.out.results //directory containing report.tsv, named for MultiQC's quast search pattern
     flagstat        = SAMTOOLS_FLAGSTAT_DENOVO.out.flagstat
     coverage        = SAMTOOLS_COVERAGE_DENOVO.out.coverage
     graph_recon_log = GRAPH_RECON.out.log

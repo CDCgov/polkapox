@@ -212,7 +212,9 @@ workflow POLKAPOX {
         ch_multiqc_files = ch_multiqc_files.mix(REFBASED.out.flagstat.collect{it[1]}.ifEmpty([]))
     }
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
-        ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_tsv.collect{it[1]}.ifEmpty([]))
+        //MultiQC's quast search pattern requires the file be literally named report.tsv, so feed the
+        //results directory (not the renamed *.tsv symlink) so MultiQC can find it inside
+        ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_results.collect{it[1]}.ifEmpty([]))
     }
 
     // MultiQC config: bundled default plus an optional user-supplied override (nf-core/modules multiqc dedicated `multiqc_config` input)

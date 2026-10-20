@@ -335,37 +335,33 @@ def fix_names(df):
     :returns: a dataframe with standardized columns
     :rtype: Dataframe object
     """
+    # column names as emitted by MultiQC 1.35's multiqc_general_stats.txt (verified against the
+    # installed container): lowercase '<module_id>-<metric>', no more '<Module>_mqc-generalstats-' prefix.
+    # Kraken no longer reports species-specific hits (Homo_sapiens/Monkeypox_virus); it always reports
+    # whichever taxon is most abundant via pct_top_one/pct_top_n, so these columns are always present.
     raw_col_names = ['Sample',
-                     'Samtools_mqc-generalstats-samtools-flagstat_total',
-                     'Samtools_mqc-generalstats-samtools-mapped_passed',
-                     'QUAST_mqc-generalstats-quast-N50',
-                     'QUAST_mqc-generalstats-quast-Total_length',
-                     'Kraken_mqc-generalstats-kraken-Homo_sapiens',
-                     'Kraken_mqc-generalstats-kraken-Monkeypox_virus',
-                     'Kraken_mqc-generalstats-kraken-Top_5',
-                     'Kraken_mqc-generalstats-kraken-Unclassified',
-                     'fastp_mqc-generalstats-fastp-pct_duplication',
-                     'fastp_mqc-generalstats-fastp-after_filtering_q30_rate',
-                     'fastp_mqc-generalstats-fastp-after_filtering_q30_bases',
-                     'fastp_mqc-generalstats-fastp-after_filtering_gc_content',
-                     'fastp_mqc-generalstats-fastp-pct_surviving',
-                     'fastp_mqc-generalstats-fastp-pct_adapter']
-    
-    for col_name in raw_col_names[:]:
-        # check for human, mpox virus top hit column. add any missing columns from raw_col_names list
+                     'samtools_flagstat-flagstat_total',
+                     'samtools_flagstat-mapped_passed',
+                     'quast-N50',
+                     'quast-Total_length',
+                     'kraken-pct_top_one',
+                     'kraken-pct_top_n',
+                     'kraken-pct_unclassified',
+                     'fastp-pct_duplication',
+                     'fastp-after_filtering_q30_rate',
+                     'fastp-after_filtering_q30_bases',
+                     'fastp-after_filtering_gc_content',
+                     'fastp-pct_surviving_reads',
+                     'fastp-pct_adapter']
+
+    for col_name in raw_col_names:
+        # add any missing columns and give a value of NA
         if col_name not in df.columns:
-            # if the missing column is either human, mpox virus top hit, remove it from the raw_col_names list
-            if col_name == 'Kraken_mqc-generalstats-kraken-Homo_sapiens' or col_name == 'Kraken_mqc-generalstats-kraken-Monkeypox_virus':
-                raw_col_names.remove(col_name)
-            else:
-                # add any other missing columns and give a value of NA
-                df[col_name] = "NA"
-    
+            df[col_name] = "NA"
+
     df = df[raw_col_names]
 
-    # raw_col_names has 15 entries but up to 2 optional Kraken species columns may be absent,
-    # so valid lengths are 13 (both absent), 14 (one absent), or 15 (both present).
-    if not (13 <= len(raw_col_names) <= 15):
+    if len(raw_col_names) != 14:
         logger.error(f"Unexpected number of columns ({len(raw_col_names)}) in multiqc/*general_stats.txt file")
         sys.exit(1)
     for i in range(len(raw_col_names)):
@@ -512,10 +508,9 @@ def main():
                summary.loc[len(summary)] = no_sample_data
                summary.fillna(value='NaN',inplace=True)
 
-    # new_col_names length must match the number of columns returned by fix_names (13–15 depending
-    # on which optional Kraken species columns are present in the MultiQC output).
-    # The base 14 names cover the common case where exactly one species column is present;
-    # fix_names adjusts raw_col_names dynamically, and set_axis will error if sizes differ.
+    # new_col_names length must match the 14 columns fix_names() always returns now that
+    # Kraken's generic top_one/top_n/unclassified columns (no longer species-specific) are
+    # always present in MultiQC 1.35 output.
     new_col_names = ['sample', 'reads_total_bwa', 'reads_mapped_bwa', 'n50_unicycler',
                      'assembly_length_unicycler', 'top_taxa_percent_kraken',
                      'top5_taxa_percent_kraken', 'unclassified_percent_kraken',
