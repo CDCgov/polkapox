@@ -143,4 +143,45 @@ nextflow_workflow {
 
     }
 
+    test("INPUT_CHECK - empty paired end FASTQ terminates with readable error") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/empty_1.fq.gz", checkIfExists: true)
+                def fq2 = file("${moduleTestDir}/empty_2.fq.gz", checkIfExists: true)
+                def samplesheet = file("${workDir}/samplesheet_empty.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nbad_pair,\${fq1},\${fq2}\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert !workflow.success
+            assert ([workflow.errorReport, workflow.stdout.join('\n'), workflow.stderr.join('\n')].join('\n')).contains("fq lint found zero records for sample 'bad_pair'")
+        }
+
+    }
+
+    test("INPUT_CHECK - empty single end FASTQ terminates with readable error") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/empty_1.fq.gz", checkIfExists: true)
+                def samplesheet = file("${workDir}/samplesheet_empty_single.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nbad_single,\${fq1},\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert !workflow.success
+            assert ([workflow.errorReport, workflow.stdout.join('\n'), workflow.stderr.join('\n')].join('\n')).contains("fq lint found zero records for sample 'bad_single'")
+        }
+
+    }
+
 }

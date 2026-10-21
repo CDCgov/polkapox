@@ -19,18 +19,19 @@ workflow INPUT_CHECK {
 
     FQ_LINT(reads)
 
-    // check that the fastq files are not empty
-    FQ_LINT.out.lint.map { meta, lintReport ->
+    // check that the fastq files are not empty; downstream channels only receive reports that pass
+    checked_lint = FQ_LINT.out.lint.map { meta, lintReport ->
         checkFqLintReport(meta, lintReport)
+        [ meta, lintReport ]
     }
 
     validated_reads = reads
-        .join(FQ_LINT.out.lint)
+        .join(checked_lint)
         .map { meta, fastq, lint -> [meta, fastq] }
 
     emit:
     reads = validated_reads                   // channel: [ val(meta), [ reads ] ]
-    lint = FQ_LINT.out.lint                    // channel: [ val(meta), lint_report ]
+    lint = checked_lint                        // channel: [ val(meta), lint_report ]
 }
 
 // Function to get list of [ meta, [ fastq_1, fastq_2 ] ]
