@@ -8,135 +8,102 @@
                     "bandage/image": {
                         "branch": "master",
                         "git_sha": "54e41f4ed3aead45054380a9befeb927612ffc91",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "bwa/index": {
                         "branch": "master",
                         "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "bwa/mem": {
                         "branch": "master",
                         "git_sha": "2fb127c8fd13de0adaa676df7169131e45c0b114",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "custom/sratoolsncbisettings": {
                         "branch": "master",
                         "git_sha": "e194f822da96a7052f544b736a2bd8a6292aa8f8",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "fastp": {
                         "branch": "master",
                         "git_sha": "826a9b28d6da61097d60e1923bb8a2e51de3c5b4",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
+                    },
+                    "fq/lint": {
+                        "branch": "master",
+                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "installed_by": ["modules"]
                     },
                     "ivar/consensus": {
                         "branch": "master",
                         "git_sha": "3dd0d7a2ab0e2333bcf198c7bf0b8744c24413dc",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "ivar/variants": {
                         "branch": "master",
                         "git_sha": "3dd0d7a2ab0e2333bcf198c7bf0b8744c24413dc",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "kraken2/kraken2": {
                         "branch": "master",
                         "git_sha": "d67d33d5925fcec4691b499670fa2bd926fd2be5",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "krakentools/extractkrakenreads": {
                         "branch": "master",
                         "git_sha": "03bd94fc81b464595bcef5d9dc3f06ea1f34bfa0",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "multiqc": {
                         "branch": "master",
                         "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "mummer": {
                         "branch": "master",
                         "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "quast": {
                         "branch": "master",
                         "git_sha": "9a034dd2c5df2c9b283e09ddf2667d9118b4ccd7",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "samtools/depth": {
                         "branch": "master",
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "samtools/faidx": {
                         "branch": "master",
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "samtools/flagstat": {
                         "branch": "master",
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "samtools/index": {
                         "branch": "master",
                         "git_sha": "9339809fcb90af8a8b7051e6cd914894d5c52002",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "sratools/fasterqdump": {
                         "branch": "master",
                         "git_sha": "c8f20a5b1c9ac08e48a3e317276a97904066bd3a",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "sratools/prefetch": {
                         "branch": "master",
                         "git_sha": "c8f20a5b1c9ac08e48a3e317276a97904066bd3a",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     },
                     "vcftools": {
                         "branch": "master",
                         "git_sha": "094186cc8b196ebdded57d596d741611ff571cf3",
-                        "installed_by": [
-                            "modules"
-                        ]
+                        "installed_by": ["modules"]
                     }
                 }
             }

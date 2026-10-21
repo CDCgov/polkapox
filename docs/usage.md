@@ -121,6 +121,20 @@ CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
 The pipeline assumes paired-end reads by default.  You should specify  `--paired False` for single-end reads when you run the pipeline with a directory path as input (`--indir`). 
 If you're providing a samplesheet, the pipeline will automatically detect paired-end vs. single-end reads based on the samplesheet, as described above.
 
+### FASTQ validation
+
+After samplesheet validation, the input-check subworkflow runs the
+[nf-core fq/lint module](https://nf-co.re/modules/fq_lint/) on every samplesheet
+entry. Paired-end files are checked together for FASTQ validity and matching
+read names; single-end entries are checked individually. Mixed single- and
+paired-end samplesheets are supported. Reads are released for downstream
+processing only after their validation succeeds.
+
+Invalid FASTQs or mismatched pairs terminate the workflow rather than being
+silently skipped. Per-entry validation reports are published to
+`<outdir>/fq_lint/`, and the fq version is recorded through the pipeline's
+software-version topic.
+
 ## Entrypoint/Subworkflow options
 This workflow contains several subworkflows that allow you as the user to specify which components of the workflow you would like to run. You must select one subworkflow using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. 
 
