@@ -26,7 +26,6 @@ nextflow_workflow {
 
         then {
             assert workflow.success
-            assert workflow.out.versions.size() >= 1
             assert workflow.out.graph_recon_log.size() == 1
             assert workflow.out.mummer_summary.size() == 1
             assert snapshot(

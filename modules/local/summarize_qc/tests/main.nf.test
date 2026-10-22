@@ -20,6 +20,25 @@ nextflow_process {
             assert process.success
             assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
             assert process.out.tsv.size() == 1
+
+            // MultiQC general-stats values are in current-MultiQC units and must be restored to legacy units
+            def lines = file(process.out.tsv[0]).readLines()
+            def header = lines[0].split('\t') as List
+            def row = lines[1].split('\t', -1) as List
+            def value = { String col -> row[header.indexOf(col)] }
+            def approx = { String col, double expected -> Math.abs((value(col) as double) - expected) < 1e-6 }
+
+            assert lines.size() == 2
+            assert value('sample') == 'test_sub'
+            assert approx('percent_reads_passed_fastp', 95.0)
+            assert approx('percent_adapter_fastp', 3.0)
+            assert approx('gc_content_postfilter_fastp', 0.55)
+            assert approx('q30_rate_postfilter_fastp', 0.95)
+            assert approx('percent_duplication_fastp', 1.5)
+            assert approx('reads_mapped_bwa', 9500)
+            assert approx('percent_mapped_bwa', 95.0)
+            assert approx('assembly_length_unicycler', 200000)
+            assert approx('n50_unicycler', 50000)
             //need to move the samplesheet files to a public location to make it work on CI/CD environments
             //assert snapshot(process.out.tsv).match()
         }
