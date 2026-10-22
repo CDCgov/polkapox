@@ -330,46 +330,82 @@ def get_gfa_stats(sample):
     return gfaResults
 
 def fix_names(df):
-    """ Standardize the raw column names
-    :param df: input dataframe with columns to standardize
-    :returns: a dataframe with standardized columns
-    :rtype: Dataframe object
+    """Select current MultiQC metrics and convert them to the older units.
+
+    The accepted headers are from the current MultiQC general-stats table. Values
+    are converted to the units used by the older pipeline summary: counts and
+    lengths are restored to whole reads or base pairs, while rates are fractions.
+
+    Args:
+        df (pandas.DataFrame): MultiQC general-stats table.
+
+    Returns:
+        pandas.DataFrame: Sample plus the 13 normalized metrics in fixed order.
+
+    Raises:
+        SystemExit: If the table has no recognized current MultiQC metric headers.
     """
-    # column names as emitted by MultiQC 1.35's multiqc_general_stats.txt (verified against the
-    # installed container): lowercase '<module_id>-<metric>', no more '<Module>_mqc-generalstats-' prefix.
-    # Kraken no longer reports species-specific hits (Homo_sapiens/Monkeypox_virus); it always reports
-    # whichever taxon is most abundant via pct_top_one/pct_top_n, so these columns are always present.
-    raw_col_names = ['Sample',
-                     'samtools_flagstat-flagstat_total',
-                     'samtools_flagstat-mapped_passed',
-                     'quast-N50',
-                     'quast-Total_length',
-                     'kraken-pct_top_one',
-                     'kraken-pct_top_n',
-                     'kraken-pct_unclassified',
-                     'fastp-pct_duplication',
-                     'fastp-after_filtering_q30_rate',
-                     'fastp-after_filtering_q30_bases',
-                     'fastp-after_filtering_gc_content',
-                     'fastp-pct_surviving_reads',
-                     'fastp-pct_adapter']
+    # CHANGE: Accept only the current MultiQC general-stats headers; convert the newer display
+    # units back to the older units expected by the downstream summary.
+    column_specs = [
+        # CHANGE: Restore raw Samtools read counts from current MultiQC values expressed in millions.
+        ('samtools_flagstat-flagstat_total', 1_000_000),
+        ('samtools_flagstat-mapped_passed', 1_000_000),
+        # CHANGE: Restore current QUAST Kbp/Mbp display values to the older base-pair units.
+        ('quast-N50', 1_000),
+        ('quast-Total_length', 1_000_000),
+        # CHANGE: Read Kraken's current taxon-neutral top_one metric only; do not use species-named
+        # headers from older MultiQC reports.
+        ('kraken-pct_top_one', 1),
+        ('kraken-pct_top_n', 1),
+        ('kraken-pct_unclassified', 1),
+        # CHANGE: Restore fastp fractions/counts from current percentage/million display values;
+        # map the current pct_surviving_reads field to the script's established output column.
+        ('fastp-pct_duplication', 1),
+        ('fastp-after_filtering_q30_rate', 0.01),
+        ('fastp-after_filtering_q30_bases', 1_000_000),
+        ('fastp-after_filtering_gc_content', 0.01),
+        ('fastp-pct_surviving_reads', 1),
+        ('fastp-pct_adapter', 1),
+    ]
 
-    for col_name in raw_col_names:
-        # add any missing columns and give a value of NA
-        if col_name not in df.columns:
-            df[col_name] = "NA"
-
-    df = df[raw_col_names]
-
-    if len(raw_col_names) != 14:
-        logger.error(f"Unexpected number of columns ({len(raw_col_names)}) in multiqc/*general_stats.txt file")
+    # CHANGE: Reject older or unrecognized header layouts instead of silently filling every
+    # MultiQC metric with NA; parsing is intentionally limited to the current header format.
+    if not any(source_name in df.columns for source_name, _ in column_specs):
+        logger.error("No current MultiQC general-stats headers were found in the input table")
         sys.exit(1)
-    for i in range(len(raw_col_names)):
-        if df.columns[i] != raw_col_names[i]:
-            logger.error(f"Unexpected column name at position {i}: '{df.columns[i]}' (expected '{raw_col_names[i]}')")
-            sys.exit(1)
 
-    return df
+    # CHANGE: Preserve Sample and select only current-version metric names, independent of column order.
+    normalized = pd.DataFrame(index=df.index)
+    normalized['Sample'] = df['Sample'] if 'Sample' in df.columns else 'NA'
+    for source_name, multiplier in column_specs:
+        if source_name not in df.columns:
+            # CHANGE: Keep the prior behavior of representing absent metrics as "NA".
+            normalized[source_name] = 'NA'
+            continue
+
+        values = pd.to_numeric(df[source_name], errors='coerce')
+        # CHANGE: Apply the current-header-to-legacy-unit conversion so downstream values match
+        # the older MultiQC table's measurement scale.
+        if multiplier != 1:
+            values = values * multiplier
+            # CHANGE: Restore Samtools read counts as whole-number values, matching the 1.12 table.
+            if source_name in {
+                'samtools_flagstat-flagstat_total',
+                'samtools_flagstat-mapped_passed',
+            }:
+                values = values.round().astype('Int64')
+            # CHANGE: Round restored QUAST lengths and fastp base counts to whole bases after scaling.
+            elif source_name in {
+                'quast-N50',
+                'quast-Total_length',
+                'fastp-after_filtering_q30_bases',
+            }:
+                values = values.round()
+        normalized[source_name] = values
+
+    # CHANGE: Return only the selected current-version columns in the existing standardized order.
+    return normalized[['Sample'] + [spec[0] for spec in column_specs]]
 
 def get_total_snps(sample):
     """ Grab the tsv files from ivar output (ivar_variants dir) and get total number of SNPs
@@ -476,7 +512,7 @@ def count_ns_in_pileup(sample):
     except (OSError, ValueError) as e:
         logger.error(f"Unable to parse {p}: {e}")
         return None
-    
+
 def main():
     args = parse_args()
 
@@ -527,7 +563,8 @@ def main():
     fixed_summary = fixed_summary.set_axis(new_col_names, axis=1)
 
     if args.workflow == 'denovo' or args.workflow == 'full':
-        contig_files = glob(os.path.join('**/*quast_num_contigs_1.txt'), recursive=True)
+        #this is strange behavior since some have the _1 and some don't. Generalizing here.
+        contig_files = glob(os.path.join('**/*quast_num_contigs*.txt'), recursive=True)
         if contig_files:
             contig_file = contig_files[0]
             logger.info(f"{contig_file} found")
