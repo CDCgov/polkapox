@@ -13,7 +13,7 @@ tools:
 input:
   - summarize_qc_files:
       type: file
-      description: All per-sample QC files to summarize (fastp JSON, Kraken2 reports/classifications, seqtk reads, MultiQC data, etc.)
+      description: All per-sample QC files to summarize (fastp JSON, Kraken2 reports/classifications, KrakenTools-extracted reads, MultiQC data, etc.)
   - samplesheet:
       type: file
       description: Validated input samplesheet

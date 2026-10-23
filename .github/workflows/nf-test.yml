@@ -33,6 +33,7 @@ jobs:
         run: |
           nf-test test \
             modules/local/aggregate_tsvs/tests/main.nf.test \
+            modules/local/dnadiff/tests/main.nf.test \
             modules/local/graph_reconstruct/tests/main.nf.test \
             modules/local/summarize_qc/tests/main.nf.test \
             modules/local/variant_convert/tests/main.nf.test \

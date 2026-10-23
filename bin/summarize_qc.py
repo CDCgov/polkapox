@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 
+"""
+Generally this project could do for an overhaul since:
+- Uses filename search to find the files of interest (easy to break in case any changes in module updates)
+- Some of the methods have out of date error handling
+- Newer version of the modules do not have the same information as the older one and the outputs need to be changed to fit the same output table as previously (for example, bp vs kbp)
+"""
+
 import numpy as np
 import pandas as pd
 import os, sys
+import gzip
 from glob import glob
 import json
 import argparse
@@ -89,6 +97,16 @@ def get_raw_filt_counts(sample):
         return 'NA', 'NA'
     return total_raw_reads, total_filtered_reads
 
+def count_fastq_records(path):
+    """ Count the records in a (gzipped) FASTQ file
+    :param path: path to the FASTQ file
+    :returns: number of reads
+    :rtype: int
+    """
+    opener = gzip.open if path.endswith('.gz') else open
+    with opener(path, 'rt') as fh:
+        return sum(1 for _ in fh) // 4
+
 def get_kraken_stats(sample, kdb, kraken_tax_ids):
     """ Get stats from kraken output
     :param sample: sample name
@@ -100,9 +118,12 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
     total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids = ('NA',) * 6
     
     kraken_reads = "{}.kraken2.classifiedreads.txt".format(sample)
-    ortho_reads = "{}.opxreads.txt".format(sample)
+    # KRAKENTOOLS_EXTRACTKRAKENREADS output; read 1 holds one record per pair (single-end has no suffix)
+    ortho_reads = next((f for f in ("{}.extracted_kraken2_read_1.fastq.gz".format(sample),
+                                    "{}.extracted_kraken2_read.fastq.gz".format(sample))
+                        if os.path.exists(f)), None)
 
-    if os.path.exists(kraken_reads) and os.path.exists(ortho_reads):
+    if os.path.exists(kraken_reads) and ortho_reads:
         try:
             k_data = pd.read_csv(kraken_reads, sep=r'\s+', usecols=[0,1,2,3,4], header=None)
             logger.info(f"Data load from {kraken_reads}")
@@ -115,17 +136,12 @@ def get_kraken_stats(sample, kdb, kraken_tax_ids):
         human_perc = round(((human/total) * 100),2)
         unclass_perc = round(((unclass/total) * 100),2)
 
-        if os.path.getsize(ortho_reads) > 0:
-            try:
-                s_data = pd.read_csv(ortho_reads, sep=r'\s+', header=None)
-                opx = len(s_data)
-                opx_perc = round(((opx/total) * 100),2)
-            except pd.errors.ParserError:
-                logger.error(f"Unable to load data from {ortho_reads}")
-                return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
-        else:
-            opx = 0
-            opx_perc = 0
+        try:
+            opx = count_fastq_records(ortho_reads)
+        except (OSError, EOFError) as e:
+            logger.error(f"Unable to read {ortho_reads}: {e}")
+            return total, opx_perc, human_perc, unclass_perc, kraken_db, k_tax_ids
+        opx_perc = round(((opx/total) * 100),2)
 
     with open(kraken_tax_ids) as l:
         lines = [line.strip() for line in l.readlines()]
@@ -496,7 +512,7 @@ def count_ns_in_pileup(sample):
     :returns: count of low-depth positions
     :rtype: str or None
     """
-    p = "{}.polished.mpileup".format(sample)
+    p = "{}.final.mpileup".format(sample)
     if not os.path.exists(p):
         logger.info(f"{p} not found")
         return 'NA'
@@ -694,11 +710,9 @@ def main():
             else None
     )
         for i in [1, 2]:
-            # get the final paths for the seqtk output R1 and R2, and final assembly n
-            seqtk_outfile_pattern = f'{args.project_outdir}/seqtk/{sample}_{{}}.f[a,q].gz' # seqtk possible extensions are fq.gz or fa.gz
-            seqtk_outfile = glob(seqtk_outfile_pattern.format(i))
-            #print(seqtk_outfile)
-            summary_full.at[idx, f'opxv_reads_{i}'] = seqtk_outfile[0] if seqtk_outfile else None
+            # get the final paths for the KrakenTools-extracted R1 and R2, and final assembly n
+            opx_outfile = glob(f'{args.project_outdir}/krakentools/{sample}.extracted_kraken2_read_{i}.f[a,q]*.gz')
+            summary_full.at[idx, f'opxv_reads_{i}'] = opx_outfile[0] if opx_outfile else None
 
     summary_full.to_csv("sample_summary.tsv", sep="\t", index=False)
     logger.info(f"Summary results successfully written to sample_summary.tsv")

@@ -45,4 +45,40 @@ nextflow_process {
 
     }
 
+    test("Summarize QC Test - kraken, extracted reads and polished mpileup") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = [
+                    file("${moduleTestDir}/multiqc_general_stats.txt"),
+                    file("${moduleTestDir}/test_sub.kraken2.classifiedreads.txt"),
+                    file("${moduleTestDir}/test_sub.extracted_kraken2_read_1.fastq.gz"),
+                    file("${moduleTestDir}/test_sub.final.mpileup")
+                ]
+                input[1] = file("${moduleTestDir}/samplesheet.test.csv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def lines = file(process.out.tsv[0]).readLines()
+            def header = lines[0].split('\t') as List
+            def row = lines[1].split('\t', -1) as List
+            def value = { String col -> row[header.indexOf(col)] }
+
+            // 10 classified reads: 4 orthopox (extracted), 3 human, 3 unclassified
+            assert value('total_raw_reads') == '10'
+            assert value('opx_percent_kraken') == '40.0'
+            assert value('human_percent_kraken') == '30.0'
+            assert value('unclass_percent_kraken') == '30.0'
+            // positions with depth < 20 in the mpileup: 10, 5 and 0
+            assert value('corrected_Ns') == '3'
+        }
+
+    }
+
 }

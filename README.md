@@ -14,7 +14,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 ## Pipeline summary
 
 **Read pre-processing**
-1. Filter raw reads to capture only Orthopox Virus sequences. ([`Kraken`](https://github.com/DerrickWood/kraken2) + [`SeqTK`](https://github.com/lh3/seqtk))
+1. Filter raw reads to capture only Orthopox Virus sequences. ([`Kraken`](https://github.com/DerrickWood/kraken2) + [`KrakenTools`](https://github.com/jenniferlu717/KrakenTools))
 1. Trim and filter reads for adapter contamination and quality, summarize QC ([`Fastp`](https://github.com/OpenGene/fastp))
 
 **Reference-based analyses**
@@ -117,7 +117,7 @@ ${outdir}/
   ├── quast/
   ├── sample_summary.tsv
   ├── samtools/
-  ├── seqtk/
+  ├── krakentools/
   ├── unicycler/
   └── variant_summaries/
 ```

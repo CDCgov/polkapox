@@ -5,7 +5,7 @@ include { BANDAGE_IMAGE as BANDAGE                      } from '../../../modules
 include { GRAPH_RECON                                   } from '../../../modules/local/graph_reconstruct/main'
 include { BWA_DENOVO                                    } from '../../../modules/local/bwa_denovo/main'
 include { PUBLISH_CONTIGS                               } from '../../../modules/local/publish_contigs/main'
-include { MUMMER                                        } from '../../../modules/nf-core/mummer/main'
+include { DNADIFF                                       } from '../../../modules/local/dnadiff/main'
 include { QUAST                                         } from '../../../modules/nf-core/quast/main'
 include { IVAR_CONSENSUS_POLISH_CLEANUP                 } from '../../../modules/local/ivar_consensus_polish_cleanup/main'
 include { IVAR_CONSENSUS as IVAR_CONSENSUS_DENOVO       } from '../../../modules/nf-core/ivar/consensus/main'
@@ -101,9 +101,9 @@ workflow DENOVO {
     )
 
     //
-    // Module: run MUMMER for assembly stats
-    //
-    MUMMER (
+    // Module: run dnadiff (MUMmer) for assembly stats
+    //TODO: seems like an overkill to use mummer for this no? Replace with another tool
+    DNADIFF (
         ch_tocompare
     )
 
@@ -123,7 +123,7 @@ workflow DENOVO {
     coverage        = SAMTOOLS_COVERAGE_DENOVO.out.coverage
     graph_recon_log = GRAPH_RECON.out.log
     gfa_assembly    = GRAPH_RECON.out.gfa_assembly
-    mummer_summary  = MUMMER.out.coords
+    mummer_summary  = DNADIFF.out.report
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
     mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
 }
