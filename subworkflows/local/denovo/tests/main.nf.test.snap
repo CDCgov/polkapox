@@ -1,5 +1,5 @@
 {
-    "Should run without failures": {
+    "clade I denovo alignment": {
         "content": [
             [
                 [
@@ -50,7 +50,7 @@
                 ]
             ]
         ],
-        "timestamp": "2026-10-22T20:21:43.986038152",
+        "timestamp": "2026-10-22T20:58:31.676369154",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
