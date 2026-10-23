@@ -13,9 +13,6 @@ workflow READ_FILTER {
     input_reads
 
     main:
-
-    //ch_versions = Channel.topic('versions')
-
     //
     // MODULE: Run Kraken to keep only orthopox reads 
     //
@@ -50,6 +47,4 @@ workflow READ_FILTER {
     kraken2_report = KRAKEN2_KRAKEN2.out.report
     classified_reads_assignment = KRAKEN2_KRAKEN2.out.classified_reads_assignment
     orthopox_reads = KRAKENTOOLS_EXTRACTKRAKENREADS.out.extracted_kraken2_reads
-    //versions      = ch_versions // channel: [ versions.yml ]
-
 }

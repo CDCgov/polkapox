@@ -17,8 +17,6 @@ workflow DENOVO {
 
     main:
 
-    //ch_versions = Channel.topic('versions')
-
     //
     // Module: run Unicycler
     //
@@ -128,5 +126,4 @@ workflow DENOVO {
     mummer_summary  = MUMMER.out.coords
     fasta           = IVAR_CONSENSUS_POLISH_CLEANUP.out.fasta
     mpileup         = IVAR_CONSENSUS_DENOVO.out.mpileup
-    //versions        = ch_versions // channel: [ versions.yml ]
 }

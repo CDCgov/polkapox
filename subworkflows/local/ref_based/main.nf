@@ -16,8 +16,6 @@ workflow REFBASED {
         ch_bwa_index
 
     main: 
-        //ch_versions = Channel.topic('versions')
-
         //log input channels for debugging purposes
         ch_trimmed_fastq_bwa.view { v -> "ch_trimmed_fastq_bwa: $v" }
         ch_bwa_index.view { v -> "ch_bwa_index: $v" }
@@ -120,5 +118,4 @@ workflow REFBASED {
             depth_tsv = SAMTOOLS_DEPTH.out.tsv
             tsv_vars  = ch_tsv_vars
             ivar_tsv  = IVAR_VARIANTS.out.tsv
-            //versions  = ch_versions // channel: [ versions.yml ]
 }

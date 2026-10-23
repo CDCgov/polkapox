@@ -9,9 +9,6 @@ workflow SRA_TOOLS {
     ch_sra_ids   // channel: [ val(meta), val(id) ]
 
     main:
-
-    //ch_versions = Channel.topic('versions')
-
     //
     // Detect existing NCBI user settings or create new ones (required by the updated SRATOOLS_FASTERQDUMP).
     //
@@ -30,5 +27,4 @@ workflow SRA_TOOLS {
 
     emit:
     reads    = SRATOOLS_FASTERQDUMP.out.reads // channel: [ val(meta), [ reads ] ]
-    //versions = ch_versions                    // channel: [ versions.yml ]
 }
