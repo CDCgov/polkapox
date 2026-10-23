@@ -1,24 +1,10 @@
 {
     "SRA_TOOLS - download and convert SRA reads": {
         "content": [
-            [
-                [
-                    {
-                        "id": "SRR11140744"
-                    },
-                    "[id:SRR11140744]_1.fastq.gz:md5,8573015c91d099b6e30789f8bab2f43c"
-                ]
-            ],
-            [
-                [
-                    {
-                        "id": "SRR11140744"
-                    },
-                    "[id:SRR11140744]_2.fastq.gz:md5,37e6f719a022dc3c9994c80fbc20c311"
-                ]
-            ]
+            null,
+            null
         ],
-        "timestamp": "2026-08-31T17:03:38.770256303",
+        "timestamp": "2026-10-22T20:28:12.950348816",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

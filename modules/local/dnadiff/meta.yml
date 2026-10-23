@@ -1,0 +1,66 @@
+name: dnadiff
+description: Compare a reference and a query assembly with MUMmer `dnadiff` and report alignment, SNP and indel statistics
+keywords:
+  - mummer
+  - dnadiff
+  - assembly
+  - comparison
+tools:
+  - mummer:
+      description: MUMmer is a system for rapidly aligning entire genomes
+      homepage: https://mummer.sourceforge.net/
+      documentation: https://mummer.sourceforge.net/manual/
+      doi: 10.1186/gb-2004-5-2-r12
+      licence: ["Artistic License"]
+      identifier: biotools:mummer
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - ref:
+        type: file
+        description: Reference FASTA file
+        pattern: "*.{fa,fasta,fna}"
+        ontologies: []
+    - query:
+        type: file
+        description: Query FASTA file
+        pattern: "*.{fa,fasta,fna}"
+        ontologies: []
+output:
+  report:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*.report":
+          type: file
+          description: dnadiff summary report (TotalSNPs, TotalIndels, alignment statistics)
+          pattern: "*.report"
+          ontologies: []
+  versions_mummer:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - mummer:
+          type: string
+          description: The tool name
+      - "3.23":
+          type: string
+          description: The version of the tool (hard-coded; mummer does not report it on the CLI)
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - mummer:
+          type: string
+          description: The tool name
+      - "3.23":
+          type: string
+          description: The version of the tool (hard-coded; mummer does not report it on the CLI)
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

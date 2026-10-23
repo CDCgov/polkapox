@@ -23,7 +23,7 @@ nextflow_process {
 
         then {
             assert process.success
-            assert process.out.versions.size() == 1
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
             assert snapshot(process.out.vcf).match()
         }
     }

@@ -1,0 +1,80 @@
+name: graph_reconstruct
+description: Reconstruct a linear consensus assembly (and locate inverted terminal repeats) from a Unicycler assembly graph
+keywords:
+  - assembly graph
+  - gfa
+  - itr
+  - de novo
+tools:
+  - graph_reconstruct:
+      description: Pipeline-bundled Python script (bin/AssemblyGraph_gfaPy.py) that walks a GFA assembly graph with gfapy/networkx to reconstruct a linear sequence
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - gfa:
+        type: file
+        description: Assembly graph produced by Unicycler
+        pattern: "*.gfa*"
+        ontologies: []
+output:
+  gfa_assembly:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*asm.fasta":
+          type: file
+          description: Reconstructed linear assembly FASTA (optional, only produced when reconstruction succeeds)
+          pattern: "*asm.fasta"
+          ontologies: []
+  unicycler_contigs:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*contigs.fasta":
+          type: file
+          description: Raw Unicycler contigs extracted from the graph (optional)
+          pattern: "*contigs.fasta"
+          ontologies: []
+  log:
+    - "*.log":
+        type: file
+        description: Reconstruction log
+        pattern: "*.log"
+        ontologies: []
+  summary:
+    - "*.summary":
+        type: file
+        description: Reconstruction summary (optional)
+        pattern: "*.summary"
+        ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

@@ -27,8 +27,8 @@ nextflow_process {
             assert process.out.scaffolds.size() == 1
             assert process.out.gfa.size() == 1
             assert process.out.log.size() == 1
-            assert process.out.versions.size() == 1
-            assert snapshot(process.out.versions).match()
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
+            assert snapshot(process.out.findAll { key, val -> key.startsWith('versions') }).match()
         }
 
     }

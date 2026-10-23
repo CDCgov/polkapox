@@ -25,13 +25,12 @@ nextflow_workflow {
 
         then {
             assert workflow.success
-            assert workflow.out.versions.size() >= 1
             assert snapshot(
                 workflow.out.trimmed_fastq,
                 workflow.out.json,
                 workflow.out.kraken2_report,
                 workflow.out.classified_reads_assignment,
-                workflow.out.seqtk_reads
+                workflow.out.orthopox_reads
             ).match()
         }
 

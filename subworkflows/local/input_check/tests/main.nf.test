@@ -24,8 +24,162 @@ nextflow_workflow {
 
         then {
             assert workflow.success
-            assert workflow.out.versions.size() == 1
+            assert workflow.out.lint.size() == 1
+            assert workflow.out.lint[0][0] == [id: 'test_sub', single_end: false]
+            assert path(workflow.out.lint[0][1]).fileName.toString() == 'test_sub.fq_lint.txt'
             assert snapshot(workflow.out.reads).match()
+        }
+
+    }
+
+    test("INPUT_CHECK - single end samplesheet") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/test_sub_1.fq.gz", checkIfExists: true)
+                def samplesheet = file("${workDir}/samplesheet_single.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nsingle,\${fq1},\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.reads.size() == 1
+            assert workflow.out.reads[0][0] == [id: 'single', single_end: true]
+            assert workflow.out.reads[0][1].size() == 1
+            assert path(workflow.out.reads[0][1][0]).fileName.toString() == 'test_sub_1.fq.gz'
+            assert workflow.out.lint.size() == 1
+        }
+
+    }
+
+    test("INPUT_CHECK - mixed samplesheet with repeated sample across lanes") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/test_sub_1.fq.gz", checkIfExists: true)
+                def fq2 = file("${moduleTestDir}/test_sub_2.fq.gz", checkIfExists: true)
+                def lane1 = file("${workDir}/lane_1.fq.gz")
+                def lane2 = file("${workDir}/lane_2.fq.gz")
+                lane1.bytes = fq1.bytes
+                lane2.bytes = fq2.bytes
+                def samplesheet = file("${workDir}/samplesheet_mixed.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\npaired,\${fq1},\${fq2}\\npaired,\${lane1},\${lane2}\\nsingle,\${fq1},\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert workflow.out.reads.size() == 3
+            assert workflow.out.lint.size() == 3
+            def readsById = workflow.out.reads.collectEntries { meta, reads -> [(meta.id): reads] }
+            assert readsById.keySet() == ['paired_T1', 'paired_T2', 'single'] as Set
+            assert readsById.paired_T1.collect { path(it).fileName.toString() } == ['test_sub_1.fq.gz', 'test_sub_2.fq.gz']
+            assert readsById.paired_T2.collect { path(it).fileName.toString() } == ['lane_1.fq.gz', 'lane_2.fq.gz']
+            assert readsById.single.collect { path(it).fileName.toString() } == ['test_sub_1.fq.gz']
+            assert workflow.out.lint.collect { it[0].id }.toSet() == readsById.keySet()
+        }
+
+    }
+
+    test("INPUT_CHECK - mismatched paired read names terminate validation") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/test_sub_1.fq.gz", checkIfExists: true)
+                def fq2 = file("${workDir}/mismatched_2.fq.gz")
+                fq2.withOutputStream { stream ->
+                    def gzip = new java.util.zip.GZIPOutputStream(stream)
+                    gzip.write("@different_read/2\\nACGT\\n+\\nIIII\\n".bytes)
+                    gzip.close()
+                }
+                def samplesheet = file("${workDir}/samplesheet_mismatched.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nmismatched,\${fq1},\${fq2}\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert !workflow.success
+            assert workflow.out.reads.size() == 0
+            assert workflow.out.lint.size() == 0
+            assert workflow.errorReport.contains('FQ_LINT')
+        }
+
+    }
+
+    test("INPUT_CHECK - malformed single end FASTQ terminates validation") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${workDir}/malformed_1.fq.gz")
+                fq1.withOutputStream { stream ->
+                    def gzip = new java.util.zip.GZIPOutputStream(stream)
+                    gzip.write("@read/1\\nACGT\\n+\\nII\\n".bytes)
+                    gzip.close()
+                }
+                def samplesheet = file("${workDir}/samplesheet_malformed.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nmalformed,\${fq1},\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert !workflow.success
+            assert workflow.out.reads.size() == 0
+            assert workflow.out.lint.size() == 0
+            assert workflow.errorReport.contains('FQ_LINT')
+        }
+
+    }
+
+    test("INPUT_CHECK - empty paired end FASTQ terminates with readable error") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/empty_1.fq.gz", checkIfExists: true)
+                def fq2 = file("${moduleTestDir}/empty_2.fq.gz", checkIfExists: true)
+                def samplesheet = file("${workDir}/samplesheet_empty.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nbad_pair,\${fq1},\${fq2}\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert !workflow.success
+            assert ([workflow.errorReport, workflow.stdout.join('\n'), workflow.stderr.join('\n')].join('\n')).contains("fq lint found zero records for sample 'bad_pair'")
+        }
+
+    }
+
+    test("INPUT_CHECK - empty single end FASTQ terminates with readable error") {
+
+        when {
+            workflow {
+                """
+                def fq1 = file("${moduleTestDir}/empty_1.fq.gz", checkIfExists: true)
+                def samplesheet = file("${workDir}/samplesheet_empty_single.csv")
+                samplesheet.text = "sample,fastq_1,fastq_2\\nbad_single,\${fq1},\\n"
+                input[0] = samplesheet
+                """
+            }
+        }
+
+        then {
+            assert !workflow.success
+            assert ([workflow.errorReport, workflow.stdout.join('\n'), workflow.stderr.join('\n')].join('\n')).contains("fq lint found zero records for sample 'bad_single'")
         }
 
     }

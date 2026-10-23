@@ -1,0 +1,50 @@
+name: samplesheet_check
+description: Validate an input samplesheet and emit a cleaned/checked CSV
+keywords:
+  - samplesheet
+  - validation
+  - csv
+tools:
+  - samplesheet_check:
+      description: Pipeline-bundled Python script (bin/check_samplesheet.py) that validates samplesheet structure and content
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - samplesheet:
+      type: file
+      description: Input samplesheet to validate
+      pattern: "*.csv"
+      ontologies: []
+output:
+  csv:
+    - "*.csv":
+        type: file
+        description: Validated samplesheet
+        pattern: "*.csv"
+        ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

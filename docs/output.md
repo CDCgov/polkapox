@@ -9,7 +9,7 @@ This document describes the output produced by the pipeline. Sub-directories lis
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data into the following outputs:
 
 - [Kraken2](#kraken2) - Fastq sequence classification 
-- [seqTK](#seqtk) - Keep only sequences classified as Monkeypox Virus
+- [KrakenTools](#krakentools) - Keep only sequences classified as Orthopox Virus
 - [FastP](#fastp) - Raw read QC and adapter + quality trimming
 - [BWA mem](#bwa) - Read alignment to a reference genome
 - [samtools](#samtools) - Read alignment depth + metrics
@@ -38,17 +38,17 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 [Kraken2 documentation](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown)
 
-### seqTK
+### KrakenTools
 
 <details markdown="1">
 <summary>Output files</summary>
 
-- `seqtk/`
-  - `*.fq.gz`: Fastqs containing only sequences classified as Monkeypox Virus with Kraken2.
+- `krakentools/`
+  - `*.extracted_kraken2_read_{1,2}.fastq.gz`: Fastqs containing only sequences classified as Orthopox Virus with Kraken2 (single-end: `*.extracted_kraken2_read.fastq.gz`).
 
 </details>
 
-[seqTK documentation](https://github.com/lh3/seqtk)
+[KrakenTools documentation](https://github.com/jenniferlu717/KrakenTools)
 
 ### FastP
 

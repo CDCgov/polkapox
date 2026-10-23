@@ -18,10 +18,65 @@ nextflow_process {
 
         then {
             assert process.success
-            assert process.out.versions.size() == 1
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
             assert process.out.tsv.size() == 1
+
+            // MultiQC general-stats values are in current-MultiQC units and must be restored to legacy units
+            def lines = file(process.out.tsv[0]).readLines()
+            def header = lines[0].split('\t') as List
+            def row = lines[1].split('\t', -1) as List
+            def value = { String col -> row[header.indexOf(col)] }
+            def approx = { String col, double expected -> Math.abs((value(col) as double) - expected) < 1e-6 }
+
+            assert lines.size() == 2
+            assert value('sample') == 'test_sub'
+            assert approx('percent_reads_passed_fastp', 95.0)
+            assert approx('percent_adapter_fastp', 3.0)
+            assert approx('gc_content_postfilter_fastp', 0.55)
+            assert approx('q30_rate_postfilter_fastp', 0.95)
+            assert approx('percent_duplication_fastp', 1.5)
+            assert approx('reads_mapped_bwa', 9500)
+            assert approx('percent_mapped_bwa', 95.0)
+            assert approx('assembly_length_unicycler', 200000)
+            assert approx('n50_unicycler', 50000)
             //need to move the samplesheet files to a public location to make it work on CI/CD environments
             //assert snapshot(process.out.tsv).match()
+        }
+
+    }
+
+    test("Summarize QC Test - kraken, extracted reads and polished mpileup") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = [
+                    file("${moduleTestDir}/multiqc_general_stats.txt"),
+                    file("${moduleTestDir}/test_sub.kraken2.classifiedreads.txt"),
+                    file("${moduleTestDir}/test_sub.extracted_kraken2_read_1.fastq.gz"),
+                    file("${moduleTestDir}/test_sub.final.mpileup")
+                ]
+                input[1] = file("${moduleTestDir}/samplesheet.test.csv")
+                """
+            }
+        }
+
+        then {
+            assert process.success
+
+            def lines = file(process.out.tsv[0]).readLines()
+            def header = lines[0].split('\t') as List
+            def row = lines[1].split('\t', -1) as List
+            def value = { String col -> row[header.indexOf(col)] }
+
+            // 10 classified reads: 4 orthopox (extracted), 3 human, 3 unclassified
+            assert value('total_raw_reads') == '10'
+            assert value('opx_percent_kraken') == '40.0'
+            assert value('human_percent_kraken') == '30.0'
+            assert value('unclass_percent_kraken') == '30.0'
+            // positions with depth < 20 in the mpileup: 10, 5 and 0
+            assert value('corrected_Ns') == '3'
         }
 
     }

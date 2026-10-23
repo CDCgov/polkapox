@@ -1,0 +1,48 @@
+name: create_samplesheet
+description: Build a pipeline samplesheet from a directory of FastQ files
+keywords:
+  - samplesheet
+  - fastq
+  - directory
+tools:
+  - create_samplesheet:
+      description: Pipeline-bundled Python script (bin/create_samplesheet.py) that scans a FastQ directory and writes a samplesheet CSV
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - indir:
+      type: directory
+      description: Directory containing FastQ files (nested per-sample subfolders or flat, per `--file_levels`)
+output:
+  samplesheet:
+    - "*.csv":
+        type: file
+        description: Generated samplesheet
+        pattern: "*.csv"
+        ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

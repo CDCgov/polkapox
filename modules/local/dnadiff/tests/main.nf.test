@@ -1,0 +1,60 @@
+nextflow_process {
+
+    name "Test Process DNADIFF"
+    script "../main.nf"
+    process "DNADIFF"
+
+    test("DNADIFF - query is a sub-region of the reference") {
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    file("${projectDir}/assets/MPXV-UK_P2.noN.fasta", checkIfExists: true),
+                    file("${projectDir}/assets/MPXV-UK_P2.noN_39086_40204.fasta", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.report.size() == 1
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
+            assert path(process.out.report[0][1]).fileName.toString() == 'test_sub.report'
+
+            // summarize_qc.py reads these two lines to fill corrected_snps / corrected_indels
+            def report = path(process.out.report[0][1]).text
+            assert report =~ /(?m)^TotalSNPs\s+\d+/
+            assert report =~ /(?m)^TotalIndels\s+\d+/
+        }
+
+    }
+
+    test("DNADIFF - stub") {
+
+        options "-stub"
+
+        when {
+            params {}
+            process {
+                """
+                input[0] = Channel.of([
+                    [ id: 'test_sub', single_end: false ],
+                    file("${projectDir}/assets/MPXV-UK_P2.noN.fasta", checkIfExists: true),
+                    file("${projectDir}/assets/MPXV-UK_P2.noN_39086_40204.fasta", checkIfExists: true)
+                ])
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assert process.out.report.size() == 1
+        }
+
+    }
+
+}

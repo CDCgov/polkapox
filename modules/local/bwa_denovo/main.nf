@@ -16,7 +16,8 @@ process BWA_DENOVO {
     tuple val(meta), path("*.bam"), path("*.bai"), emit: bambai
     tuple val(meta), path("*.bai"), emit: bai
 
-    path  "versions.yml"          , emit: versions
+    tuple val("${task.process}"), val('bwa'), eval('bwa 2>&1 | sed "s/^.*Version: //; s/Contact:.*$//"'), topic: versions, emit: versions_bwa
+    tuple val("${task.process}"), val('samtools'), eval('samtools --version 2>&1 | sed "s/^.*samtools //; s/Using.*$//"'), topic: versions, emit: versions_samtools
 
     when:
     task.ext.when == null || task.ext.when
@@ -43,11 +44,5 @@ process BWA_DENOVO {
         \$INDEX \\
         $reads \\
         | samtools $samtools_command $args2 --threads $task.cpus -o ${prefix}.bam - && samtools index ${prefix}.bam 
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bwa: \$(echo \$(bwa 2>&1) | sed 's/^.*Version: //; s/Contact:.*\$//')
-        samtools: \$(echo \$(samtools --version 2>&1) | sed 's/^.*samtools //; s/Using.*\$//')
-    END_VERSIONS
     """
 }
