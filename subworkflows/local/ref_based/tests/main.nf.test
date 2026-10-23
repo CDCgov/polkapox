@@ -11,7 +11,10 @@ nextflow_workflow {
                 script "../../../../modules/nf-core/bwa/index/main.nf"
                 process {
                     """
-                    input[0] = file("${projectDir}/assets/MPXV-UK_P2.noN.fasta", checkIfExists: true)
+                    input[0] = [
+                        [ id: 'MPXV-UK_P2' ],
+                        file("${projectDir}/assets/MPXV-UK_P2.noN.fasta", checkIfExists: true)
+                    ]
                     """
                 }
             }

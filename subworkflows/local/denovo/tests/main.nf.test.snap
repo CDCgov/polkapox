@@ -2,7 +2,12 @@
     "Should run without failures": {
         "content": [
             [
-                "report.tsv:md5,30ce79acac87ef8796761e1c31d408d1"
+                [
+                    {
+                        "id": "test_sub"
+                    },
+                    "test_sub.tsv:md5,8a7674c8f04725646e51707898b148f1"
+                ]
             ],
             [
                 [
@@ -41,11 +46,11 @@
                     {
                         "id": "test_sub"
                     },
-                    "test_sub.polished.mpileup:md5,d362a6580dbc928feb5fe805a2244a31"
+                    "test_sub.final.mpileup:md5,d362a6580dbc928feb5fe805a2244a31"
                 ]
             ]
         ],
-        "timestamp": "2026-09-17T17:35:49.74454858",
+        "timestamp": "2026-10-22T20:21:43.986038152",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

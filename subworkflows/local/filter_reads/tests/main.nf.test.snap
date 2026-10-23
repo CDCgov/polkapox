@@ -8,8 +8,8 @@
                         "single_end": false
                     },
                     [
-                        "sample1_1.fastp.fastq.gz:md5,97003b788bf272896544f064eadffff2",
-                        "sample1_2.fastp.fastq.gz:md5,5b9c118657d2a1b64927ff2e25d24044"
+                        "sample1_R1.fastp.fastq.gz:md5,da362d8b1921300312c34fa87083e42b",
+                        "sample1_R2.fastp.fastq.gz:md5,cdea9d4d95bafe0368f78f7304e16ab7"
                     ]
                 ]
             ],
@@ -19,7 +19,7 @@
                         "id": "sample1",
                         "single_end": false
                     },
-                    "sample1.fastp.json:md5,2fe749917b59c23d588794f1bd7e9165"
+                    "sample1.fastp.json:md5,57bab7258b39051490ee94b8c81c97f5"
                 ]
             ],
             [
@@ -46,11 +46,14 @@
                         "id": "sample1",
                         "single_end": false
                     },
-                    "sample1.opxreads.txt:md5,637b8ab70cdb8f52c9ec38ccc9c241c3"
+                    [
+                        "sample1.extracted_kraken2_read_1.fastq.gz:md5,9279437f52bde3ef9077ba002283b3ef",
+                        "sample1.extracted_kraken2_read_2.fastq.gz:md5,958f0828e1284803a14c89256eee670c"
+                    ]
                 ]
             ]
         ],
-        "timestamp": "2026-08-31T17:20:56.551723591",
+        "timestamp": "2026-10-22T20:33:24.559128609",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -4,7 +4,7 @@ nextflow_process {
     script "../main.nf"
     process "SUMMARIZE_TSV"
 
-    test("Should run without failures") {
+    test("summarize tsv on test_sub") {
 
         when {
             params {

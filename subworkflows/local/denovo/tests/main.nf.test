@@ -4,7 +4,7 @@ nextflow_workflow {
     script "../main.nf"
     workflow "DENOVO"
 
-    test("Should run without failures") {
+    test("clade I denovo alignment") {
 
         when {
             params {

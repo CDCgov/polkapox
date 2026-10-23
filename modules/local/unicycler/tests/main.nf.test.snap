@@ -6,12 +6,12 @@
                     [
                         "UNICYCLER",
                         "unicycler",
-                        "0.5.1"
+                        "tput:\ntput:\n0.4.8"
                     ]
                 ]
             }
         ],
-        "timestamp": "2026-10-22T19:26:38.755429756",
+        "timestamp": "2026-10-22T20:04:13.202222473",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

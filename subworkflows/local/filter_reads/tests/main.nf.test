@@ -30,7 +30,7 @@ nextflow_workflow {
                 workflow.out.json,
                 workflow.out.kraken2_report,
                 workflow.out.classified_reads_assignment,
-                workflow.out.seqtk_reads
+                workflow.out.orthopox_reads
             ).match()
         }
 
