@@ -136,7 +136,11 @@ silently skipped. Per-entry validation reports are published to
 software-version topic.
 
 ## Entrypoint/Subworkflow options
-This workflow contains several subworkflows that allow you as the user to specify which components of the workflow you would like to run. You must select one subworkflow using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. 
+This workflow contains several subworkflows that allow you as the user to specify which components of the workflow you would like to run. You must select one subworkflow using the `--workflow` parameter. Options include `full`, `filter_reads`, `ref_based`, and `denovo`. Read filtering is always run, but can optionally be run alone. Reads are classified with Kraken2 and only reads assigned to the orthopox taxa are kept (extracted with KrakenTools `extract_kraken_reads.py`, including child taxa) before adapter and quality trimming with fastp.
+
+### Variant calling thresholds
+
+The reference-based workflow (`ref_based` and `full`) calls variants with iVar using `--DP_cutoff` (minimum total depth, default `5`) and `--af_cutoff` (minimum allele frequency, default `0.01`). `total_snps` in `sample_summary.tsv` counts the variants that pass these cutoffs. The VCF conversion also applies `--af_cutoff`, and the per-locus variant summaries (`--filter true`) additionally apply `--altDP_cutoff` (minimum alternate-allele depth, default `3`).
 
 ## Kraken2 DB options
 The default kraken2 database was assembled from 15 Orthopox viruses including Monkeypox virus Clade II (MA001_USA_002), Monkeypox virus Clade I (NC_003310), Variola major (NC_001611), Variola minor (DQ441419), Borealpox (MN240300), Camelpox (NC_003391), Cowpox (NC_003663), Ectromelia (NC_004105), Vaccinia (NC_006998), Taterapox (NC_008291), Racoonpox (NC027213), Volepox (NC_031033), Skunkpox (NC_031038), Akhmeta (NC_055230), Horsepox (NC_066642), and the human t2t reference (GCF_009914755). We also include the path to smaller database with only Monkeypox virus Clade II (MA001_USA_002), and human genome build GRCh38 (GCF_000001405.40) which works quite well on Monkeypox virus Clade II samples. 
@@ -179,19 +183,19 @@ kraken2-build --build --db orthopox_kdb --threads $THREADS
 The typical command for running the pipeline with a sample sheet is as follows:
 
 ```console
-nextflow run polkapox --input {SAMPLESHEET.csv} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+nextflow run polkapox --input {SAMPLESHEET.csv} --outdir {OUTDIR} --fasta {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
 ```
 
 To run with an input directory, run as: 
 
 ```console
-nextflow run polkapox --indir {PATH/TO/DIR} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+nextflow run polkapox --indir {PATH/TO/DIR} --outdir {OUTDIR} --fasta {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
 ```
 
 To run with SRA accessions: 
 
 ```console
-nextflow run polkapox --sra --sra_ids {PATH/TO/SRA/FILE} --outdir {OUTDIR} --genome {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
+nextflow run polkapox --sra --sra_ids {PATH/TO/SRA/FILE} --outdir {OUTDIR} --fasta {REF.fa} -profile <docker, singularity, test etc> --kraken_db {PATH/TO/DB} --workflow {WORKFLOW} --filter {true/false}
 ```
 
 Note that the pipeline will create the following files in your working directory:

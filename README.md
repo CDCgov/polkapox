@@ -1,6 +1,6 @@
 # PolkaPox :microbe: :dna: :accordion:
 
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A525.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg)](https://sylabs.io/docs/)
@@ -12,6 +12,9 @@
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
 ## Pipeline summary
+
+**Input validation**
+1. Validate the input FASTQ files and read pairing. ([`fq lint`](https://github.com/stjude-rust-labs/fq))
 
 **Read pre-processing**
 1. Filter raw reads to capture only Orthopox Virus sequences. ([`Kraken`](https://github.com/DerrickWood/kraken2) + [`KrakenTools`](https://github.com/jenniferlu717/KrakenTools))
@@ -30,10 +33,11 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 1. Align reads to assembled genome. ([`BWA`](http://bio-bwa.sourceforge.net/))
 1. Calculate mapping statistics. ([`Samtools`](https://www.htslib.org/))
 1. Correct assembly errors and ambiguities. ([`iVar`](https://andersen-lab.github.io/ivar/html/manualpage.html))
-1. Quantify assembly corrections. ([`MUMmer`](https://github.com/mummer4/mummer#dnadiff))
+1. Quantify assembly corrections. ([`MUMmer dnadiff`](https://github.com/mummer4/mummer#dnadiff))
 
 **Performance summary**
-1. Visualize reads metrics and summary of software versions. ([`MultiQC`](http://multiqc.info/))
+1. Visualize reads metrics. ([`MultiQC`](http://multiqc.info/))
+1. Collate the software versions of all processes into `pipeline_info/collated_versions.yml`.
 1. Compile various QC metrics. ([`summarize_qc.py`](/bin/summarize_qc.py))
 
 **Pipeline diagram**  
@@ -41,7 +45,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 ## Quick Start
 
-1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=23.04.0, <=25.10.4`)
+1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=25.04.0, <=25.10.4`)
 
 2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) (you can follow [this tutorial](https://singularity-tutorial.github.io/01-installation/)), [`Podman`](https://podman.io/), [`Shifter`](https://nersc.gitlab.io/development/shifter/how-to-use/) or [`Charliecloud`](https://hpc.github.io/charliecloud/) for full pipeline reproducibility _(you can use [`Conda`](https://conda.io/miniconda.html) both to install Nextflow itself and also to manage software within pipelines. Please only use it within pipelines as a last resort; see [docs](https://nf-co.re/usage/configuration#basic-configuration-profiles))_.
    - *Note*: if running this pipeline on CDC infrascructure (nettie, rosalind), use singularity containers.
@@ -106,18 +110,18 @@ ${outdir}/
   ├── bwa/
   ├── fastp/
   ├── final_assembly/
+  ├── fq_lint/
   ├── graph_recon/
   ├── graph_recon_mapping/
   ├── ivar/
-  ├── ivar_variants/
   ├── kraken2/
+  ├── krakentools/
   ├── multiqc/
   ├── mummer/
   ├── pipeline_info/
   ├── quast/
   ├── sample_summary.tsv
   ├── samtools/
-  ├── krakentools/
   ├── unicycler/
   └── variant_summaries/
 ```
