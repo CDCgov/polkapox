@@ -1,0 +1,45 @@
+name: sra_to_samplesheet
+description: Build a single-sample samplesheet row from a pair of downloaded SRA FastQ files
+keywords:
+  - sra
+  - samplesheet
+  - fastq
+tools:
+  - sra_to_samplesheet:
+      description: Pipeline-bundled bash step (no external tool) that writes a one-row samplesheet CSV for an SRA-derived sample
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map/accession identifying the sample
+          e.g. [ id:'SRR12345678' ]
+    - fastq1:
+        type: file
+        description: Downloaded forward (R1) FastQ file
+        ontologies: []
+  - - meta:
+        type: map
+        description: |
+          Groovy Map/accession identifying the sample (same value as the first input)
+          e.g. [ id:'SRR12345678' ]
+    - fastq2:
+        type: file
+        description: Downloaded reverse (R2) FastQ file
+        ontologies: []
+output:
+  samplesheet:
+    - - meta:
+          type: map
+          description: Groovy Map/accession identifying the sample
+      - "*samplesheet.csv":
+          type: file
+          description: One-row samplesheet CSV for this SRA-derived sample
+          pattern: "*samplesheet.csv"
+          ontologies: []
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

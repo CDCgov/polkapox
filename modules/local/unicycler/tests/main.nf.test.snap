@@ -1,11 +1,17 @@
 {
     "MPXV - paired end": {
         "content": [
-            [
-                "versions.yml:md5,45075b6a6a79996b28ee8114d7ca4131"
-            ]
+            {
+                "versions_unicycler": [
+                    [
+                        "UNICYCLER",
+                        "unicycler",
+                        "tput:\ntput:\n0.4.8"
+                    ]
+                ]
+            }
         ],
-        "timestamp": "2026-09-17T14:16:36.368578293",
+        "timestamp": "2026-10-22T20:04:13.202222473",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

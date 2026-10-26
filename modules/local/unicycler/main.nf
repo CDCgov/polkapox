@@ -15,7 +15,7 @@ process UNICYCLER {
     tuple val(meta), path('*.scaffolds.fa.gz'), emit: scaffolds, optional: true
     tuple val(meta), path('*bridges_applied.gfa'), emit: gfa, optional: true
     tuple val(meta), path('*.log')            , emit: log
-    path  "versions.yml"                      , emit: versions
+    tuple val("${task.process}"), val('unicycler'), eval('unicycler --version 2>&1 | sed "s/^.*Unicycler v//; s/ .*$//"'), topic: versions, emit: versions_unicycler
 
     when:
     task.ext.when == null || task.ext.when
@@ -38,10 +38,5 @@ process UNICYCLER {
     mv *_bridges_applied.gfa ${prefix}.bridges_applied.gfa
     mv assembly.gfa ${prefix}.assembly.gfa
     gzip -n ${prefix}.assembly.gfa
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        unicycler: \$(echo \$(unicycler --version 2>&1) | sed 's/^.*Unicycler v//; s/ .*\$//')
-    END_VERSIONS
     """
 }

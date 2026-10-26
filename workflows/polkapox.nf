@@ -34,7 +34,7 @@ else if (params.sra_ids) {
 */
 
 ch_multiqc_config        = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config) : Channel.empty()
+ch_multiqc_custom_config = params.multiqc_config ? file(params.multiqc_config, checkIfExists: true) : []
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,7 +46,6 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK         } from '../subworkflows/local/input_check/main'
-include { PREPARE_GENOME      } from '../subworkflows/local/prepare_genome/main'
 include { SRA_TOOLS           } from '../subworkflows/local/sra_tools/main'
 include { CREATE_SAMPLESHEET  } from '../modules/local/create_samplesheet/main'
 include { READ_FILTER         } from '../subworkflows/local/filter_reads/main'
@@ -55,7 +54,7 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+    IMPORT NF-CORE MODULES/WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
@@ -63,9 +62,37 @@ include { REFBASED            } from '../subworkflows/local/ref_based/main'
 // MODULE: Installed directly from nf-core/modules
 //
 include { MULTIQC                                       } from '../modules/nf-core/multiqc/main'
-//note that the lower is deprecated
-include { CUSTOM_DUMPSOFTWAREVERSIONS                   } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { SUMMARIZE_QC                                  } from '../modules/local/summarize_qc/main'
+include { BWA_INDEX                                     } from '../modules/nf-core/bwa/index/main'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// Generate workflow version string
+def getWorkflowVersion() {
+    def version_string = "" as String
+    if (workflow.manifest.version) {
+        def prefix_v = workflow.manifest.version[0] != 'v' ? 'v' : ''
+        version_string += "${prefix_v}${workflow.manifest.version}"
+    }
+    if (workflow.commitId) {
+        def git_shortsha = workflow.commitId.substring(0, 7)
+        version_string += "-g${git_shortsha}"
+    }
+    return version_string
+}
+
+// Get workflow version block for the collated versions report
+def workflowVersionToYAML() {
+    return """
+    Workflow:
+        ${workflow.manifest.name}: ${getWorkflowVersion()}
+        Nextflow: ${workflow.nextflow.version}
+    """.stripIndent().trim()
+}
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,8 +105,6 @@ def multiqc_report = []
 
 workflow POLKAPOX {
 
-    ch_versions = Channel.empty() 
-
     if (params.indir) {
         //
         // MODULE: Create samplesheet based on directory of fastq files 
@@ -88,7 +113,6 @@ workflow POLKAPOX {
             ch_indir
         )
         ch_input = CREATE_SAMPLESHEET.out.samplesheet
-        ch_versions = ch_versions.mix(CREATE_SAMPLESHEET.out.versions)
     }
 
     else if (params.sra_ids) {
@@ -106,11 +130,9 @@ workflow POLKAPOX {
         SRA_TOOLS (
             ch_sra
         )
-        ch_versions = ch_versions.mix(SRA_TOOLS.out.versions.first())
-    
-        ch_reads = SRA_TOOLS.out.forward.join(SRA_TOOLS.out.reverse)
-        ch_input = ch_reads
-            .map { meta, fastq1, fastq2 -> "$meta,$fastq1,$fastq2" }
+
+        ch_input = SRA_TOOLS.out.reads
+            .map { meta, reads -> "$meta,${reads[0]},${reads.size() > 1 ? reads[1] : ''}" }
             .collectFile(name: 'sra-samplesheet.csv', newLine: true, seed: 'sample,fastq_1,fastq_2')
     }
     //
@@ -119,14 +141,11 @@ workflow POLKAPOX {
     INPUT_CHECK (
         ch_input
     )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)            
 
     //
     // SUBWORKFLOW: Prepare reference
     //
-    PREPARE_GENOME ()
-    ch_bwa_index = PREPARE_GENOME.out.bwa_index
-    ch_versions = ch_versions.mix(PREPARE_GENOME.out.versions)
+    BWA_INDEX ( [ [id: 'reference'], file(params.fasta) ] )
 
     //
     // SUBWORKFLOW: Only run Read Filter
@@ -139,7 +158,6 @@ workflow POLKAPOX {
         READ_FILTER (
             INPUT_CHECK.out.reads,
         )
-        ch_versions = ch_versions.mix(READ_FILTER.out.versions)
     } 
 
     //
@@ -149,10 +167,8 @@ workflow POLKAPOX {
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
         REFBASED (
             READ_FILTER.out.trimmed_fastq,
-            ch_bwa_index
+            BWA_INDEX.out.index,
         )
-        ch_versions = ch_versions.mix(REFBASED.out.versions)
-
     }
 
     //
@@ -163,17 +179,24 @@ workflow POLKAPOX {
         DENOVO (
             READ_FILTER.out.trimmed_fastq,
         )
-        ch_versions = ch_versions.mix(DENOVO.out.versions)
     }
 
     //
-    // MODULE: Dump all software versions used
+    // Collate software versions used (replaces CUSTOM_DUMPSOFTWAREVERSIONS; topic-channel
+    // based only -- read after all version-emitting modules/subworkflows above have run)
     //
-
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
-
+    ch_collated_versions = Channel.topic('versions')
+        .distinct()
+        .map { process, tool, version ->
+            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+        }
+        .groupTuple(by:0)
+        .map { process, tool_versions ->
+            tool_versions.unique().sort()
+            "${process}:\n${tool_versions.join('\n')}"
+        }
+        .mix(Channel.of(workflowVersionToYAML()))
+        .collectFile(storeDir: "${params.outdir}/pipeline_info", name: 'collated_versions.yml', sort: true, newLine: true)
     //
     // MODULE: MultiQC
     //
@@ -181,24 +204,26 @@ workflow POLKAPOX {
     ch_workflow_summary = Channel.value(workflow_summary)
 
     ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(Channel.from(ch_multiqc_config))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions.collect())
     ch_multiqc_files = ch_multiqc_files.mix(READ_FILTER.out.json.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(READ_FILTER.out.kraken2_report.collect{it[1]}.ifEmpty([]))
     if ( params.workflow == 'ref_based' || params.workflow == 'full' ) {
         ch_multiqc_files = ch_multiqc_files.mix(REFBASED.out.flagstat.collect{it[1]}.ifEmpty([]))
     }
     if ( params.workflow == 'denovo' || params.workflow == 'full' ) {
-        ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_tsv.collect().ifEmpty([]))
+        //MultiQC's quast search pattern requires the file be literally named report.tsv, so feed the
+        //results directory (not the renamed *.tsv symlink) so MultiQC can find it inside
+        ch_multiqc_files = ch_multiqc_files.mix(DENOVO.out.quast_results.collect{it[1]}.ifEmpty([]))
     }
 
+    // MultiQC config: bundled default plus an optional user-supplied override (nf-core/modules multiqc dedicated `multiqc_config` input)
+    ch_multiqc_config_files = ch_multiqc_custom_config ? [ ch_multiqc_config, ch_multiqc_custom_config ] : ch_multiqc_config
+
     MULTIQC (
-        ch_multiqc_files.collect()
+        ch_multiqc_files.collect().map { files -> [ [id:'multiqc'], files, ch_multiqc_config_files, [], [], [] ] }
     )
-    multiqc_report = MULTIQC.out.report.toList()
-    ch_versions    = ch_versions.mix(MULTIQC.out.versions)
+    multiqc_report = MULTIQC.out.report.map { meta, report -> report }.toList()
 
     //
     // MODULE: summarize_qc.py
@@ -208,8 +233,8 @@ workflow POLKAPOX {
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.json.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.kraken2_report.collect{it[1]}.ifEmpty([]))
     ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.classified_reads_assignment.collect{it[1]}.ifEmpty([]))
-    ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.seqtk_reads.collect{it[1]}.ifEmpty([]))
-    ch_summarizeqc_files = ch_summarizeqc_files.mix(MULTIQC.out.data.collect().ifEmpty([]))
+    ch_summarizeqc_files = ch_summarizeqc_files.mix(READ_FILTER.out.orthopox_reads.collect{it[1]}.ifEmpty([]))
+    ch_summarizeqc_files = ch_summarizeqc_files.mix(MULTIQC.out.data.map { meta, data -> data }.collect().ifEmpty([]))
     if ( params.workflow == 'ref_based' || params.workflow == 'full') {
         ch_summarizeqc_files = ch_summarizeqc_files.mix(REFBASED.out.depth_tsv.collect{it[1]}.ifEmpty([]))
         ch_summarizeqc_files = ch_summarizeqc_files.mix(REFBASED.out.tsv_vars.collect{it[1]}.ifEmpty([]))

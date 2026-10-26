@@ -4,7 +4,7 @@ nextflow_process {
     script "../main.nf"
     process "SUMMARIZE_TSV"
 
-    test("Should run without failures") {
+    test("summarize tsv on test_sub") {
 
         when {
             params {
@@ -29,7 +29,7 @@ nextflow_process {
 
         then {
             assert process.success
-            assert process.out.versions.size() == 1
+            assert process.out.findAll { key, val -> key.startsWith('versions') }.size() == 1
             assert snapshot(process.out.vars).match()
         }
 

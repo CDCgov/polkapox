@@ -1,0 +1,74 @@
+name: summarize_tsv
+description: Filter an iVar variants TSV down to variant calls inside one or two coordinate windows and tee a per-sample summary
+keywords:
+  - ivar
+  - variants
+  - filter
+  - summary
+tools:
+  - summarize_tsv:
+      description: Pipeline-bundled Python script (bin/filter_tsv.py) that filters iVar variant calls by genomic coordinates and QC thresholds
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - - meta:
+        type: map
+        description: |
+          Groovy Map containing sample information
+          e.g. [ id:'test', single_end:false ]
+    - ivar_tsv:
+        type: file
+        description: iVar variants TSV for this sample
+        pattern: "*.tsv"
+        ontologies: []
+  - - coord1_start:
+        type: integer
+        description: Start coordinate of the first (e.g. F13L) window of interest
+    - coord1_end:
+        type: integer
+        description: End coordinate of the first window of interest
+    - coord2_start:
+        type: integer
+        description: Start coordinate of the second (e.g. E9L) window of interest
+    - coord2_end:
+        type: integer
+        description: End coordinate of the second window of interest
+  - save_vars:
+      type: boolean
+      description: Whether to also tee a per-sample `<prefix>_ivar_summary.txt` file
+output:
+  vars:
+    - - meta:
+          type: map
+          description: Groovy Map containing sample information
+      - "*_ivar_summary.txt":
+          type: file
+          description: Filtered per-sample variant summary
+          pattern: "*_ivar_summary.txt"
+          ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python3 --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"

@@ -12,7 +12,7 @@ process AGGREGATE_TSVS {
 
     output:
     path("*.txt"), emit: txt
-    path "versions.yml"  , emit: versions
+    tuple val("${task.process}"), val('python'), eval('python3 --version | sed "s/Python //g"'), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when
@@ -22,10 +22,5 @@ process AGGREGATE_TSVS {
     def tee_output = save_aggr ? "| tee all_samples.vcf.summary.txt" : ""
     """
     aggregate_tsvs.py
-    
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }

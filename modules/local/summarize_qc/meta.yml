@@ -1,0 +1,53 @@
+name: summarize_qc
+description: Aggregate per-sample QC metrics (fastp, Kraken2, alignment, assembly) into a single run-level TSV
+keywords:
+  - qc
+  - summary
+  - report
+tools:
+  - summarize_qc:
+      description: Pipeline-bundled Python script (bin/summarize_qc.py, uses pandas) that collates QC outputs across the whole run
+      homepage: https://github.com/CDCgov/polkapox
+      documentation: https://github.com/CDCgov/polkapox
+      licence: ["Apache-2.0"]
+input:
+  - summarize_qc_files:
+      type: file
+      description: All per-sample QC files to summarize (fastp JSON, Kraken2 reports/classifications, KrakenTools-extracted reads, MultiQC data, etc.)
+  - samplesheet:
+      type: file
+      description: Validated input samplesheet
+      pattern: "*.csv"
+      ontologies: []
+output:
+  tsv:
+    - "*.tsv":
+        type: file
+        description: Run-level QC summary table
+        pattern: "*.tsv"
+        ontologies: []
+  versions_python:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+topics:
+  versions:
+    - - ${task.process}:
+          type: string
+          description: The process the versions were collected from
+      - python:
+          type: string
+          description: The tool name
+      - "python --version | sed \"s/Python //g\"":
+          type: string
+          description: The command used to generate the version of the tool
+authors:
+  - "@CDCgov/polkapox"
+maintainers:
+  - "@CDCgov/polkapox"
