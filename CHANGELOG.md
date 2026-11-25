@@ -3,7 +3,12 @@
 All notable changes since the initial release are listed below. Whenever possible, links to relevant commits or issues are provided. A full commit history relative to the previous release is also provided. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v3.1.0 - 2026-09-28
+## v3.1.2 - 2026-11-25
+
+### `Fixed`
+- **ENH: Ensure IVAR consensus outputs (.bwa.fa) are published** - Fixed output configuration to ensure IVAR reference-based consensus genome files (`.bwa.fa`) are properly published to the `ivar/` output folder. These files are essential for lineage/clade/variant screening and identifying large indels and genomic rearrangements. Addresses AMD-37461.
+
+## v3.1.1 - 2026-09-28
 [Full history](https://github.com/CDCgov/polkapox/pull/62)
 Refactoring of tests and writing of tests to ensure 100% coverage
 
