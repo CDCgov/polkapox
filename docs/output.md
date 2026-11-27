@@ -97,9 +97,10 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 <summary>Output files</summary>
 
 - `ivar/`
-  - `*.consensus.fa`: Consensus generated from BWA MEM alignment to reference genome.
+  - `*.bwa.fa`: **IVAR reference-based consensus genome** generated from BWA MEM alignment to reference genome. Used for lineage/clade/variant screening and identifying large indels/genomic rearrangements.
+  - `*.consensus.fa`: Consensus generated from BWA MEM alignment to reference genome (after post-processing).
   - `*.polished.fa`: Intermediate de novo assembly following read mapping and correction but before any terminal-N trimming.
-  - `*.bwa.mpileup*`: Mpileup output from BWA MEM alignment to reference genome.
+  - `*.bwa.mpileup*`: Mpileup output from BWA MEM alignment to reference genome, containing read depth information.
   - `*.ivar.tsv`: Default ivar variant output with variants as tsv table for each sample.
   - `*.ivar.vcf`: VCF converted from ivar variants tsv for each sample.
 

@@ -27,13 +27,21 @@ jobs:
         include:
           # Test pipeline minimum Nextflow version
           - NXF_VER: "23.04.0"
+            JAVA_VERSION: "17"
             NXF_EDGE: ""
           # Test latest edge release of Nextflow (limiting the upper version number of nextflow)
           - NXF_VER: "25.10.4"
+            JAVA_VERSION: "21"
             NXF_EDGE: ""
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
+
+      - name: Set up Java ${{ matrix.JAVA_VERSION }}
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.JAVA_VERSION }}
 
       - name: Install Nextflow
         env:
